@@ -7,11 +7,13 @@ import Link from 'next/link';
 import {
   PhoneCall,
   CalendarCheck,
-  Tag,
-  Headphones,
   ArrowUpRight,
   Clock,
   TrendingDown,
+  Rocket,
+  Search,
+  Megaphone,
+  Sparkles,
 } from 'lucide-react';
 
 const ring = 'linear-gradient(135deg, rgba(139,92,246,.9), rgba(96,165,250,.85))'; // logo vibe
@@ -61,11 +63,18 @@ export default function Hero() {
             </h1>
 
             <p className="lead max-w-2xl">
-              We build fast <b>websites</b>, run simple, effective <b>Google &amp; Meta Ads</b>, and
-              add an <b>AI voice receptionist</b> that answers right away, asks a few key questions,
-              <b> books the meeting</b>, or <b>warm-transfers</b> to your team. You close deals —
-              we handle the busywork.
+              We build the full funnel: a <b>conversion-ready website</b>, <b>ads that match</b>,
+              and an <b>AI receptionist</b> that greets every lead in seconds. Visitors know what
+              you do, why it matters, and how to book a call without digging for details.
             </p>
+
+            <div className="pill-grid text-sm text-white/85">
+              <span className="pill"><Rocket className="size-4" aria-hidden /> Launch-ready site</span>
+              <span className="pill"><Search className="size-4" aria-hidden /> Google demand</span>
+              <span className="pill"><Megaphone className="size-4" aria-hidden /> Meta awareness</span>
+              <span className="pill"><PhoneCall className="size-4" aria-hidden /> 24/7 receptionist</span>
+              <span className="pill"><Sparkles className="size-4" aria-hidden /> Clear, human copy</span>
+            </div>
 
      
           </motion.div>
@@ -169,9 +178,9 @@ export default function Hero() {
               </ol>
 
               <div className="grid sm:grid-cols-3 gap-2 text-[13px]">
-                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/85">More calls</div>
-                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/85">Less waiting</div>
-                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/85">Lower cost</div>
+                <div className="pill w-full justify-center">More booked calls</div>
+                <div className="pill w-full justify-center">Answer every lead</div>
+                <div className="pill w-full justify-center">Spend goes further</div>
               </div>
 
               <div className="flex flex-wrap gap-3 pt-1">

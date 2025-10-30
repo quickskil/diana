@@ -14,6 +14,7 @@ import {
   ArrowRight,
   ShieldCheck,
   BadgeDollarSign,
+  Sparkles,
 } from 'lucide-react';
 
 type Step = {
@@ -33,25 +34,31 @@ const steps: Step[] = [
     badge: 'Week 1',
     title: 'Launch a website that’s easy to buy from',
     desc:
-      'Clean, fast and clear. Your offers, proof, and next steps are front-and-center so visitors know what to do.',
-    bullets: ['Looks great on phone and desktop', 'Your story in plain language', 'Built to grow—add pages anytime'],
+      'We launch a modern site that shows who you help, why you are trusted, and how to talk to you in under a minute.',
+    bullets: ['Loads fast on phone or desktop', 'Clear promise and proof up top', 'Built so new sections are easy'],
   },
   {
     icon: Search,
     badge: 'Week 2–3',
-    title: 'Turn on the right traffic',
+    title: 'Turn on steady traffic',
     desc:
-      'Show up when people are looking (Google). Keep growing awareness (Meta). We adjust weekly so your spend works harder.',
-    bullets: ['Budgets move to what brings calls', 'Clear, simple reporting', 'Steady creative + keyword tweaks'],
+      'We run Google for high-intent leads and Meta to stay in front of lookalikes. Reports are short and focused on booked calls.',
+    bullets: ['Spend goes to proven winners', 'Plain-language updates each week', 'Creative and keywords stay fresh'],
   },
   {
     icon: PhoneCall,
     badge: 'Always on',
     title: 'Never miss a new lead',
     desc:
-      'An AI receptionist answers 24/7. During open hours it warm-transfers hot leads. After hours it books the meeting for you.',
-    bullets: ['Friendly, on-brand conversations', 'Qualifies in seconds', 'Meetings on your calendar'],
+      'An AI receptionist answers in your tone, captures the details, and either connects callers live or books the meeting for you.',
+    bullets: ['Greets callers in seconds', 'Shares a quick summary with you', 'Adds meetings straight to your calendar'],
   },
+];
+
+const kpis: { icon: React.ElementType; title: string; caption: string }[] = [
+  { icon: PhoneCall, title: '+ More live conversations', caption: 'Fewer missed opportunities' },
+  { icon: CalendarCheck, title: '24/7 bookings', caption: 'Wake up to new meetings' },
+  { icon: BadgeDollarSign, title: 'Lower cost per lead', caption: 'Better use of ad spend' },
 ];
 
 export default function Process() {
@@ -112,26 +119,20 @@ export default function Process() {
                   </div>
                   <h3 className="font-semibold">{s.title}</h3>
                   <p className="text-white/75 text-sm mt-1">{s.desc}</p>
-                  <ul className="mt-3 text-white/80 text-sm space-y-1 list-disc list-inside">
+                  <ul className="mt-4 text-white/85 text-sm space-y-2">
                     {s.bullets.map((b) => (
-                      <li key={b}>{b}</li>
+                      <li key={b} className="flex items-start gap-2">
+                        <CheckCircle2 className="size-4 mt-0.5 text-emerald-300" aria-hidden />
+                        <span>{b}</span>
+                      </li>
                     ))}
                   </ul>
 
                   {/* micro trust row */}
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-white/70">
-                    <div className="flex items-center gap-1">
-                      <GaugeCircle className="size-4 opacity-70" />
-                      Fast
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Handshake className="size-4 opacity-70" />
-                      Friendly
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <ShieldCheck className="size-4 opacity-70" />
-                      Reliable
-                    </div>
+                  <div className="mt-5 pill-grid text-[12px]">
+                    <span className="pill"><GaugeCircle className="size-3.5" aria-hidden /> Fast launch</span>
+                    <span className="pill"><Handshake className="size-3.5" aria-hidden /> Done with you</span>
+                    <span className="pill"><ShieldCheck className="size-3.5" aria-hidden /> Built to last</span>
                   </div>
                 </div>
               </article>
@@ -141,15 +142,14 @@ export default function Process() {
 
         {/* KPI chips */}
         <div className="grid sm:grid-cols-3 gap-4">
-          {[
-            ['+ More calls answered', 'Fewer missed opportunities'],
-            ['24/7 capture', 'Meetings while you sleep'],
-            ['Lower cost per lead', 'Better value from ad spend'],
-          ].map(([h, sub]) => (
-            <div key={h} className="relative rounded-2xl p-[1px]" style={{ background: ring }}>
-              <div className="card p-4 h-full bg-slate-900/70 rounded-2xl">
-                <div className="font-medium">{h}</div>
-                <div className="text-white/60 text-sm">{sub}</div>
+          {kpis.map(({ icon: Icon, title, caption }) => (
+            <div key={title} className="relative rounded-2xl p-[1px]" style={{ background: ring }}>
+              <div className="card p-4 h-full bg-slate-900/70 rounded-2xl space-y-2">
+                <div className="flex items-center gap-2 font-medium">
+                  <Icon className="size-4 text-emerald-300" aria-hidden />
+                  {title}
+                </div>
+                <div className="text-white/65 text-sm">{caption}</div>
               </div>
             </div>
           ))}
@@ -179,18 +179,24 @@ export default function Process() {
                   <PhoneCall className="opacity-85" aria-hidden />
                   <div className="font-semibold">Open hours • Warm transfer</div>
                 </div>
-                <p className="text-white/75 text-sm leading-relaxed">
-                  A new caller is answered in seconds. The receptionist asks a few short questions, then{' '}
-                  <b>consults & connects</b> the call to your team with context. You join, the AI steps back.
+                <p className="text-white/80 text-sm leading-relaxed">
+                  New callers hear a friendly voice right away. The receptionist gathers the key details, then loops your team
+                  in live with a short summary so you can jump straight into the conversation.
                 </p>
-                <ul className="mt-3 text-xs text-white/65 space-y-1 list-disc list-inside">
-                  <li>Quick qualification, no scripts to memorize</li>
-                  <li>Clear handoff — your team hears the summary</li>
-                  <li>Works with your existing numbers and tools</li>
+                <ul className="mt-4 text-xs text-white/70 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="size-3.5 mt-0.5 text-emerald-300" aria-hidden />
+                    Quick qualification in your voice
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="size-3.5 mt-0.5 text-emerald-300" aria-hidden />
+                    Smooth handoff with context
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="size-3.5 mt-0.5 text-emerald-300" aria-hidden />
+                    Works with your existing number
+                  </li>
                 </ul>
-                <div className="mt-3 flex items-center gap-2 text-xs text-white/60">
-                  <CheckCircle2 className="size-4" /> Standard 3-way bridge workflow
-                </div>
               </div>
             </motion.div>
 
@@ -208,29 +214,32 @@ export default function Process() {
                   <CalendarCheck className="opacity-85" aria-hidden />
                   <div className="font-semibold">After hours • Instant scheduling</div>
                 </div>
-                <p className="text-white/75 text-sm leading-relaxed">
-                  The AI offers times and <b>books right on your calendar</b>. Visitors stay on your site and you start
-                  the morning with new meetings — no back-and-forth.
+                <p className="text-white/80 text-sm leading-relaxed">
+                  After-hours visitors pick a time that works for them. Confirmations go out instantly, and you start the day
+                  with fresh meetings already on the calendar.
                 </p>
-                <ul className="mt-3 text-xs text-white/65 space-y-1 list-disc list-inside">
-                  <li>Inline, popup, or floating badge scheduler</li>
-                  <li>Confirmation + calendar invite to both sides</li>
-                  <li>Notes and contact details saved for follow-up</li>
+                <ul className="mt-4 text-xs text-white/70 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="size-3.5 mt-0.5 text-emerald-300" aria-hidden />
+                    Scheduler lives on your site
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="size-3.5 mt-0.5 text-emerald-300" aria-hidden />
+                    Instant confirmation for both sides
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="size-3.5 mt-0.5 text-emerald-300" aria-hidden />
+                    Notes saved for easy follow-up
+                  </li>
                 </ul>
-                <div className="mt-3 flex items-center gap-2 text-xs text-white/60">
-                  <CheckCircle2 className="size-4" /> Works great on mobile
-                </div>
               </div>
             </motion.div>
           </div>
 
           {/* Upgraded bridge row with animated arrow + gradient chips */}
           <div className="grid md:grid-cols-[1fr_auto_1fr] items-center gap-3">
-            <div
-              className="rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-sm text-white/80"
-              aria-label="Traffic sources"
-            >
-              <b>Website + Ads</b> bring the right people.
+            <div className="pill w-full justify-center text-sm" aria-label="Traffic sources">
+              <Sparkles className="size-4" aria-hidden /> Website + Ads bring the right people
             </div>
 
             {!reduce ? (
@@ -248,18 +257,15 @@ export default function Process() {
               <ArrowRight className="mx-auto opacity-70 hidden md:block" aria-hidden />
             )}
 
-            <div
-              className="rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-sm text-white/80"
-              aria-label="Conversion engine"
-            >
-              <b>AI Receptionist</b> turns them into bookings — even after hours.
+            <div className="pill w-full justify-center text-sm" aria-label="Conversion engine">
+              <PhoneCall className="size-4" aria-hidden /> AI Receptionist turns them into bookings
             </div>
           </div>
 
           {/* Confidence note (friendly; non-jargon) */}
-          <p className="text-center text-xs text-white/65 max-w-2xl mx-auto">
-            Getting back to people quickly makes a real difference. We design your flow for speed and clarity so more
-            conversations turn into customers.
+          <p className="text-center text-xs text-white/70 max-w-2xl mx-auto">
+            When it’s effortless to get in touch, more conversations happen. We design every touchpoint so people feel heard and
+            ready to buy.
           </p>
         </section>
 
