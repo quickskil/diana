@@ -1,5 +1,5 @@
 export const DEFAULT_SCHEDULER_URL =
-  'https://cal.com/cm-seo-bu01oy/30min?overlayCalendar=true';
+  'https://cal.com/business-booster/30min';
 
 const schedulerUrl =
   process.env.NEXT_PUBLIC_CAL_URL ||
