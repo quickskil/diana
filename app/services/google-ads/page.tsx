@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Headphones,
 } from "lucide-react";
+import ServicePill from "@/components/ServicePill";
 
 export const metadata: Metadata = {
   title: "Google Ads",
@@ -52,20 +53,7 @@ export default function Page() {
 
       <div className="container space-y-12">
         {/* Top “Service” pill */}
-        <div
-          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[12px] border border-white/10"
-          style={{ background: "rgba(255,255,255,.04)" }}
-        >
-          <span
-            aria-hidden
-            className="inline-block size-1.5 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle at 30% 30%, rgba(139,92,246,.9), rgba(96,165,250,.9))",
-            }}
-          />
-          Service
-        </div>
+        <ServicePill />
 
         {/* HERO */}
         <header className="space-y-4">

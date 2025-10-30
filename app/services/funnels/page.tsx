@@ -14,6 +14,7 @@ import {
   Sparkles,
   CheckCircle2,
 } from "lucide-react";
+import ServicePill from "@/components/ServicePill";
 
 export const metadata: Metadata = {
   title: "Funnels",
@@ -51,7 +52,7 @@ export default function Page() {
       <div className="container space-y-12">
         {/* HERO */}
         <header className="space-y-3">
-          <div className="badge">Service</div>
+          <ServicePill />
           <h1 id="svc-title" className="leading-tight">
             Funnels that turn clicks into <span className="text-brand">booked calls</span>
           </h1>

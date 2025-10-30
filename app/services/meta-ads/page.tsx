@@ -14,6 +14,7 @@ import {
   MessageCircle,
   ArrowRight,
 } from "lucide-react";
+import ServicePill from "@/components/ServicePill";
 
 export const metadata: Metadata = {
   title: "Meta Ads",
@@ -52,7 +53,7 @@ export default function Page() {
       <div className="container space-y-12">
         {/* HERO */}
         <header className="space-y-3">
-          <div className="badge">Service</div>
+          <ServicePill />
           <h1 id="svc-title" className="leading-tight">
             Meta Ads that turn attention into <span className="text-brand">booked calls</span>
           </h1>
