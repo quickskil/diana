@@ -92,55 +92,57 @@ export default function FAQ() {
 
         <div className="radiant-card" role="presentation">
           <div className="card p-2 divide-y divide-white/10" role="list">
-          {faqs.map((item, i) => {
-            const isOpen = open === i;
-            const contentId = `faq-panel-${i}`;
-            const buttonId = `faq-button-${i}`;
-            const hashId = `faq-${item.id ?? slugify(item.q)}`;
+            {faqs.map((item, i) => {
+              const isOpen = open === i;
+              const contentId = `faq-panel-${i}`;
+              const buttonId = `faq-button-${i}`;
+              const hashId = `faq-${item.id ?? slugify(item.q)}`;
 
-            return (
-              <div key={item.q} id={hashId} className="py-2" role="listitem">
-                {/* Visible button acts as the heading control (APG disclosure pattern) */}
-                <button
-                  id={buttonId}
-                  className="accordion-q w-full text-left py-3 focus:outline-none flex items-center justify-between gap-3"
-                  aria-expanded={isOpen}
-                  aria-controls={contentId}
-                  onClick={() => setOpen(isOpen ? null : i)}
-                >
-                  <span className="font-medium">{item.q}</span>
-                  <motion.span
-                    aria-hidden
-                    initial={false}
-                    animate={{ rotate: isOpen ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="shrink-0"
+              return (
+                <div key={item.q} id={hashId} className="py-2" role="listitem">
+                  {/* Visible button acts as the heading control (APG disclosure pattern) */}
+                  <button
+                    id={buttonId}
+                    className="accordion-q w-full text-left py-3 focus:outline-none flex items-center justify-between gap-3"
+                    aria-expanded={isOpen}
+                    aria-controls={contentId}
+                    onClick={() => setOpen(isOpen ? null : i)}
                   >
-                    <ChevronDown className="opacity-70" />
-                  </motion.span>
-                </button>
+                    <span className="font-medium">{item.q}</span>
+                    <motion.span
+                      aria-hidden
+                      initial={false}
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="shrink-0"
+                    >
+                      <ChevronDown className="opacity-70" />
+                    </motion.span>
+                  </button>
 
-                {/* Panel */}
-                <motion.div
-                  id={contentId}
-                  role="region"
-                  aria-labelledby={buttonId}
-                  initial={false}
-                  animate={isOpen ? 'open' : 'closed'}
-                  variants={{
-                    open: { height: 'auto', opacity: 1 },
-                    closed: { height: 0, opacity: 0 },
-                  }}
-                  transition={{ duration: reduce ? 0 : 0.25 }}
-                  className="overflow-hidden pr-2"
-                >
-                  <div className="accordion-a pb-4 text-white/80 text-sm">
-                    {item.a}
-                  </div>
-                </motion.div>
-              </div>
-            );
-          })}
+                  {/* Panel */}
+                  <motion.div
+                    id={contentId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    initial={false}
+                    animate={isOpen ? 'open' : 'closed'}
+                    variants={{
+                      open: { height: 'auto', opacity: 1 },
+                      closed: { height: 0, opacity: 0 },
+                    }}
+                    transition={{ duration: reduce ? 0 : 0.25 }}
+                    className="overflow-hidden pr-2"
+                  >
+                    <div className="accordion-a pb-4 text-white/80 text-sm">
+                      {item.a}
+                    </div>
+                  </motion.div>
+                </div>
+              );
+            })}
+          </div>
+
         </div>
 
         <div className="text-center">
