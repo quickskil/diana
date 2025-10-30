@@ -72,7 +72,7 @@ const ITEMS: Item[] = [
     href: '/services/voice-agents',
     cta: 'See Voice Plan',
     bullets: [
-      'Answers, qualifies, and books via Calendly',
+      'Answers, qualifies, and books via Cal.com',
       'Warm transfers using a brief consult/bridge',
       'SIP/WebRTC + CRM integrations'
     ],
