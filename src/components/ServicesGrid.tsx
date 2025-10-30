@@ -84,7 +84,7 @@ const services: Service[] = [
 ];
 
 export default function ServicesGrid() {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotion() ?? false;
 
   return (
     <section id="services" className="section" aria-labelledby="services-title">

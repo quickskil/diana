@@ -81,7 +81,7 @@ const ITEMS: Item[] = [
 ];
 
 export default function Services() {
-  const reduce = useReducedMotion(); // respect users who prefer less motion. :contentReference[oaicite:2]{index=2}
+  const reduce = useReducedMotion() ?? false; // respect users who prefer less motion. :contentReference[oaicite:2]{index=2}
   const [open, setOpen] = useState<number | null>(null);
 
   return (
