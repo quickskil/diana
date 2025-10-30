@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   ArrowRight,
 } from "lucide-react";
+import ServicePill from "@/components/ServicePill";
 
 export const metadata: Metadata = {
   title: "AI Voice Receptionists",
@@ -50,7 +51,7 @@ export default function Page() {
       <div className="container space-y-12">
         {/* HERO */}
         <header className="space-y-3">
-          <div className="badge">Service</div>
+          <ServicePill />
           <h1 id="svc-title">AI Voice Receptionists</h1>
           <p className="lead max-w-3xl">
             <b>Never miss a lead.</b> We answer inbound calls instantly and{" "}
