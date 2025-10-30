@@ -1,4 +1,5 @@
 // app/case-studies/page.tsx
+import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -13,6 +14,8 @@ type Study = {
   metric: string;
   context: string;
   outcome: string;
+  trend: number[];
+  color: "violet" | "sky" | "emerald";
 };
 
 const studies: Study[] = [
@@ -21,12 +24,16 @@ const studies: Study[] = [
     metric: "Booked jobs 2.1×",
     context: "HVAC & roofing teams",
     outcome: "Neighborhood landing page + AI voice to handle overflow and after-hours calls added steady appointments each week.",
+    trend: [12, 17, 22, 28, 31, 36, 41, 45],
+    color: "violet",
   },
   {
     title: "B2B SaaS",
     metric: "Demo requests +88%",
     context: "Growth-stage platform",
     outcome: "Role-based messaging, synchronized ads, and instant voice follow-up meant more pipeline without adding SDR headcount.",
+    trend: [24, 29, 33, 39, 46, 52, 58, 63],
+    color: "sky",
   },
   {
     title: "DTC & eCom",
@@ -34,6 +41,8 @@ const studies: Study[] = [
     context: "Skincare & supplements",
     outcome:
       "Faster product experiences and creatives that mirrored the landing page increased conversion and let spend scale profitably.",
+    trend: [3.2, 3.5, 3.8, 4.1, 4.5, 4.8, 5.0, 5.1],
+    color: "emerald",
   },
 ];
 
@@ -80,10 +89,13 @@ export default function Page() {
         <section className="grid md:grid-cols-3 gap-4" aria-label="Highlights by industry">
           {studies.map((study) => (
             <div key={study.title} className="radiant-card">
-              <div className="card h-full p-5 space-y-2">
-                <div className="text-sm text-white/60">{study.context}</div>
+              <div className="card h-full p-5 space-y-3">
+                <div className="flex items-center justify-between text-sm text-white/60">
+                  <span>{study.context}</span>
+                  <span className="badge">{study.metric}</span>
+                </div>
                 <h2 className="text-lg font-semibold text-white/95">{study.title}</h2>
-                <div className="text-3xl font-extrabold text-white/95">{study.metric}</div>
+                <MiniChart values={study.trend} color={study.color} ariaLabel={`${study.title} performance`} />
                 <p className="text-sm text-white/70">{study.outcome}</p>
               </div>
             </div>
@@ -102,11 +114,12 @@ export default function Page() {
         </section>
 
         <section className="radiant-card">
-          <div className="card p-6 text-center space-y-3">
+          <div className="card p-6 space-y-4 text-center">
             <h2 className="text-xl font-semibold text-white/95">Want the numbers for your niche?</h2>
             <p className="text-sm text-white/70 max-w-2xl mx-auto">
               We’ll share a tailored forecast, sample creative, and how we’d roll out the automated funnel step by step.
             </p>
+            <MiniChart values={[18, 26, 32, 37, 45, 52, 58, 63]} color="emerald" ariaLabel="Forecasted pipeline growth" />
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <Link href="/contact" className="btn">
                 Book a call

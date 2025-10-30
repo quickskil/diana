@@ -1,4 +1,5 @@
 // app/about/page.tsx
+import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarCheck, PhoneCall, Rocket, Search, Sparkles } from "lucide-react";
@@ -13,32 +14,41 @@ const pillars = [
   {
     icon: Rocket,
     title: "Funnel Foundation",
-    body: "A conversion-ready site that tells the story quickly, builds trust, and drives every visitor to book a call.",
+    body: "We build the homepage like a trusted friend explaining what you do and why it matters.",
+    stat: "+37% booked calls",
+    trend: [6, 7, 9, 12, 18, 22, 26, 31],
+    color: "violet" as const,
   },
   {
     icon: Search,
     title: "Traffic Engine",
-    body: "Intent-led ads that echo the page, so every dollar goes toward conversations that actually close.",
+    body: "Ads mirror the page promise so every click lands on something familiar and fast.",
+    stat: "-24% cost per lead",
+    trend: [78, 75, 71, 67, 63, 59, 55, 52],
+    color: "sky" as const,
   },
   {
     icon: PhoneCall,
     title: "Lead Response",
-    body: "An AI receptionist that answers in seconds, books meetings, and warm-transfers hot opportunities to you.",
+    body: "An AI receptionist that answers right away, books meetings, and hands off hot leads with context.",
+    stat: "93% answer rate",
+    trend: [68, 72, 78, 84, 88, 92, 94, 96],
+    color: "emerald" as const,
   },
 ];
 
 const reasons = [
   {
     title: "Plain-language positioning",
-    copy: "Prospects get what you do in under a minute. That clarity lowers friction and shortens sales cycles.",
+    copy: "We explain your offer like a friend would, so prospects nod along within seconds.",
   },
   {
     title: "Tight ad → page match",
-    copy: "Clicks land on a page that repeats the same promise, so costs drop and more leads convert.",
+    copy: "Ads and landing pages speak the same language, lowering costs and boosting trust.",
   },
   {
     title: "Always-on follow-up",
-    copy: "After-hours and overflow calls are answered, booked, and summarized — without adding headcount.",
+    copy: "Our AI receptionist answers instantly, books meetings, and shares notes so nothing slips through.",
   },
 ];
 
@@ -51,7 +61,7 @@ const steps = [
   {
     label: "Week 2",
     title: "Light up the demand",
-    desc: "Search + social campaigns that mirror the page and feed the same CTA.",
+    desc: "Search + social that mirror the page and send people to the same friendly CTA.",
   },
   {
     label: "Always on",
@@ -78,14 +88,18 @@ export default function Page() {
 
       <div className="container space-y-12">
         <header className="space-y-5 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 badge">Automated funnel, real conversations</div>
-          <h1 id="about-title">Your growth team for booked calls on autopilot</h1>
+          <div className="inline-flex items-center gap-2 badge">Automated funnel, friendly team</div>
+          <h1 id="about-title">We build the whole funnel so you can just close</h1>
           <p className="lead text-white/75">
-            We combine design, media, and AI follow-up into one simple service. The result: more qualified calls, less time
-            chasing leads, and a pipeline you can rely on.
+            Design, media, and AI follow-up under one roof. We keep it conversational, share what’s working each week, and keep
+            your calendar full without you chasing leads.
           </p>
+          <div className="mx-auto max-w-sm">
+            <MiniChart values={[12, 16, 22, 29, 34, 39, 44, 52]} color="violet" ariaLabel="Booked calls increasing month over month" />
+            <p className="mt-2 text-xs text-white/55">Typical ramp-up for clients once the full system is live.</p>
+          </div>
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <Link href="/contact" className="btn">Book a strategy call</Link>
+            <Link href="/contact" className="btn">Book a friendly strategy chat</Link>
             <Link href="/pricing" className="btn-ghost">See pricing</Link>
           </div>
           <p className="text-xs text-white/55">Start lean. Scale when the numbers work. No long-term contracts.</p>
@@ -94,15 +108,21 @@ export default function Page() {
         <section aria-labelledby="pillar-title" className="space-y-4">
           <h2 id="pillar-title" className="text-center">What we deliver together</h2>
           <p className="text-center text-white/70 max-w-2xl mx-auto">
-            Three pieces, one pipeline. We own the hand-off from click to conversation so you can stay focused on closing.
+            Three pieces, one pipeline. We handle the hand-off from click to booked call so you can stay focused on closing.
           </p>
           <div className="grid md:grid-cols-3 gap-4">
-            {pillars.map(({ icon: Icon, title, body }) => (
+            {pillars.map(({ icon: Icon, title, body, stat, trend, color }) => (
               <div key={title} className="radiant-card">
                 <div className="card h-full p-5 space-y-3">
-                  <Icon className="size-6 opacity-90" aria-hidden />
+                  <div className="flex items-start justify-between">
+                    <span className="inline-flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                      <Icon className="size-5 opacity-90" aria-hidden />
+                    </span>
+                    <span className="badge">{stat}</span>
+                  </div>
                   <h3 className="font-semibold text-white/95">{title}</h3>
                   <p className="text-sm text-white/70">{body}</p>
+                  <MiniChart values={trend} color={color} ariaLabel={`${title} performance`} />
                 </div>
               </div>
             ))}
@@ -114,7 +134,11 @@ export default function Page() {
           <div className="grid md:grid-cols-3 gap-4">
             {reasons.map((item) => (
               <div key={item.title} className="radiant-card">
-                <div className="card h-full p-5 space-y-2">
+                <div className="card h-full p-5 space-y-3">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+                    <Sparkles className="size-3.5" aria-hidden />
+                    Real-world playbook
+                  </div>
                   <h3 className="font-semibold text-white/95">{item.title}</h3>
                   <p className="text-sm text-white/70">{item.copy}</p>
                 </div>
@@ -126,15 +150,21 @@ export default function Page() {
         <section aria-labelledby="step-title" className="space-y-4">
           <h2 id="step-title" className="text-center">How we plug in</h2>
           <div className="grid md:grid-cols-3 gap-4">
-            {steps.map((step) => (
+            {steps.map((step, idx) => (
               <div key={step.title} className="radiant-card">
-                <div className="card h-full p-5 space-y-2">
+                <div className="card h-full p-5 space-y-3">
                   <div className="flex items-center justify-between text-sm text-white/60">
                     <span>{step.label}</span>
                     <span className="badge">Done for you</span>
                   </div>
                   <h3 className="font-semibold text-white/95">{step.title}</h3>
                   <p className="text-sm text-white/70">{step.desc}</p>
+                  <div className="space-y-1">
+                    <div className="progress-track" aria-hidden>
+                      <div className="progress-bar" style={{ width: `${((idx + 1) / steps.length) * 100}%` }} />
+                    </div>
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Step {idx + 1}</div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -142,22 +172,32 @@ export default function Page() {
         </section>
 
         <section className="radiant-card">
-          <div className="card p-6 text-center space-y-3">
-            <h2 className="text-2xl font-bold text-white/95">We stay close to the numbers</h2>
-            <p className="text-sm text-white/70 max-w-2xl mx-auto">
-              Weekly check-ins keep the funnel sharp. We show what booked, what needs trimming, and what we are testing next —
-              all in plain language.
-            </p>
-            <div className="flex items-center justify-center gap-2 flex-wrap text-sm text-white/80">
-              <span className="pill"><Sparkles className="size-4" aria-hidden /> Conversion-first updates</span>
-              <span className="pill"><Search className="size-4" aria-hidden /> Spend focused on wins</span>
-              <span className="pill"><PhoneCall className="size-4" aria-hidden /> Call summaries in your inbox</span>
+          <div className="card grid gap-6 p-6 md:grid-cols-[minmax(0,1fr)_minmax(220px,260px)] md:items-center">
+            <div className="space-y-3 text-center md:text-left">
+              <h2 className="text-2xl font-bold text-white/95">We stay close to the numbers</h2>
+              <p className="text-sm text-white/70">
+                Weekly check-ins keep the funnel sharp. We show what booked, what we trimmed, and the next experiment — all in
+                plain language.
+              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap text-sm text-white/80 md:justify-start">
+                <span className="pill"><Sparkles className="size-4" aria-hidden /> Conversion-first updates</span>
+                <span className="pill"><Search className="size-4" aria-hidden /> Spend focused on wins</span>
+                <span className="pill"><PhoneCall className="size-4" aria-hidden /> Call summaries in your inbox</span>
+              </div>
+            </div>
+            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+              <div className="flex items-center justify-between text-white/60">
+                <span>Weekly booked calls</span>
+                <span className="badge">Live dashboard</span>
+              </div>
+              <MiniChart values={[14, 19, 23, 28, 31, 36, 38, 42]} color="violet" ariaLabel="Weekly booked calls trending up" />
+              <p className="text-xs text-white/55">You get a concise loom and written recap every Friday.</p>
             </div>
           </div>
         </section>
 
         <section className="text-center space-y-3">
-          <p className="text-white/70">Ready to see the playbook for your business?</p>
+          <p className="text-white/70">Want us to sketch your funnel on a quick call?</p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <Link href="/contact" className="btn">
               <PhoneCall className="size-4" aria-hidden />
@@ -168,7 +208,7 @@ export default function Page() {
               Explore pricing
             </Link>
           </div>
-          <p className="text-xs text-white/55">Zero pressure. Leave with clear next steps either way.</p>
+          <p className="text-xs text-white/55">Zero pressure. Leave with a roadmap either way.</p>
         </section>
       </div>
     </main>

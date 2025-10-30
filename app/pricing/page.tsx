@@ -1,4 +1,5 @@
 // app/pricing/page.tsx
+import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CalendarCheck, PhoneCall, Rocket, Search } from "lucide-react";
@@ -15,6 +16,8 @@ type Tier = {
   caption: string;
   bullets: string[];
   cta: string;
+  trend: number[];
+  color: "violet" | "sky" | "emerald";
 };
 
 const tiers: Tier[] = [
@@ -29,6 +32,8 @@ const tiers: Tier[] = [
       "Ready to grow into more pages",
     ],
     cta: "Start with the site",
+    trend: [4, 6, 9, 12, 16, 19, 21, 24],
+    color: "violet",
   },
   {
     name: "Launch + Traffic",
@@ -41,6 +46,8 @@ const tiers: Tier[] = [
       "Weekly trims & reporting",
     ],
     cta: "Add traffic",
+    trend: [28, 32, 36, 41, 47, 53, 58, 64],
+    color: "sky",
   },
   {
     name: "Full Funnel Automation",
@@ -53,6 +60,8 @@ const tiers: Tier[] = [
       "Warm transfers & after-hours booking",
     ],
     cta: "Go fully automated",
+    trend: [35, 42, 51, 60, 68, 75, 82, 90],
+    color: "emerald",
   },
 ];
 
@@ -74,10 +83,10 @@ export default function Page() {
 
       <div className="container space-y-10">
         <header className="text-center space-y-4 max-w-3xl mx-auto">
-          <h1 id="pricing-title">Pricing made for momentum</h1>
+          <h1 id="pricing-title">Pick the plan that fits today — upgrade when you’re ready</h1>
           <p className="text-white/70">
-            Start with the minimum that proves ROI. Layer in ads and AI follow-up once the site is converting. Everything stays
-            in sync because we run the entire funnel for you.
+            Start lean to prove ROI, then add ads and AI follow-up once the page is converting. We keep everything in sync so you
+            only talk to one friendly team.
           </p>
           <div className="flex items-center justify-center gap-2 flex-wrap text-sm text-white/80">
             <span className="pill"><Rocket className="size-4" aria-hidden /> Launch fast</span>
@@ -99,6 +108,7 @@ export default function Page() {
                   <div className="text-3xl font-extrabold text-white/95">{tier.price}</div>
                   <div className="text-xs text-white/55">{tier.caption}</div>
                 </div>
+                <MiniChart values={tier.trend} color={tier.color} ariaLabel={`${tier.headline} ramp`} />
                 <ul className="text-sm text-white/75 space-y-2">
                   {tier.bullets.map((bullet) => (
                     <li key={bullet}>{bullet}</li>
@@ -114,27 +124,38 @@ export default function Page() {
         </section>
 
         <section className="radiant-card">
-          <div className="card p-6 space-y-3 text-center">
-            <h2 className="text-xl font-semibold text-white/95">What every plan includes</h2>
-            <p className="text-sm text-white/70">
-              Conversion copy, speed optimizations, analytics setup, and weekly insight on what is booking calls. No surprise
-              fees, no long-term commitments.
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center text-sm text-white/80">
-              <span className="pill">Calendar + form integration</span>
-              <span className="pill">Transparent reporting</span>
-              <span className="pill">Friendly support</span>
+          <div className="card grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_minmax(220px,260px)] md:items-center">
+            <div className="space-y-3 text-center md:text-left">
+              <h2 className="text-xl font-semibold text-white/95">What every plan includes</h2>
+              <p className="text-sm text-white/70">
+                Conversion copy, speed optimizations, analytics setup, and weekly insight on what is booking calls. No surprise
+                fees, no long-term commitments.
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center text-sm text-white/80 md:justify-start">
+                <span className="pill">Calendar + form integration</span>
+                <span className="pill">Transparent reporting</span>
+                <span className="pill">Friendly support</span>
+              </div>
+            </div>
+            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+              <div className="flex items-center justify-between text-white/60">
+                <span>Onboarding timeline</span>
+                <span className="badge">2 weeks</span>
+              </div>
+              <MiniChart values={[0, 25, 45, 65, 78, 90, 100, 100]} color="emerald" ariaLabel="Two-week onboarding timeline" />
+              <p className="text-xs text-white/55">We handle the heavy lifting — you just review and approve.</p>
             </div>
           </div>
         </section>
 
         <section className="radiant-card">
-          <div className="card p-6 space-y-3 text-center">
+          <div className="card p-6 space-y-4 text-center">
             <h2 className="text-xl font-semibold text-white/95">Need a tailored quote?</h2>
             <p className="text-sm text-white/70 max-w-2xl mx-auto">
               We scope to your sales cycle, creative needs, and call volume. You’ll leave with a clear roadmap and the exact
               investment to make it happen.
             </p>
+            <MiniChart values={[12, 18, 27, 35, 44, 52, 59, 67]} color="sky" ariaLabel="Custom plan ramp" />
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <Link href="/contact" className="btn inline-flex items-center gap-2">
                 <PhoneCall className="size-4" aria-hidden />

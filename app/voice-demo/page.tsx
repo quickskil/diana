@@ -1,4 +1,5 @@
 // app/voice-demo/page.tsx
+import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -135,6 +136,13 @@ export default function VoiceDemoPage() {
                 <CallMetric label="First-call answer" value="100%" accent="sky" />
                 <CallMetric label="Bookings captured" value="92%" accent="emerald" />
               </div>
+
+              <MiniChart
+                values={[68, 74, 81, 86, 90, 93, 95, 97]}
+                color="emerald"
+                ariaLabel="Answer rate trending upward"
+                className="mt-6"
+              />
 
               <p className="mt-6 text-center text-xs text-white/60">
                 Calls may be recorded with consent. Carrier rates apply.

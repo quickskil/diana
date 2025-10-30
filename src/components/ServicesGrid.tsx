@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useCallback, useRef } from "react";
+import MiniChart from "./MiniChart";
 
 type Service = {
   icon: React.ElementType;
@@ -22,6 +23,10 @@ type Service = {
   cta: string;
   chip: string;
   chipIcon: React.ElementType;
+  stat: string;
+  statCaption: string;
+  trend: number[];
+  color: "violet" | "sky" | "emerald";
 };
 
 const services: Service[] = [
@@ -30,26 +35,34 @@ const services: Service[] = [
     title: "Funnel Foundation",
     href: "/services/websites",
     bullets: [
-      "Conversion-first page with a single next step",
-      "Proof and offer framed in plain language",
-      "Built to add sections as you scale",
+      "Conversion-focused homepage that loads fast",
+      "Proof, offer, and CTA aligned above the fold",
+      "Simple CMS so updates take minutes",
     ],
     cta: "See the site play",
     chip: "Launch fast",
     chipIcon: Sparkles,
+    stat: "+37% more booked calls",
+    statCaption: "Fresh copy + frictionless booking",
+    trend: [6, 7, 9, 13, 17, 22, 26, 30],
+    color: "violet",
   },
   {
     icon: Search,
     title: "Traffic Engine",
     href: "/services/google-ads",
     bullets: [
-      "Intent-based ads that match the page",
-      "Weekly trims so spend follows what books",
-      "Simple 10% management fee",
+      "Search + paid social that mirror the page promise",
+      "Weekly trims keep budget on winning terms",
+      "Creative refreshes based on what converts",
     ],
     cta: "See traffic plan",
     chip: "Always optimizing",
     chipIcon: CheckCircle2,
+    stat: "-28% cost per lead",
+    statCaption: "Message match cuts waste",
+    trend: [72, 69, 65, 61, 58, 55, 52, 49],
+    color: "sky",
   },
   {
     icon: PhoneCall,
@@ -57,12 +70,16 @@ const services: Service[] = [
     href: "/services/voice-agents",
     bullets: [
       "AI receptionist answers in seconds",
-      "Warm-transfers during open hours",
+      "Warm transfers during open hours",
       "After-hours callers book automatically",
     ],
     cta: "See response plan",
     chip: "24/7 coverage",
     chipIcon: PhoneCall,
+    stat: "93% answer rate",
+    statCaption: "No more missed calls",
+    trend: [68, 72, 78, 84, 89, 92, 94, 96],
+    color: "emerald",
   },
 ];
 
@@ -74,8 +91,7 @@ export default function ServicesGrid() {
       <div className="container space-y-8">
         <h2 id="services-title" className="text-center">What we ship</h2>
         <p className="text-center text-white/70 max-w-2xl mx-auto">
-          Everything rolls up to one goal: an automated funnel that captures interest, books the call, and lets you stay in
-          sales conversations.
+          Pick the piece you need or let us run the full play. Every service connects so clicks turn into friendly booked calls.
         </p>
 
         <div role="list" className="grid md:grid-cols-3 gap-4">
@@ -154,18 +170,33 @@ function ServiceCard({
         />
 
         {/* Content */}
-        <div className="relative z-10 flex items-start gap-3">
-          <Icon className="opacity-90 shrink-0" aria-hidden />
-          <div className="w-full">
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <h3 className="font-semibold text-white/95">{s.title}</h3>
-              <span className="badge">
-                <s.chipIcon className="size-3.5" aria-hidden />
-                {s.chip}
+        <div className="relative z-10 flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                <Icon className="size-5 opacity-90" aria-hidden />
               </span>
+              <div>
+                <h3 className="font-semibold text-white/95">{s.title}</h3>
+                <div className="text-xs text-white/55">{s.statCaption}</div>
+              </div>
+            </div>
+            <span className="badge">
+              <s.chipIcon className="size-3.5" aria-hidden />
+              {s.chip}
+            </span>
+          </div>
+
+          <div className="grid gap-3">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-white/70">
+              <div className="flex items-center justify-between">
+                <span>{s.stat}</span>
+                <ArrowRight className="size-4 text-white/60" aria-hidden />
+              </div>
+              <MiniChart values={s.trend} color={s.color} ariaLabel={`${s.title} performance`} />
             </div>
 
-            <ul className="text-white/80 text-sm space-y-2 mb-5">
+            <ul className="text-white/80 text-sm space-y-2">
               {s.bullets.map((b) => (
                 <li key={b} className="flex items-start gap-2">
                   <CheckCircle2 className="size-4 mt-0.5 text-emerald-300" aria-hidden />
@@ -173,33 +204,31 @@ function ServiceCard({
                 </li>
               ))}
             </ul>
-
-            {/* Actions: clearer, friendlier, with icons */}
-            <div className="relative z-10 flex items-center justify-between gap-2">
-              <Link
-                href={s.href}
-                className="btn-ghost inline-flex items-center gap-2"
-                aria-label={`${s.cta}: ${s.title}`}
-              >
-                <ArrowRight className="size-4" aria-hidden />
-                {s.cta}
-              </Link>
-
-              <Link
-                href="/contact"
-                className="btn inline-flex items-center gap-2"
-                aria-label={`Book a call about ${s.title}`}
-              >
-                <CalendarCheck className="size-4" aria-hidden />
-                Book a Call
-              </Link>
-            </div>
-
-            {/* Micro reassurance */}
-            <p className="mt-3 text-xs text-white/55">
-              Friendly setup. Clear pricing. No long-term contracts.
-            </p>
           </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Link
+              href={s.href}
+              className="btn-ghost inline-flex items-center gap-2"
+              aria-label={`${s.cta}: ${s.title}`}
+            >
+              <ArrowRight className="size-4" aria-hidden />
+              {s.cta}
+            </Link>
+
+            <Link
+              href="/contact"
+              className="btn inline-flex items-center gap-2"
+              aria-label={`Book a call about ${s.title}`}
+            >
+              <CalendarCheck className="size-4" aria-hidden />
+              Book a Call
+            </Link>
+          </div>
+
+          <p className="text-xs text-white/55">
+            Friendly setup, clear pricing, no long-term contracts.
+          </p>
         </div>
       </div>
     </motion.div>
