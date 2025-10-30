@@ -364,7 +364,7 @@ Always keep replies under 2 sentences unless asked for more detail.`;
   );
 }
 
-function Meter({ value, reduce }: { value: number; reduce: boolean }) {
+function Meter({ value, reduce }: { value: number; reduce: boolean | null }) {
   const pct = Math.min(100, Math.round((value || 0) * 160)); // scale RMS → %
   return (
     <div className="w-28 h-2 rounded-full bg-white/10 overflow-hidden" aria-label="Input level">
