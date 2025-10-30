@@ -10,7 +10,9 @@ import {
   Rocket,
   Search,
   ArrowRight,
-  CalendarCheck
+  CalendarCheck,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { useCallback, useMemo, useRef } from "react";
 
@@ -20,7 +22,8 @@ type Service = {
   href: string;
   bullets: string[];
   cta: string;
-  chip?: string;
+  chip: string;
+  chipIcon: React.ElementType;
 };
 
 const services: Service[] = [
@@ -34,7 +37,8 @@ const services: Service[] = [
       "Built to grow — add pages and features later",
     ],
     cta: "See Website Plan",
-    chip: "From $499",
+    chip: "Launch in 10 days",
+    chipIcon: Sparkles,
   },
   {
     icon: Search,
@@ -46,6 +50,8 @@ const services: Service[] = [
       "Simple fee: 10% of ad spend",
     ],
     cta: "See Google Plan",
+    chip: "Simple 10% fee",
+    chipIcon: CheckCircle2,
   },
   {
     icon: Megaphone,
@@ -57,6 +63,8 @@ const services: Service[] = [
       "Weekly tweaks so results keep improving",
     ],
     cta: "See Meta Plan",
+    chip: "Fresh creative weekly",
+    chipIcon: Sparkles,
   },
   {
     icon: MousePointerClick,
@@ -68,6 +76,8 @@ const services: Service[] = [
       "A/B tests to keep raising conversion",
     ],
     cta: "See Funnel Plan",
+    chip: "Iterate every month",
+    chipIcon: CheckCircle2,
   },
   {
     icon: PhoneCall,
@@ -79,7 +89,8 @@ const services: Service[] = [
       "After-hours callers get scheduled instantly",
     ],
     cta: "See Voice Plan",
-    chip: "Live Demo",
+    chip: "Live demo ready",
+    chipIcon: PhoneCall,
   },
 ];
 
@@ -182,16 +193,20 @@ function ServiceCard({
         <div className="relative z-10 flex items-start gap-3">
           <Icon className="opacity-90 shrink-0" aria-hidden />
           <div className="w-full">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold">{s.title}</h3>
-              {s.chip && (
-                <span className="badge">{s.chip}</span>
-              )}
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h3 className="font-semibold text-white/95">{s.title}</h3>
+              <span className="badge">
+                <s.chipIcon className="size-3.5" aria-hidden />
+                {s.chip}
+              </span>
             </div>
 
-            <ul className="text-white/70 text-sm space-y-1 mb-5 list-disc list-inside">
+            <ul className="text-white/80 text-sm space-y-2 mb-5">
               {s.bullets.map((b) => (
-                <li key={b}>{b}</li>
+                <li key={b} className="flex items-start gap-2">
+                  <CheckCircle2 className="size-4 mt-0.5 text-emerald-300" aria-hidden />
+                  <span>{b}</span>
+                </li>
               ))}
             </ul>
 

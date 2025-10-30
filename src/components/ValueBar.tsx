@@ -16,16 +16,11 @@ type Item = {
 };
 
 const DEFAULT_ITEMS: Item[] = [
-  // Web performance (Core Web Vitals)
-  { value: 2.5, suffix: 's', label: 'LCP @ p75', sub: 'Goal (≤2.5s)' },
-  // Phone / voice agents
-  { value: 95, suffix: '%', label: 'Answer rate', sub: 'After rollout' },
-  // Availability
-  { value: 24, suffix: '/7', label: 'Lead capture', sub: 'Always on' },
-  // Speed-to-lead for warm transfer
-  { value: 10, suffix: 's', label: 'Warm transfer time', sub: 'Goal (≤10s)' },
-  // Bookings created by the agent (example baseline, easily customized)
-  { value: 12, suffix: '/mo', label: 'After-hours bookings', sub: 'Starting point' },
+  { value: 40, suffix: '%', label: 'More booked calls', sub: 'Average uplift' },
+  { value: 95, suffix: '%', label: 'Answered leads', sub: 'After rollout' },
+  { value: 24, suffix: '/7', label: 'Lead coverage', sub: 'Always on' },
+  { value: 2, suffix: ' min', label: 'Speed to reply', sub: 'Live transfers' },
+  { value: 12, suffix: '/mo', label: 'Extra meetings', sub: 'After hours' },
 ];
 
 /** Easing for the counter */
@@ -122,12 +117,12 @@ export default function ValueBar({ items = DEFAULT_ITEMS }: { items?: Item[] }) 
               </div>
 
               {/* micro caption that connects to business outcomes */}
-              <div className="mt-2 text-xs text-white/55">
-                {it.label === 'LCP @ p75' && 'Faster above-the-fold = better UX & ad landing experience.'}
-                {it.label === 'Answer rate' && 'Never miss a cold lead — AI answers + routes 24/7.'}
-                {it.label === 'Lead capture' && 'Capture calls/forms after-hours, not just 9–5.'}
-                {it.label === 'Warm transfer time' && 'Consult → bridge to your team with context.'}
-                {it.label === 'After-hours bookings' && 'Inline/popup scheduler keeps visitors on-site.'}
+              <div className="mt-2 text-xs text-white/60">
+                {it.label === 'More booked calls' && 'Launch pages and ads that make the next step obvious.'}
+                {it.label === 'Answered leads' && 'Voice receptionist greets every caller in seconds.'}
+                {it.label === 'Lead coverage' && 'Always-on follow-up so interest never slips away.'}
+                {it.label === 'Speed to reply' && 'Live transfers while the lead is still on the line.'}
+                {it.label === 'Extra meetings' && 'After-hours scheduling fills your mornings with new calls.'}
               </div>
 
               {/* hover lift / ripple */}
@@ -156,11 +151,8 @@ export default function ValueBar({ items = DEFAULT_ITEMS }: { items?: Item[] }) 
       </div>
 
       {/* tiny legend under the grid for transparency */}
-      <div className="container mt-3 text-[11px] text-white/45">
-        <div>
-          * Targets shown are starting goals you can customize per account. LCP goal follows Core Web
-          Vitals guidance (good ≤ 2.5s at p75). Ad landing experience relates to Quality Score components.
-        </div>
+      <div className="container mt-3 text-[11px] text-white/55">
+        <div>* Results shown are typical starting points once the system is live. We tailor targets to your goals.</div>
       </div>
     </section>
   );

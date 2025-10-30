@@ -11,8 +11,9 @@ export default function Page() {
   return (
     <>
       <Hero />
+      <ValueBar />
       <ServicesGrid />
-      <Process />     
+      <Process />
     </>
   );
 }
