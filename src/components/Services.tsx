@@ -1,7 +1,7 @@
 // src/components/Services.tsx
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import {
@@ -12,7 +12,11 @@ import {
   ChevronDown,
   ShieldCheck,
   GaugeCircle,
-  Layers
+  Layers,
+  ArrowRight,
+  Sparkles,
+  BadgeDollarSign,
+  Headphones,
 } from 'lucide-react';
 
 type Item = {
@@ -106,8 +110,14 @@ export default function Services() {
         </div>
 
         <div className="flex items-center justify-center gap-3">
-          <Link href="/pricing" className="btn-ghost">Compare Plans</Link>
-          <a href="#voice-demo" className="btn-ghost">Try Voice Demo</a>
+          <Link href="/pricing" className="btn-ghost inline-flex items-center gap-2">
+            <BadgeDollarSign className="size-4" aria-hidden />
+            Compare Plans
+          </Link>
+          <a href="#voice-demo" className="btn-ghost inline-flex items-center gap-2">
+            <Headphones className="size-4" aria-hidden />
+            Try Voice Demo
+          </a>
         </div>
       </div>
     </section>
@@ -156,12 +166,6 @@ function ServiceCard({
     el.style.setProperty('--ry', `0deg`);
   }, []);
 
-  const gradient = useMemo(
-    () =>
-      'linear-gradient(135deg, rgba(124,58,237,.8), rgba(96,165,250,.6), rgba(52,211,153,.6))',
-    []
-  );
-
   return (
     <motion.div
       role="listitem"
@@ -169,12 +173,11 @@ function ServiceCard({
       whileInView={reduce ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, amount: 0.5 }}
       transition={{ duration: 0.5, delay: index * 0.06 }}
-      className="relative rounded-2xl p-[1px]"
-      style={{ background: gradient }}
+      className="radiant-card"
     >
       <div
         ref={containerRef}
-        className="card h-full p-5 bg-black/60 rounded-2xl will-change-transform"
+        className="card h-full p-5 rounded-2xl will-change-transform"
         style={{
           transform:
             reduce ? undefined : 'perspective(900px) rotateX(var(--rx,0)) rotateY(var(--ry,0))'
@@ -227,6 +230,7 @@ function ServiceCard({
             className="btn-ghost"
             aria-label={`${item.cta}: ${item.title}`}
           >
+            <ArrowRight className="size-4" aria-hidden />
             {item.cta}
           </Link>
           <Link
@@ -234,6 +238,7 @@ function ServiceCard({
             className="btn"
             aria-label={`Book a call about ${item.title}`}
           >
+            <PhoneCall className="size-4" aria-hidden />
             Book a Call
           </Link>
         </div>
@@ -271,7 +276,10 @@ function ServiceCard({
               ))}
             </ul>
             <div className="mt-3">
-              <a href="#voice-demo" className="btn-ghost">See it in action</a>
+              <a href="#voice-demo" className="btn-ghost inline-flex items-center gap-2">
+                <Sparkles className="size-4" aria-hidden />
+                See it in action
+              </a>
             </div>
           </motion.div>
         </div>

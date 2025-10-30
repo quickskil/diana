@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import Script from "next/script";
 
@@ -145,7 +145,8 @@ export default function Testimonials() {
           <div className="text-sm text-white/70">Real results, short path to ROI.</div>
         </div>
 
-        <div className="card overflow-hidden relative">
+        <div className="radiant-card">
+          <div className="card overflow-hidden relative">
           {/* Track */}
           <div
             ref={listRef}
@@ -191,10 +192,14 @@ export default function Testimonials() {
               />
             ))}
           </div>
+          </div>
         </div>
 
         <div className="text-center">
-          <a href="/contact" className="btn">Book a Strategy Call</a>
+          <a href="/contact" className="btn inline-flex items-center gap-2">
+            <CalendarCheck className="size-4" aria-hidden />
+            Book a Strategy Call
+          </a>
         </div>
       </div>
     </section>
@@ -225,14 +230,8 @@ function Slide({
       animate={{ opacity: selected ? 1 : 0.8, scale: selected ? 1 : 0.98 }}
       transition={{ duration: 0.3 }}
     >
-      <div
-        className="relative rounded-2xl p-[1px]"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(124,58,237,.8), rgba(96,165,250,.6), rgba(52,211,153,.6))",
-        }}
-      >
-        <div className="rounded-2xl bg-black/60 p-6 h-full">
+      <div className="radiant-card">
+        <div className="card p-6 h-full">
           <blockquote className="text-xl font-semibold mb-2">“{item.text}”</blockquote>
           <div className="text-white/60">{item.name}{item.role ? ` — ${item.role}` : ""}</div>
           <div className="mt-1 flex items-center gap-3">

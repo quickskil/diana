@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Loader2, SendHorizontal } from 'lucide-react';
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState('');
@@ -45,8 +46,18 @@ export default function NewsletterForm() {
           onChange={(e) => setEmail(e.target.value)}
           aria-describedby="nl-help"
         />
-        <button className="btn" type="submit" disabled={busy || !email}>
-          {busy ? 'Submitting…' : 'Subscribe'}
+        <button className="btn inline-flex items-center gap-2" type="submit" disabled={busy || !email}>
+          {busy ? (
+            <>
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              Submitting…
+            </>
+          ) : (
+            <>
+              <SendHorizontal className="size-4" aria-hidden />
+              Subscribe
+            </>
+          )}
         </button>
       </div>
       <p id="nl-help" className="mt-2 text-xs text-white/50">

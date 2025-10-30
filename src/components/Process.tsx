@@ -25,9 +25,6 @@ type Step = {
   badge: string;
 };
 
-const ring =
-  'linear-gradient(135deg, rgba(124,58,237,.9), rgba(96,165,250,.75), rgba(52,211,153,.75))';
-
 const steps: Step[] = [
   {
     icon: Rocket,
@@ -87,10 +84,9 @@ export default function Process() {
               whileInView={reduce ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true, amount: 0.55 }}
               transition={{ duration: 0.5, delay: i * 0.06 }}
-              className="relative rounded-2xl p-[1.5px]"
-              style={{ background: ring }}
+              className="radiant-card"
             >
-              <article className="rounded-2xl h-full bg-slate-900/70 border border-white/12 p-6 flex flex-col isolation-isolate">
+              <article className="card h-full p-6 flex flex-col isolation-isolate">
                 {/* hover glow that never blocks clicks */}
                 {!reduce && (
                   <motion.div
@@ -143,8 +139,8 @@ export default function Process() {
         {/* KPI chips */}
         <div className="grid sm:grid-cols-3 gap-4">
           {kpis.map(({ icon: Icon, title, caption }) => (
-            <div key={title} className="relative rounded-2xl p-[1px]" style={{ background: ring }}>
-              <div className="card p-4 h-full bg-slate-900/70 rounded-2xl space-y-2">
+            <div key={title} className="radiant-card">
+              <div className="card p-4 h-full space-y-2">
                 <div className="flex items-center gap-2 font-medium">
                   <Icon className="size-4 text-emerald-300" aria-hidden />
                   {title}
@@ -171,10 +167,9 @@ export default function Process() {
               whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.6 }}
               transition={{ duration: 0.45 }}
-              className="relative rounded-2xl p-[1.5px]"
-              style={{ background: ring }}
+              className="radiant-card"
             >
-              <div className="card p-5 rounded-2xl bg-slate-900/70 border border-white/12">
+              <div className="card p-5 rounded-2xl">
                 <div className="flex items-center gap-2 mb-2">
                   <PhoneCall className="opacity-85" aria-hidden />
                   <div className="font-semibold">Open hours • Warm transfer</div>
@@ -206,10 +201,9 @@ export default function Process() {
               whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.6 }}
               transition={{ duration: 0.45, delay: 0.06 }}
-              className="relative rounded-2xl p-[1.5px]"
-              style={{ background: ring }}
+              className="radiant-card"
             >
-              <div className="card p-5 rounded-2xl bg-slate-900/70 border border-white/12">
+              <div className="card p-5 rounded-2xl">
                 <div className="flex items-center gap-2 mb-2">
                   <CalendarCheck className="opacity-85" aria-hidden />
                   <div className="font-semibold">After hours • Instant scheduling</div>

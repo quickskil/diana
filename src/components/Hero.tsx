@@ -16,8 +16,6 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-const ring = 'linear-gradient(135deg, rgba(139,92,246,.9), rgba(96,165,250,.85))'; // logo vibe
-
 export default function Hero() {
   const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
@@ -96,8 +94,8 @@ export default function Hero() {
               { k: '24/7 capture', v: 'Night & weekend bookings', I: Clock },
               { k: 'Lower CPL', v: 'Faster pages = cheaper wins', I: TrendingDown },
             ].map(({ k, v, I }, i) => (
-              <li key={k} className="relative overflow-hidden rounded-2xl p-[1px]" style={{ background: ring }}>
-                <div className="card h-full bg-black/75 p-4 border border-white/10">
+              <li key={k} className="radiant-card">
+                <div className="card h-full p-4">
                   {!reduceMotion && (
                     <motion.div
                       aria-hidden
@@ -130,10 +128,9 @@ export default function Hero() {
             whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, ease: 'easeOut', delay: 0.06 }}
-            className="relative overflow-hidden rounded-2xl p-[1px]"
-            style={{ background: ring }}
+            className="radiant-card"
           >
-            <div className="rounded-[15px] bg-black/80 p-7 border border-white/10 space-y-5">
+            <div className="card rounded-[15px] p-7 space-y-5">
               <header className="space-y-1">
                 <h2 className="text-white/95 text-lg font-semibold">How we grow your business</h2>
                 <p className="text-white/70 text-sm">

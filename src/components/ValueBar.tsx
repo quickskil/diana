@@ -84,13 +84,9 @@ export default function ValueBar({ items = DEFAULT_ITEMS }: { items?: Item[] }) 
             whileInView={shouldReduce ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.5, delay: i * 0.06 }}
-            className="relative overflow-hidden rounded-2xl p-[1px]"
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(124,58,237,.8), rgba(96,165,250,.6), rgba(52,211,153,.6))',
-            }}
+            className="radiant-card"
           >
-            <div className="card p-4 h-full bg-black/60">
+            <div className="card p-4 h-full">
               {/* subtle top shimmer */}
               {!shouldReduce && (
                 <motion.div

@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   Sparkles,
 } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useRef } from "react";
 
 type Service = {
   icon: React.ElementType;
@@ -151,12 +151,6 @@ function ServiceCard({
     el.style.setProperty('--ry', `0deg`);
   }, []);
 
-  const gradient = useMemo(
-    () =>
-      'linear-gradient(135deg, rgba(124,58,237,.8), rgba(96,165,250,.6), rgba(52,211,153,.6))',
-    []
-  );
-
   return (
     <motion.div
       role="listitem"
@@ -164,12 +158,11 @@ function ServiceCard({
       whileInView={reduce ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, amount: 0.55 }}
       transition={{ duration: 0.5, delay: i * 0.06 }}
-      className="relative rounded-2xl p-[1px]"
-      style={{ background: gradient }}
+      className="radiant-card"
     >
       <div
         ref={ref}
-        className="card h-full p-5 bg-black/60 rounded-2xl will-change-transform relative"
+        className="card h-full p-5 rounded-2xl will-change-transform relative"
         style={{
           transform: reduce ? undefined : 'perspective(900px) rotateX(var(--rx,0)) rotateY(var(--ry,0))',
         }}
@@ -217,7 +210,7 @@ function ServiceCard({
                 className="btn-ghost inline-flex items-center gap-2"
                 aria-label={`${s.cta}: ${s.title}`}
               >
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4" aria-hidden />
                 {s.cta}
               </Link>
 
@@ -226,7 +219,7 @@ function ServiceCard({
                 className="btn inline-flex items-center gap-2"
                 aria-label={`Book a call about ${s.title}`}
               >
-                <CalendarCheck className="size-4" />
+                <CalendarCheck className="size-4" aria-hidden />
                 Book a Call
               </Link>
             </div>
