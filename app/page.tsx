@@ -37,49 +37,49 @@ const stats = [
 
 const journey = [
   {
-    title: "Discovery call",
-    copy: "We map your offer, audience, and current pipeline to identify the highest leverage plays.",
+    title: "Strategy alignment",
+    copy: "We audit how leads currently arrive, define the win metric, and agree on the rollout calendar in our kickoff call.",
   },
   {
-    title: "Messaging sprint",
-    copy: "Our strategists rebuild your positioning, sales narrative, and scripts across every touchpoint.",
+    title: "Conversion build",
+    copy: "Design and ship the site experience with clear proof, a frictionless booking flow, and integrations to your CRM and calendar.",
   },
   {
-    title: "Full-funnel launch",
-    copy: "Conversion site, coordinated ads, and the AI receptionist go live together so every click converts.",
+    title: "Traffic ignition",
+    copy: "Launch paid search and social campaigns that mirror the site message, with daily monitoring on cost per booked call.",
   },
   {
-    title: "Ongoing optimization",
-    copy: "Weekly growth rituals, new campaign tests, and human-reviewed call transcripts drive compounding gains.",
+    title: "Voice agent activation",
+    copy: "Train the AI voice agent to answer forms, calls, and texts, warm-transfer during business hours, and sync availability with Cal.com.",
   },
 ];
 
 const services = [
   {
     icon: Rocket,
-    title: "Conversion-first web",
+    title: "Conversion-ready website",
     bullets: [
-      "Story-driven page architecture built for action in the first scroll.",
-      "Speed tuned for sub-two-second loads on mobile and paid traffic.",
-      "Personalized proof modules tied to your vertical and credibility cues.",
+      "Launch pages that load fast and guide visitors to a single clear action.",
+      "Message hierarchy written to match the ads and voice scripts.",
+      "Booking flow wired into Calendly, Cal.com, or your native calendar.",
     ],
   },
   {
     icon: Share2,
-    title: "Coordinated acquisition",
+    title: "Demand-driving ads",
     bullets: [
-      "Search + paid social campaigns mirror the same promise and proof.",
-      "Always-on creative lab testing hooks, angles, and offers.",
-      "Real-time dashboards that translate media data into pipeline language.",
+      "Search and social creative mirrors the on-page promise to lift quality.",
+      "Weekly optimizations focus budget on keywords and audiences that convert.",
+      "Insights shared in plain English so decisions stay focused on pipeline.",
     ],
   },
   {
     icon: Headset,
-    title: "AI receptionist",
+    title: "AI voice agent",
     bullets: [
-      "24/7 coverage that answers, qualifies, and books in your calendar.",
-      "Warm transfers to your closers the moment a hot lead raises their hand.",
-      "Compliance-ready recordings and transcripts reviewed by our team.",
+      "Answers calls, texts, and form submissions within seconds—day or night.",
+      "Books meetings, confirms details, or warm-transfers to your team on schedule.",
+      "Integrates with your CRM plus Cal.com for synced availability and reminders.",
     ],
   },
 ];
@@ -195,11 +195,11 @@ function HeroSection() {
               </div>
 
               <h1 className="text-balance text-4xl font-extrabold leading-tight tracking-tight md:text-6xl">
-                Turn curious clicks into scheduled conversations within one orchestrated system.
+                Turn curious clicks into scheduled conversations with one connected growth system.
               </h1>
 
               <p className="max-w-2xl text-lg text-white/75 md:text-xl">
-                Business Booster AI builds the conversion-first site, manages paid media, and deploys an AI receptionist so every qualified lead is welcomed, qualified, and booked without delay.
+                Business Booster AI designs the conversion-ready site, runs paid traffic that matches the message, and trains an AI voice agent to answer every inquiry, book meetings, or warm-transfer on schedule.
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -240,7 +240,7 @@ function HeroSection() {
               <header className="space-y-2">
                 <p className="text-sm font-semibold uppercase tracking-wide text-indigo-200/80">How we make the call inevitable</p>
                 <p className="text-base text-white/75">
-                  We orchestrate every touchpoint so prospects glide from curiosity to committed calendar event.
+                  We connect every touchpoint so prospects glide from curiosity to confirmed calendar event.
                 </p>
               </header>
               <ul className="space-y-4 text-sm text-white/75">
@@ -250,7 +250,7 @@ function HeroSection() {
                 </li>
                 <li className="flex gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-3">
                   <Mic className="mt-1 size-5 text-emerald-300" aria-hidden />
-                  <span>Voice AI answers within seconds, qualifies, and books or warm-transfers based on your rules.</span>
+                  <span>Voice AI answers within seconds, qualifies, and books or warm-transfers based on your team’s availability.</span>
                 </li>
                 <li className="flex gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-3">
                   <ShieldCheck className="mt-1 size-5 text-sky-300" aria-hidden />
@@ -322,21 +322,29 @@ function JourneySection() {
 function ServicesSection() {
   return (
     <section className="section">
-      <div className="container space-y-12">
+      <div className="container space-y-8">
         <div className="max-w-3xl space-y-4">
           <p className="badge">What we deploy</p>
-          <h2 className="text-balance">Three teams in one engagement—site, media, and voice automation.</h2>
+          <h2 className="text-balance">Three linked disciplines—website, ads, and voice agent—driving one outcome.</h2>
           <p className="text-lg text-white/70">
-            Each discipline feeds the others, so prospects see the same message, feel the same credibility, and always reach someone ready to advance the conversation.
+            Every deliverable is built to hand off momentum to the next, so by the time a lead reaches your team they already know what to expect and how to move forward.
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           {services.map((service) => (
-            <div key={service.title} className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-slate-900/70 p-6">
-              <service.icon className="size-9 text-indigo-300" aria-hidden />
-              <h3 className="text-xl font-semibold text-white">{service.title}</h3>
-              <ul className="space-y-3 text-sm text-white/70">
+            <div
+              key={service.title}
+              className="group relative flex flex-col gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-[0_18px_40px_-30px_rgba(99,102,241,0.7)]"
+            >
+              <span className="h-1.5 w-16 rounded-full bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400" aria-hidden />
+              <div className="flex items-center gap-3">
+                <span className="inline-flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                  <service.icon className="size-5 text-indigo-200" aria-hidden />
+                </span>
+                <h3 className="text-lg font-semibold text-white">{service.title}</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-white/70">
                 {service.bullets.map((bullet) => (
                   <li key={bullet} className="flex gap-2">
                     <ArrowRight className="mt-1 size-4 text-white/40" aria-hidden />
