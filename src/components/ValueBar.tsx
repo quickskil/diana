@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
+import MiniChart from './MiniChart';
 
 type Item = {
   /** numeric goal/value (e.g., 2.5, 95, 24) */
@@ -13,12 +14,46 @@ type Item = {
   label: string;
   /** tiny subcopy (use to declare "Goal", "After rollout", etc.) */
   sub?: string;
+  /** optional chart values */
+  trend?: number[];
+  /** optional progress value 0-1 */
+  progress?: number;
+  /** optional friendly caption */
+  caption?: string;
+  color?: 'violet' | 'sky' | 'emerald';
 };
 
 const DEFAULT_ITEMS: Item[] = [
-  { value: 38, suffix: '%', label: 'More booked calls', sub: 'System average' },
-  { value: 92, suffix: '%', label: 'Answered leads', sub: '24/7 coverage' },
-  { value: 14, suffix: '/mo', label: 'Hours back', sub: 'Saved from chasing' },
+  {
+    value: 44,
+    suffix: '%',
+    label: 'More booked calls',
+    sub: 'System average',
+    trend: [8, 12, 14, 18, 22, 27, 33, 37],
+    progress: 0.82,
+    caption: 'Conversion-first page + follow-up = full calendar.',
+    color: 'violet',
+  },
+  {
+    value: 93,
+    suffix: '%',
+    label: 'Answered leads',
+    sub: '24/7 coverage',
+    trend: [65, 71, 76, 82, 88, 90, 92, 94],
+    progress: 0.93,
+    caption: 'Voice agent picks up in seconds, even at night.',
+    color: 'emerald',
+  },
+  {
+    value: 14,
+    suffix: ' hrs',
+    label: 'Time saved monthly',
+    sub: 'No chasing',
+    trend: [2, 3, 4, 6, 9, 11, 13, 15],
+    progress: 0.7,
+    caption: 'Automation handles booking + updates.',
+    color: 'sky',
+  },
 ];
 
 /** Easing for the counter */
@@ -84,8 +119,7 @@ export default function ValueBar({ items = DEFAULT_ITEMS }: { items?: Item[] }) 
             transition={{ duration: 0.5, delay: i * 0.06 }}
             className="radiant-card"
           >
-            <div className="card p-4 h-full">
-              {/* subtle top shimmer */}
+            <div className="card flex h-full flex-col gap-4 p-4">
               {!shouldReduce && (
                 <motion.div
                   aria-hidden
@@ -106,18 +140,32 @@ export default function ValueBar({ items = DEFAULT_ITEMS }: { items?: Item[] }) 
                 {it.sub && <div className="badge">{it.sub}</div>}
               </div>
 
-              <div className="mt-1 text-3xl md:text-4xl font-extrabold tracking-tight">
-                <CountUp to={it.value} suffix={it.suffix} />
+              <div className="grid gap-3">
+                {it.trend && (
+                  <MiniChart
+                    values={it.trend}
+                    color={it.color}
+                    ariaLabel={`${it.label} trend chart`}
+                  />
+                )}
+                <div className="text-3xl font-extrabold tracking-tight">
+                  <CountUp to={it.value} suffix={it.suffix} />
+                </div>
+                {typeof it.progress === 'number' && (
+                  <div className="space-y-1">
+                    <div className="progress-track" aria-hidden>
+                      <div
+                        className="progress-bar"
+                        style={{ width: `${Math.min(100, Math.max(0, it.progress * 100))}%` }}
+                      />
+                    </div>
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Momentum</div>
+                  </div>
+                )}
               </div>
 
-              {/* micro caption that connects to business outcomes */}
-              <div className="mt-2 text-xs text-white/60">
-                {it.label === 'More booked calls' && 'Conversion-first pages make the decision simple.'}
-                {it.label === 'Answered leads' && 'The voice agent picks up instantly so no inquiry is lost.'}
-                {it.label === 'Hours back' && 'Automation handles follow-up while you focus on closing.'}
-              </div>
+              {it.caption && <div className="text-xs text-white/60">{it.caption}</div>}
 
-              {/* hover lift / ripple */}
               {!shouldReduce && (
                 <motion.div
                   aria-hidden

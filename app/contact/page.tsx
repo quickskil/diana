@@ -1,4 +1,5 @@
 // app/contact/page.tsx
+import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSchedulerUrl, toEmbedUrl } from "@/lib/scheduler";
@@ -30,12 +31,16 @@ export default function Page() {
       />
 
       <div className="container space-y-10">
-        <header className="space-y-4 text-center max-w-3xl mx-auto">
-          <h1 id="contact-title">Let’s map the automated funnel for your business</h1>
+        <header className="space-y-5 text-center max-w-3xl mx-auto">
+          <h1 id="contact-title">Let’s plan how we’ll get you more booked calls</h1>
           <p className="text-white/70">
-            A quick conversation to understand your goals, walk through the system, and size the rollout. If it’s a fit, we’ll
-            launch fast. If not, you still leave with a clear plan.
+            In 20 minutes we’ll learn about your offer, walk through the funnel, and size the rollout. You leave with a friendly
+            action plan — whether we work together or not.
           </p>
+          <div className="mx-auto max-w-sm">
+            <MiniChart values={[9, 13, 17, 22, 29, 34, 39, 45]} color="violet" ariaLabel="Projected booked calls after launch" />
+            <p className="mt-2 text-xs text-white/55">Typical ramp once the site, ads, and voice follow-up are live.</p>
+          </div>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <a href={CAL_URL} target="_blank" rel="noopener noreferrer" className="btn inline-flex items-center gap-2">
               <CalendarCheck className="size-4" aria-hidden />
@@ -57,6 +62,7 @@ export default function Page() {
                   <li>The quickest way to launch a conversion-first page</li>
                   <li>How traffic, follow-up, and reporting stay connected</li>
                 </ul>
+                <MiniChart values={[15, 18, 22, 27, 31, 36, 38, 42]} color="emerald" ariaLabel="Meeting agenda progress" />
               </div>
             </div>
 
@@ -106,16 +112,26 @@ export default function Page() {
         </section>
 
         <section className="radiant-card">
-          <div className="card p-6 space-y-3 text-center">
-            <h2 className="text-xl font-semibold text-white/95">We’re here to take lead follow-up off your plate</h2>
-            <p className="text-sm text-white/70 max-w-2xl mx-auto">
-              Every engagement includes conversion copywriting, campaign setup, AI call handling, and weekly optimization. One
-              team, one invoice, one automated funnel.
-            </p>
-            <div className="flex items-center justify-center gap-2 flex-wrap text-sm text-white/80">
-              <span className="pill"><Sparkles className="size-4" aria-hidden /> Plain-language updates</span>
-              <span className="pill"><PhoneCall className="size-4" aria-hidden /> 24/7 coverage</span>
-              <span className="pill"><CalendarCheck className="size-4" aria-hidden /> Meetings on your calendar</span>
+          <div className="card grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_minmax(220px,260px)] md:items-center">
+            <div className="space-y-3 text-center md:text-left">
+              <h2 className="text-xl font-semibold text-white/95">We’re here to take lead follow-up off your plate</h2>
+              <p className="text-sm text-white/70">
+                Every engagement includes conversion copywriting, campaign setup, AI call handling, and weekly optimization. One
+                team, one invoice, one automated funnel.
+              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap text-sm text-white/80 md:justify-start">
+                <span className="pill"><Sparkles className="size-4" aria-hidden /> Plain-language updates</span>
+                <span className="pill"><PhoneCall className="size-4" aria-hidden /> 24/7 coverage</span>
+                <span className="pill"><CalendarCheck className="size-4" aria-hidden /> Meetings on your calendar</span>
+              </div>
+            </div>
+            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+              <div className="flex items-center justify-between text-white/60">
+                <span>Lead response time</span>
+                <span className="badge">Under 30s</span>
+              </div>
+              <MiniChart values={[95, 78, 62, 48, 34, 22, 18, 15]} color="sky" ariaLabel="Lead response time dropping" />
+              <p className="text-xs text-white/55">Voice automation picks up instantly so your team focuses on the closes.</p>
             </div>
           </div>
         </section>
