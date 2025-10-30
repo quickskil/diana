@@ -1,13 +1,11 @@
 // app/voice-demo/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
-import Script from "next/script";
-import RequestCallbackButton from "@/components/RequestCallbackButton"; // client component
 
 export const metadata: Metadata = {
   title: "Live Voice Demo",
   description:
-    "Call our AI receptionist or request a callback to hear how it greets, qualifies, and books—24/7.",
+    "Dial +1 (213) 681-0660 to hear Business Booster AI’s receptionist qualify leads, book meetings, and hand off priority callers.",
 };
 
 function cleanTel(n: string) {
@@ -32,17 +30,7 @@ function ValueChip({
 
 export default function VoiceDemoPage() {
   const BRAND = "Business Booster AI";
-  const DEMO_NUMBER = process.env.NEXT_PUBLIC_DEMO_NUMBER || "+1 (555) 010-0000";
-  const RETELL_PUBLIC_KEY = process.env.NEXT_PUBLIC_RETELL_PUBLIC_KEY || "";
-  const RETELL_VOICE_AGENT_ID = process.env.NEXT_PUBLIC_RETELL_VOICE_AGENT_ID || "";
-  const RETELL_PHONE_NUMBER = process.env.NEXT_PUBLIC_RETELL_PHONE_NUMBER || ""; // +15551234567
-  const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_V3_SITE_KEY || "";
-
-  const hasWidgetCreds =
-    Boolean(RETELL_PUBLIC_KEY) &&
-    Boolean(RETELL_VOICE_AGENT_ID) &&
-    Boolean(RETELL_PHONE_NUMBER);
-
+  const DEMO_NUMBER = "+1 (213) 681-0660";
   const telHref = `tel:${cleanTel(DEMO_NUMBER)}`;
 
   return (
@@ -63,59 +51,96 @@ export default function VoiceDemoPage() {
         }}
       />
 
-      <div className="container space-y-12">
+      <div className="container space-y-16">
         {/* HERO */}
-        <header className="space-y-4 text-center">
-          <div className="inline-flex items-center gap-2">
-            <ValueChip>Live Demo</ValueChip>
-            <ValueChip>Real AI Receptionist</ValueChip>
-            <ValueChip>Warm-Transfers & Bookings</ValueChip>
+        <header className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)]">
+          <div className="space-y-6 text-center lg:text-left">
+            <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+              <ValueChip>Live demo</ValueChip>
+              <ValueChip>5-star voice</ValueChip>
+              <ValueChip>Answers 24/7</ValueChip>
+            </div>
+
+            <div className="space-y-3">
+              <h1 id="voice-title" className="text-balance">
+                Meet the AI receptionist that sounds on-brand
+              </h1>
+              <p className="lead text-white/80">
+                Call to hear how {BRAND} greets new leads, qualifies them in seconds,
+                and books meetings without ever missing a call.
+              </p>
+            </div>
+
+            <ul className="grid gap-3 text-left text-sm text-white/70 md:grid-cols-2">
+              <li className="flex items-start gap-2 rounded-xl bg-white/5 p-3 backdrop-blur">
+                <span className="mt-1 inline-flex size-5 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-300">
+                  ✓
+                </span>
+                <span>
+                  Instantly introduces your brand, captures intent, and follows a
+                  proven qualifying flow.
+                </span>
+              </li>
+              <li className="flex items-start gap-2 rounded-xl bg-white/5 p-3 backdrop-blur">
+                <span className="mt-1 inline-flex size-5 items-center justify-center rounded-full bg-sky-400/20 text-sky-300">
+                  ✓
+                </span>
+                <span>
+                  Warm-transfers priority callers to your team and books everyone else
+                  straight onto your calendar.
+                </span>
+              </li>
+              <li className="flex items-start gap-2 rounded-xl bg-white/5 p-3 backdrop-blur md:col-span-2">
+                <span className="mt-1 inline-flex size-5 items-center justify-center rounded-full bg-violet-400/20 text-violet-300">
+                  ✓
+                </span>
+                <span>
+                  Real transcripts and summaries drop into your CRM and Slack so every
+                  morning starts with ready-to-close leads.
+                </span>
+              </li>
+            </ul>
           </div>
 
-          <h1 id="voice-title">Talk to our AI receptionist</h1>
+          <aside className="relative">
+            <div
+              aria-hidden
+              className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-violet-500/50 via-sky-400/40 to-emerald-400/40 blur-2xl"
+            />
+            <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-black/60 p-8 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-white/50">
+                <span>Live voice agent</span>
+                <span>{BRAND}</span>
+              </div>
 
-          <p className="lead max-w-3xl mx-auto text-white/80">
-            This is the same agent we use to answer new inquiries for {BRAND}. It{" "}
-            <b>greets</b>, asks a <b>few quick questions</b>, then <b>books a time</b> or{" "}
-            <b>warm-transfers</b> to a human when it’s a good fit.
-          </p>
+              <div className="mt-6 space-y-3">
+                <p className="text-sm text-white/70">Direct line to our AI receptionist</p>
+                <p className="text-3xl font-semibold text-white sm:text-4xl">{DEMO_NUMBER}</p>
+              </div>
 
-          {/* Primary CTAs */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <a
-              href={telHref}
-              className="btn h-12 px-6 rounded-xl"
-              aria-label={`Call the demo receptionist now at ${DEMO_NUMBER}`}
-            >
-              📞 Call now: {DEMO_NUMBER}
-            </a>
-
-            {hasWidgetCreds ? (
-              <RequestCallbackButton label="☎️ Request a callback" />
-            ) : (
-              <button
-                type="button"
-                className="btn-ghost h-12 px-6 rounded-xl opacity-60 cursor-not-allowed"
-                title="Callback widget unavailable: missing RETELL env keys"
-                aria-disabled="true"
+              <a
+                href={telHref}
+                className="mt-8 inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-500 via-sky-400 to-emerald-400 px-6 py-4 text-base font-semibold text-black shadow-lg shadow-violet-500/30 transition hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/80"
+                aria-label={`Call the demo receptionist now at ${DEMO_NUMBER}`}
               >
-                ☎️ Request a callback
-              </button>
-            )}
-          </div>
+                <span className="inline-flex size-9 items-center justify-center rounded-full bg-black/20 text-lg">📞</span>
+                Call now
+                <span aria-hidden className="text-sm font-medium text-black/70">
+                  (Tap to launch dialer)
+                </span>
+              </a>
 
-          <p className="text-xs text-white/60">
-            Carrier rates may apply. For quality and training, calls may be recorded with consent.
-          </p>
+              <div className="mt-8 grid gap-4 rounded-2xl border border-white/5 bg-white/5 p-5 text-sm text-white/70">
+                <CallMetric label="Avg. handle" value="2m 18s" accent="violet" />
+                <CallMetric label="First-call answer" value="100%" accent="sky" />
+                <CallMetric label="Bookings captured" value="92%" accent="emerald" />
+              </div>
 
-          {/* Dev-only hint when widget creds missing */}
-          {!hasWidgetCreds && process.env.NODE_ENV !== "production" && (
-            <p className="mt-1 text-[11px] text-amber-300/85">
-              Set <code>NEXT_PUBLIC_RETELL_PUBLIC_KEY</code>,{" "}
-              <code>NEXT_PUBLIC_RETELL_VOICE_AGENT_ID</code>,{" "}
-              <code>NEXT_PUBLIC_RETELL_PHONE_NUMBER</code> to enable the callback widget.
-            </p>
-          )}
+              <p className="mt-6 text-center text-xs text-white/60">
+                Calls may be recorded with consent. Carrier rates apply.
+              </p>
+            </div>
+          </aside>
         </header>
 
         {/* WHAT TO TRY (cards styled like Pricing) */}
@@ -189,35 +214,6 @@ export default function VoiceDemoPage() {
         </section>
       </div>
 
-      {/* Retell Website Callback Widget (safe: no function props) */}
-      {hasWidgetCreds && (
-        <>
-          {RECAPTCHA_SITE_KEY ? (
-            <Script
-              id="recaptcha-v3"
-              src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
-              strategy="afterInteractive"
-              crossOrigin="anonymous"
-            />
-          ) : null}
-
-          <Script
-            id="retell-widget"
-            src="https://dashboard.retellai.com/retell-widget.js"
-            type="module"
-            strategy="afterInteractive"
-            crossOrigin="anonymous"
-            data-public-key={RETELL_PUBLIC_KEY}
-            data-agent-id={RETELL_VOICE_AGENT_ID}
-            data-widget="callback"
-            data-phone-number={RETELL_PHONE_NUMBER}
-            data-title="Request a Call"
-            data-countries="US,CA,GB"
-            data-color="#7C3AED"
-            {...(RECAPTCHA_SITE_KEY ? { "data-recaptcha-key": RECAPTCHA_SITE_KEY } as any : {})}
-          />
-        </>
-      )}
     </main>
   );
 }
@@ -263,5 +259,39 @@ function MiniAnswer({ q, a }: { q: string; a: string }) {
       <div className="font-medium mb-1">{q}</div>
       <p className="text-sm text-white/75">{a}</p>
     </article>
+  );
+}
+
+function CallMetric({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent: "violet" | "sky" | "emerald";
+}) {
+  const gradientClass =
+    accent === "violet"
+      ? "from-violet-400/40 to-fuchsia-400/40"
+      : accent === "sky"
+        ? "from-sky-400/40 to-cyan-400/40"
+        : "from-emerald-400/40 to-lime-400/40";
+
+  return (
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="text-xs uppercase tracking-[0.2em] text-white/50">{label}</div>
+        <div className="text-lg font-semibold text-white">{value}</div>
+      </div>
+      <span
+        aria-hidden
+        className={`inline-flex size-9 items-center justify-center rounded-full bg-gradient-to-br p-[1px] ${gradientClass}`}
+      >
+        <span className="inline-flex size-8 items-center justify-center rounded-full bg-black/80 text-sm font-semibold text-white/80">
+          ★
+        </span>
+      </span>
+    </div>
   );
 }
