@@ -3,7 +3,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { ChevronDown } from 'lucide-react';
+import { CalendarCheck, ChevronDown } from 'lucide-react';
 import Script from 'next/script';
 
 type QA = { q: string; a: string; id?: string };
@@ -90,7 +90,8 @@ export default function FAQ() {
       <div className="container space-y-6" ref={containerRef}>
         <h2 id={`${uid}-title`}>FAQ</h2>
 
-        <div className="card p-2 divide-y divide-white/10" role="list">
+        <div className="radiant-card" role="presentation">
+          <div className="card p-2 divide-y divide-white/10" role="list">
           {faqs.map((item, i) => {
             const isOpen = open === i;
             const contentId = `faq-panel-${i}`;
@@ -143,7 +144,10 @@ export default function FAQ() {
         </div>
 
         <div className="text-center">
-          <a href="/contact" className="btn">Still have questions? Book a Call</a>
+          <a href="/contact" className="btn inline-flex items-center gap-2">
+            <CalendarCheck className="size-4" aria-hidden />
+            Still have questions? Book a Call
+          </a>
         </div>
       </div>
     </section>

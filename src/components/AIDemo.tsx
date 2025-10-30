@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Mic, MicOff, PhoneCall, CalendarClock, Bot, Loader2, Volume2, PhoneForwarded } from "lucide-react";
+import { Mic, MicOff, PhoneCall, CalendarClock, CalendarCheck, Bot, Loader2, Volume2, PhoneForwarded, Square } from "lucide-react";
 
 /**
  * This demo:
@@ -241,122 +241,157 @@ Always keep replies under 2 sentences unless asked for more detail.`;
   return (
     <section id="ai-demo" className="section">
       <div className="container">
-        <div className="card p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2>AI Voice Receptionist — Live Demo</h2>
-            <div className="badge">OpenAI Realtime (WebRTC)</div>
-          </div>
+        <div className="radiant-card">
+          <div className="card p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2>AI Voice Receptionist — Live Demo</h2>
+              <div className="badge">OpenAI Realtime (WebRTC)</div>
+            </div>
 
-          {/* Config row */}
-          <div className="grid md:grid-cols-4 gap-3">
-            <input
-              className="input"
-              placeholder="Your company (for greeting)"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-            />
-            <select className="input" value={persona} onChange={(e) => {
-              const p = e.target.value as PersonaKey;
-              setPersona(p);
-              setBehavior(PERSONAS[p].defaultBehavior);
-            }}>
-              <option value="friendly">Persona: Friendly</option>
-              <option value="professional">Persona: Professional</option>
-              <option value="sales">Persona: High-Energy Sales</option>
-            </select>
-            <select className="input" value={voice} onChange={(e) => setVoice(e.target.value as VoiceKey)}>
-              <option value="alloy">Voice: Alloy</option>
-              <option value="verse">Voice: Verse</option>
-              <option value="coral">Voice: Coral</option>
-              <option value="sage">Voice: Sage</option>
-              <option value="ballad">Voice: Ballad</option>
-            </select>
-            <select className="input" value={behavior} onChange={(e) => setBehavior(e.target.value)}>
-              <option value="always_offer_schedule">Behavior: Always offer to schedule</option>
-              <option value="open_hours_transfer_else_schedule">Behavior: Warm-transfer in open hours, schedule otherwise</option>
-              <option value="drive_to_schedule">Behavior: Drive to book ASAP</option>
-            </select>
-          </div>
+            {/* Config row */}
+            <div className="grid md:grid-cols-4 gap-3">
+              <input
+                className="input"
+                placeholder="Your company (for greeting)"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+              />
+              <select className="input" value={persona} onChange={(e) => {
+                const p = e.target.value as PersonaKey;
+                setPersona(p);
+                setBehavior(PERSONAS[p].defaultBehavior);
+              }}>
+                <option value="friendly">Persona: Friendly</option>
+                <option value="professional">Persona: Professional</option>
+                <option value="sales">Persona: High-Energy Sales</option>
+              </select>
+              <select className="input" value={voice} onChange={(e) => setVoice(e.target.value as VoiceKey)}>
+                <option value="alloy">Voice: Alloy</option>
+                <option value="verse">Voice: Verse</option>
+                <option value="coral">Voice: Coral</option>
+                <option value="sage">Voice: Sage</option>
+                <option value="ballad">Voice: Ballad</option>
+              </select>
+              <select className="input" value={behavior} onChange={(e) => setBehavior(e.target.value)}>
+                <option value="always_offer_schedule">Behavior: Always offer to schedule</option>
+                <option value="open_hours_transfer_else_schedule">Behavior: Warm-transfer in open hours, schedule otherwise</option>
+                <option value="drive_to_schedule">Behavior: Drive to book ASAP</option>
+              </select>
+            </div>
 
-          {/* Controls */}
-          <div className="flex flex-wrap items-center gap-3">
-            {!connected ? (
+            {/* Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              {!connected ? (
+                <button
+                  className="btn"
+                  disabled={!company || connecting}
+                  onClick={startDemo}
+                  aria-label="Start the live voice demo"
+                >
+                  {connecting ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      Connecting…
+                    </>
+                  ) : (
+                    <>
+                      <Bot className="size-4" aria-hidden />
+                      Start Demo
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button className="btn inline-flex items-center gap-2" onClick={stopDemo} aria-label="Stop the live voice demo">
+                  <Square className="size-4" aria-hidden />
+                  Stop Demo
+                </button>
+              )}
+
               <button
-                className="btn"
-                disabled={!company || connecting}
-                onClick={startDemo}
-                aria-label="Start the live voice demo"
+                className="btn-ghost"
+                onClick={toggleMic}
+                disabled={!connected}
+                aria-label={micEnabled ? "Mute microphone" : "Unmute microphone"}
               >
-                {connecting ? <><Loader2 className="mr-2 animate-spin" /> Connecting…</> : <><Bot className="mr-2" /> Start Demo</>}
+                {micEnabled ? (
+                  <>
+                    <Mic className="size-4" aria-hidden />
+                    Mute
+                  </>
+                ) : (
+                  <>
+                    <MicOff className="size-4" aria-hidden />
+                    Unmute
+                  </>
+                )}
               </button>
-            ) : (
-              <button className="btn" onClick={stopDemo} aria-label="Stop the live voice demo">
-                Stop Demo
+
+              <button
+                className="btn-ghost"
+                onClick={() => sendToolCall("warm_transfer")}
+                disabled={!connected}
+                aria-label="Request warm transfer"
+                title="Ask the agent to consult & bridge you to the team"
+              >
+                <PhoneCall className="size-4" aria-hidden />
+                Request Warm Transfer
               </button>
-            )}
 
-            <button
-              className="btn-ghost"
-              onClick={toggleMic}
-              disabled={!connected}
-              aria-label={micEnabled ? "Mute microphone" : "Unmute microphone"}
-            >
-              {micEnabled ? <><Mic className="mr-2" /> Mute</> : <><MicOff className="mr-2" /> Unmute</>}
-            </button>
+              <a
+                href="/contact"
+                className="btn-ghost inline-flex items-center gap-2"
+                title="Inline/popup/floating Cal.com embeds supported"
+              >
+                <CalendarClock className="size-4" aria-hidden />
+                Schedule Now
+              </a>
 
-            <button
-              className="btn-ghost"
-              onClick={() => sendToolCall("warm_transfer")}
-              disabled={!connected}
-              aria-label="Request warm transfer"
-              title="Ask the agent to consult & bridge you to the team"
-            >
-              <PhoneCall className="mr-2" /> Request Warm Transfer
-            </button>
-
-            <a href="/contact" className="btn-ghost" title="Inline/popup/floating Cal.com embeds supported">
-              <CalendarClock className="mr-2" /> Schedule Now
-            </a>
-
-            <div className="ml-auto inline-flex items-center gap-2 text-sm text-white/70">
-              <Volume2 /> <Meter value={meter} reduce={reduce} />
-            </div>
-          </div>
-
-          {/* Audio element for agent speech */}
-          <audio ref={audioElRef} autoPlay />
-
-          {/* Transcript / events */}
-          <div className="grid md:grid-cols-2 gap-3">
-            <div className="p-4 rounded-xl bg-black/30 border border-white/10">
-              <div className="text-sm text-white/60 mb-1">Live Transcript</div>
-              <div className="font-medium whitespace-pre-wrap min-h-24">
-                {log.length === 0 ? "Press Start Demo and speak to the agent…" : log.map((l, i) => (
-                  <div key={i} className={l.who === "agent" ? "text-white" : l.who === "user" ? "text-brand" : "text-white/60"}>
-                    {l.who === "agent" ? "Agent: " : l.who === "user" ? "You: " : ""}{l.text}
-                  </div>
-                ))}
+              <div className="ml-auto inline-flex items-center gap-2 text-sm text-white/70">
+                <Volume2 /> <Meter value={meter} reduce={reduce} />
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-black/30 border border-white/10">
-              <div className="text-sm text-white/60 mb-1">What this agent can do</div>
-              <ul className="text-sm text-white/70 space-y-1 list-disc list-inside">
-                <li>Answer FAQs and qualify leads (interrupt anytime — barge-in supported by Realtime).</li>
-                <li><b>Warm transfer</b> during open hours (consult → bridge) so your team joins with context.</li>
-                <li><b>Schedule after-hours</b> via inline or popup Cal.com so you wake up to booked calls.</li>
-                <li>Switch persona/voice to fit your brand.</li>
-              </ul>
-              <div className="mt-3 text-xs text-white/50">
-                To wire real scheduling/transfer, connect your Cal.com account and phone/SIP stack; this demo focuses on the live voice experience.
+            {/* Audio element for agent speech */}
+            <audio ref={audioElRef} autoPlay />
+
+            {/* Transcript / events */}
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="p-4 rounded-xl bg-black/30 border border-white/10">
+                <div className="text-sm text-white/60 mb-1">Live Transcript</div>
+                <div className="font-medium whitespace-pre-wrap min-h-24">
+                  {log.length === 0 ? "Press Start Demo and speak to the agent…" : log.map((l, i) => (
+                    <div key={i} className={l.who === "agent" ? "text-white" : l.who === "user" ? "text-brand" : "text-white/60"}>
+                      {l.who === "agent" ? "Agent: " : l.who === "user" ? "You: " : ""}{l.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-black/30 border border-white/10">
+                <div className="text-sm text-white/60 mb-1">What this agent can do</div>
+                <ul className="text-sm text-white/70 space-y-1 list-disc list-inside">
+                  <li>Answer FAQs and qualify leads (interrupt anytime — barge-in supported by Realtime).</li>
+                  <li><b>Warm transfer</b> during open hours (consult → bridge) so your team joins with context.</li>
+                  <li><b>Schedule after-hours</b> via inline or popup Cal.com so you wake up to booked calls.</li>
+                  <li>Switch persona/voice to fit your brand.</li>
+                </ul>
+                <div className="mt-3 text-xs text-white/50">
+                  To wire real scheduling/transfer, connect your Cal.com account and phone/SIP stack; this demo focuses on the live voice experience.
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Secondary CTAs */}
-          <div className="flex flex-wrap gap-3">
-            <a href="/contact" className="btn">Book a Strategy Call</a>
-            <a href="#voice-demo" className="btn-ghost"><PhoneForwarded className="mr-2" /> See Warm Transfer Flow</a>
+            {/* Secondary CTAs */}
+            <div className="flex flex-wrap gap-3">
+              <a href="/contact" className="btn inline-flex items-center gap-2">
+                <CalendarCheck className="size-4" aria-hidden />
+                Book a Strategy Call
+              </a>
+              <a href="#voice-demo" className="btn-ghost inline-flex items-center gap-2">
+                <PhoneForwarded className="size-4" aria-hidden />
+                See Warm Transfer Flow
+              </a>
+            </div>
           </div>
         </div>
       </div>
