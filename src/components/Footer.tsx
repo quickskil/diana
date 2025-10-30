@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Script from "next/script";
 import Image from "next/image";
+import { getSchedulerUrl } from "@/lib/scheduler";
 import {
   CalendarCheck,
   ShieldCheck,
@@ -16,9 +17,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
   const brand = "Business Booster AI";
   const siteUrl = "https://yourdomain.com"; // update when you deploy
-  const calendly =
-    process.env.NEXT_PUBLIC_CALENDLY_URL ||
-    "https://calendly.com/your-handle/intro-call";
+  const schedulerUrl = getSchedulerUrl();
 
   // Minimal Organization JSON-LD (keeps things clean, no social/address)
   const orgJsonLd = {
@@ -155,8 +154,10 @@ export default function Footer() {
               </a>
             </li>
             <li>
-              <Link
-                href="/contact"
+              <a
+                href={schedulerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               >
                 <span className="inline-flex items-center gap-2">
@@ -164,7 +165,7 @@ export default function Footer() {
                   call
                 </span>
                 <ArrowRight className="size-4 opacity-70 group-hover:translate-x-0.5 transition" />
-              </Link>
+              </a>
             </li>
           </ul>
 

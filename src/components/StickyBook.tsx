@@ -3,6 +3,57 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from 'lucide-react';
+import { extractCalLink, getSchedulerUrl } from '@/lib/scheduler';
+
+declare global {
+  interface Window {
+    Cal?: (...args: any[]) => void;
+  }
+}
+
+let calScriptPromise: Promise<void> | null = null;
+
+function loadCalComScript() {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (window.Cal) return Promise.resolve();
+  if (calScriptPromise) return calScriptPromise;
+
+  calScriptPromise = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-calcom-embed]');
+    if (existing) {
+      if (existing.dataset.loaded === 'true') {
+        resolve();
+        return;
+      }
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener(
+        'error',
+        () => {
+          calScriptPromise = null;
+          reject(new Error('Failed to load Cal.com embed'));
+        },
+        { once: true }
+      );
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://app.cal.com/embed/embed.js';
+    script.async = true;
+    script.dataset.calcomEmbed = 'true';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      resolve();
+    });
+    script.addEventListener('error', () => {
+      calScriptPromise = null;
+      reject(new Error('Failed to load Cal.com embed'));
+    });
+    document.head.appendChild(script);
+  });
+
+  return calScriptPromise;
+}
 
 type Props = {
   /** CSS selector to observe; button appears once this is mostly off-screen */
@@ -21,11 +72,7 @@ export default function StickyBook({
   utm = 'utm_source=site&utm_medium=fab&utm_campaign=sticky',
   position = 'br',
 }: Props) {
-  // Prefer public env var; CALENDLY_URL is a fallback
-  const base =
-    process.env.NEXT_PUBLIC_CALENDLY_URL ||
-    process.env.CALENDLY_URL ||
-    'https://calendly.com/your-handle/intro-call';
+  const base = getSchedulerUrl();
 
   const url = useMemo(() => {
     if (!utm) return base;
@@ -57,17 +104,47 @@ export default function StickyBook({
     return () => obs.disconnect();
   }, [watch]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    loadCalComScript()
+      .then(() => {
+        try {
+          window.Cal?.('init', { origin: 'https://app.cal.com' });
+        } catch {
+          /* noop */
+        }
+      })
+      .catch(() => {
+        /* embed script optional */
+      });
+  }, []);
+
   function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
-    // If Calendly's embed script is present, open a popup instead of a new tab
-    // @ts-ignore
-    if (typeof window !== 'undefined' && window.Calendly?.initPopupWidget) {
-      e.preventDefault();
-      // @ts-ignore
-      window.Calendly.initPopupWidget({ url });
-    } else {
-      // Fallback: open in new tab
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
+    e.preventDefault();
+    if (typeof window === 'undefined') return;
+
+    const fallback = () => window.open(url, '_blank', 'noopener,noreferrer');
+
+    loadCalComScript()
+      .then(() => {
+        try {
+          const calLink = extractCalLink(base);
+          if (window.Cal && calLink) {
+            window.Cal('popup', {
+              calLink,
+              config: {
+                layout: 'month_view',
+                theme: 'dark',
+              },
+            });
+            return;
+          }
+        } catch {
+          // swallow and use fallback
+        }
+        fallback();
+      })
+      .catch(fallback);
   }
 
   const sideClass =

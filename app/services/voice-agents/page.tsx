@@ -222,7 +222,7 @@ export default function Page() {
             items={[
               "Custom scripts & routing rules",
               "Warm-transfer to your team during open hours",
-              "Calendly (or your scheduler) for 24/7 bookings",
+              "Cal.com (or your scheduler) for 24/7 bookings",
               "CRM & inbox logging with source tags",
               "Summaries and optional recordings (with consent)",
             ]}

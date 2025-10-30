@@ -1,7 +1,7 @@
 // app/contact/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
-import Script from "next/script";
+import { getSchedulerUrl, toEmbedUrl } from "@/lib/scheduler";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -9,18 +9,12 @@ export const metadata: Metadata = {
     "Book a discovery call. We’ll show you how we turn clicks into booked calls with websites, ads, and AI voice receptionists.",
 };
 
-const CAL_URL =
-  process.env.NEXT_PUBLIC_CALENDLY_URL ||
-  process.env.CALENDLY_URL ||
-  "https://calendly.com/your-handle/intro-call";
+const CAL_URL = getSchedulerUrl();
+const CAL_EMBED_URL = toEmbedUrl(CAL_URL);
 
 export default function Page() {
   return (
     <main id="main" className="section">
-      {/* Calendly inline embed (server-safe) */}
-      <Script src="https://assets.calendly.com/assets/external/widget.js" strategy="lazyOnload" />
-      <link rel="stylesheet" href="https://assets.calendly.com/assets/external/widget.css" />
-
       <div className="container space-y-10">
         {/* Hero */}
         <header className="text-center space-y-3">
@@ -31,7 +25,7 @@ export default function Page() {
           </p>
           <div className="flex items-center justify-center gap-2">
             <Link href="/case-studies" className="btn-ghost">See results</Link>
-            <a href={CAL_URL} target="_blank" rel="noopener noreferrer" className="btn">Open scheduler in new tab</a>
+            <a href={CAL_URL} target="_blank" rel="noopener noreferrer" className="btn">Open scheduler in Cal.com</a>
           </div>
           <p className="text-xs text-white/50">No long-term contracts • Transparent pricing</p>
         </header>
@@ -52,10 +46,10 @@ export default function Page() {
               <div className="font-semibold">Talk to a real person</div>
               <ul className="mt-2 text-sm text-white/70 space-y-2">
                 <li>Email: <a href="mailto:hello@yourdomain.com" className="underline underline-offset-4">hello@yourdomain.com</a></li>
-                <li>Phone: <a href="tel:+15550100000" className="underline underline-offset-4">+1 (555) 010-0000</a></li>
+                <li>Phone: <a href="tel:+12136810660" className="underline underline-offset-4">+1 (213) 681-0660</a></li>
                 <li>Hours: Mon–Fri, 9am–5pm (PST)</li>
               </ul>
-              <p className="mt-3 text-xs text-white/50">Prefer after-hours? Book below — our AI receptionist can still schedule you.</p>
+              <p className="mt-3 text-xs text-white/50">Prefer after-hours? Book below — our AI receptionist can still schedule you through Cal.com.</p>
             </article>
 
             <article className="card p-5">
@@ -68,21 +62,23 @@ export default function Page() {
             </article>
           </div>
 
-          {/* Calendly inline */}
+          {/* Cal.com inline */}
           <div className="card p-2 overflow-hidden">
-            <div
-              className="calendly-inline-widget"
-              data-url={CAL_URL}
-              style={{ minWidth: "320px", height: "720px" }}
+            <iframe
+              src={CAL_EMBED_URL}
+              title="Schedule time with Business Booster AI"
+              className="w-full rounded-xl border-0"
+              style={{ minHeight: "720px" }}
+              allow="camera *; microphone *; fullscreen; autoplay"
+              loading="lazy"
             />
-            <noscript>
-              <p className="p-3 text-sm text-white/70">
-                JavaScript is required to load the scheduler inline.{" "}
-                <a className="underline" href={CAL_URL} target="_blank" rel="noopener noreferrer">
-                  Open the Calendly page →
-                </a>
-              </p>
-            </noscript>
+            <p className="p-3 text-xs text-white/50">
+              Powered by {" "}
+              <a className="underline" href="https://cal.com" target="_blank" rel="noopener noreferrer">
+                Cal.com
+              </a>
+              .
+            </p>
           </div>
         </section>
 

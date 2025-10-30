@@ -10,7 +10,7 @@ import { Mic, MicOff, PhoneCall, CalendarClock, Bot, Loader2, Volume2, PhoneForw
  * - Lets users pick a persona + voice preset.
  * - Starts a WebRTC session with OpenAI Realtime via an ephemeral key from /api/realtime/session.
  * - Captures mic audio, plays agent audio, shows a live input meter & transcript.
- * - Exposes "Schedule Now" (Calendly) and "Request Warm Transfer" buttons that send tool calls.
+ * - Exposes "Schedule Now" (Cal.com) and "Request Warm Transfer" buttons that send tool calls.
  *
  * Server endpoints you need:
  *   POST /api/realtime/session → returns { client_secret: { value: <ephemeral-key> }, url?: <optional custom URL> }
@@ -314,7 +314,7 @@ Always keep replies under 2 sentences unless asked for more detail.`;
               <PhoneCall className="mr-2" /> Request Warm Transfer
             </button>
 
-            <a href="/contact" className="btn-ghost" title="Inline/popup/floating Calendly embeds supported">
+            <a href="/contact" className="btn-ghost" title="Inline/popup/floating Cal.com embeds supported">
               <CalendarClock className="mr-2" /> Schedule Now
             </a>
 
@@ -344,11 +344,11 @@ Always keep replies under 2 sentences unless asked for more detail.`;
               <ul className="text-sm text-white/70 space-y-1 list-disc list-inside">
                 <li>Answer FAQs and qualify leads (interrupt anytime — barge-in supported by Realtime).</li>
                 <li><b>Warm transfer</b> during open hours (consult → bridge) so your team joins with context.</li>
-                <li><b>Schedule after-hours</b> via inline or popup Calendly so you wake up to booked calls.</li>
+                <li><b>Schedule after-hours</b> via inline or popup Cal.com so you wake up to booked calls.</li>
                 <li>Switch persona/voice to fit your brand.</li>
               </ul>
               <div className="mt-3 text-xs text-white/50">
-                To wire real scheduling/transfer, connect your Calendly and phone/SIP stack; this demo focuses on the live voice experience.
+                To wire real scheduling/transfer, connect your Cal.com account and phone/SIP stack; this demo focuses on the live voice experience.
               </div>
             </div>
           </div>

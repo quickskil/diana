@@ -31,7 +31,7 @@ const faqs: QA[] = [
   },
   {
     q: 'Which schedulers and CRMs do you support?',
-    a: 'Common picks are Calendly, Cal.com, or HubSpot scheduling. CRM handoffs typically go to HubSpot, Pipedrive, or Salesforce via webhook/API.',
+    a: 'Common picks are Cal.com, Calendly (if you must), or HubSpot scheduling. CRM handoffs typically go to HubSpot, Pipedrive, or Salesforce via webhook/API.',
     id: 'integrations',
   },
   {

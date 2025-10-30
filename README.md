@@ -1,7 +1,7 @@
 
 # Business Booster AI — Multi‑page Funnel Site (Next.js)
 
-Stack: Next.js (App Router), TypeScript, Tailwind, Motion, OpenAI Responses API, Calendly.
+Stack: Next.js (App Router), TypeScript, Tailwind, Motion, OpenAI Responses API, Cal.com.
 
 ## Run locally
 ```
@@ -17,4 +17,4 @@ Set:
 Pages:
 - Home (hero, services grid, AI tools, testimonials, FAQ)
 - Services + product pages (Websites, Meta Ads, Google Ads, Funnels, AI Voice Agents)
-- Case Studies, Pricing, About, Contact (Calendly), Blog
+- Case Studies, Pricing, About, Contact (Cal.com), Blog
