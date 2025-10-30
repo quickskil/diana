@@ -12,7 +12,7 @@ pnpm dev
 Set:
 - OPENAI_API_KEY
 - OPENAI_MODEL (e.g., gpt-4.1-mini)
-- CALENDLY_URL or NEXT_PUBLIC_CALENDLY_URL
+- CAL_URL or NEXT_PUBLIC_CAL_URL (defaults to https://cal.com/cm-seo-bu01oy/30min?overlayCalendar=true)
 
 Pages:
 - Home (hero, services grid, AI tools, testimonials, FAQ)
