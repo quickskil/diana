@@ -4,8 +4,6 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import {
-  Megaphone,
-  MousePointerClick,
   PhoneCall,
   Rocket,
   Search,
@@ -29,67 +27,41 @@ type Service = {
 const services: Service[] = [
   {
     icon: Rocket,
-    title: "Websites that Convert",
+    title: "Funnel Foundation",
     href: "/services/websites",
     bullets: [
-      "Looks great, loads fast, easy to use",
-      "Clear story that guides visitors to book",
-      "Built to grow — add pages and features later",
+      "Conversion-first page with a single next step",
+      "Proof and offer framed in plain language",
+      "Built to add sections as you scale",
     ],
-    cta: "See Website Plan",
-    chip: "Launch in 10 days",
+    cta: "See the site play",
+    chip: "Launch fast",
     chipIcon: Sparkles,
   },
   {
     icon: Search,
-    title: "Google Ads",
+    title: "Traffic Engine",
     href: "/services/google-ads",
     bullets: [
-      "Show up when people search for you",
-      "No fluff — spend goes to what brings calls",
-      "Simple fee: 10% of ad spend",
+      "Intent-based ads that match the page",
+      "Weekly trims so spend follows what books",
+      "Simple 10% management fee",
     ],
-    cta: "See Google Plan",
-    chip: "Simple 10% fee",
-    chipIcon: CheckCircle2,
-  },
-  {
-    icon: Megaphone,
-    title: "Meta Ads",
-    href: "/services/meta-ads",
-    bullets: [
-      "Reach more of the right people",
-      "Quick creative testing to find winners",
-      "Weekly tweaks so results keep improving",
-    ],
-    cta: "See Meta Plan",
-    chip: "Fresh creative weekly",
-    chipIcon: Sparkles,
-  },
-  {
-    icon: MousePointerClick,
-    title: "Funnels & CRO",
-    href: "/services/funnels",
-    bullets: [
-      "Straightforward steps from click → call",
-      "Short forms, fewer clicks, more bookings",
-      "A/B tests to keep raising conversion",
-    ],
-    cta: "See Funnel Plan",
-    chip: "Iterate every month",
+    cta: "See traffic plan",
+    chip: "Always optimizing",
     chipIcon: CheckCircle2,
   },
   {
     icon: PhoneCall,
-    title: "AI Voice Receptionists",
+    title: "Lead Response",
     href: "/services/voice-agents",
     bullets: [
-      "Answers new callers 24/7 so you don’t miss leads",
-      "Transfers warm leads to your team during open hours",
-      "After-hours callers get scheduled instantly",
+      "AI receptionist answers in seconds",
+      "Warm-transfers during open hours",
+      "After-hours callers book automatically",
     ],
-    cta: "See Voice Plan",
-    chip: "Live demo ready",
+    cta: "See response plan",
+    chip: "24/7 coverage",
     chipIcon: PhoneCall,
   },
 ];
@@ -101,13 +73,12 @@ export default function ServicesGrid() {
     <section id="services" className="section" aria-labelledby="services-title">
       <div className="container space-y-8">
         <h2 id="services-title" className="text-center">What we ship</h2>
-        <p className="text-center text-white/70 max-w-3xl mx-auto">
-          We make it easy: <b>we build your site</b>, <b>run your ads</b>, and our <b>AI receptionist</b> answers new callers
-          around the clock. During open hours we <b>warm-transfer</b> hot leads to your team; after hours we <b>book the
-          meeting</b>. Simple, friendly, and focused on results.
+        <p className="text-center text-white/70 max-w-2xl mx-auto">
+          Everything rolls up to one goal: an automated funnel that captures interest, books the call, and lets you stay in
+          sales conversations.
         </p>
 
-        <div role="list" className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div role="list" className="grid md:grid-cols-3 gap-4">
           {services.map((s, i) => (
             <ServiceCard key={s.title} s={s} i={i} reduce={reduce} />
           ))}
