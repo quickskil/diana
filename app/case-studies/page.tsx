@@ -1,5 +1,4 @@
 // app/case-studies/page.tsx
-import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -14,8 +13,6 @@ type Study = {
   metric: string;
   context: string;
   outcome: string;
-  trend: number[];
-  color: "violet" | "sky" | "emerald";
 };
 
 const studies: Study[] = [
@@ -24,16 +21,12 @@ const studies: Study[] = [
     metric: "Booked jobs 2.1×",
     context: "HVAC & roofing teams",
     outcome: "Neighborhood landing page + AI voice to handle overflow and after-hours calls added steady appointments each week.",
-    trend: [12, 17, 22, 28, 31, 36, 41, 45],
-    color: "violet",
   },
   {
     title: "B2B SaaS",
     metric: "Demo requests +88%",
     context: "Growth-stage platform",
     outcome: "Role-based messaging, synchronized ads, and instant voice follow-up meant more pipeline without adding SDR headcount.",
-    trend: [24, 29, 33, 39, 46, 52, 58, 63],
-    color: "sky",
   },
   {
     title: "DTC & eCom",
@@ -41,8 +34,6 @@ const studies: Study[] = [
     context: "Skincare & supplements",
     outcome:
       "Faster product experiences and creatives that mirrored the landing page increased conversion and let spend scale profitably.",
-    trend: [3.2, 3.5, 3.8, 4.1, 4.5, 4.8, 5.0, 5.1],
-    color: "emerald",
   },
 ];
 
@@ -121,14 +112,65 @@ export default function Page() {
             <p className="text-sm text-white/70 max-w-2xl mx-auto">
               We’ll share a tailored forecast, sample creative, and how we’d roll out the automated funnel step by step.
             </p>
-            <MiniChart values={[18, 26, 32, 37, 45, 52, 58, 63]} color="emerald" ariaLabel="Forecasted pipeline growth" />
+            <div className="grid gap-4 md:grid-cols-3 text-left">
+              <div className="rounded-lg border border-white/10 p-4">
+                <h3 className="font-semibold text-white/90">15-minute discovery call</h3>
+                <p className="text-sm text-white/70">
+                  Align on your revenue goals, current funnel gaps, and what an automated follow-up engine could unlock.
+                </p>
+              </div>
+              <div className="rounded-lg border border-white/10 p-4">
+                <h3 className="font-semibold text-white/90">Custom performance forecast</h3>
+                <p className="text-sm text-white/70">
+                  Receive a projected pipeline model, channel mix, and sample creatives tailored to your vertical.
+                </p>
+              </div>
+              <div className="rounded-lg border border-white/10 p-4">
+                <h3 className="font-semibold text-white/90">Roadmap & next steps</h3>
+                <p className="text-sm text-white/70">
+                  Get a clear rollout plan, ownership expectations, and the KPIs we’ll monitor in the first 30 days.
+                </p>
+              </div>
+            </div>
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <Link href="/contact" className="btn">
                 Book a call
               </Link>
-              <Link href="/pricing" className="btn-ghost">
-                View pricing
+              <Link href="/contact" className="btn-ghost">
+                Schedule a walkthrough
               </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="radiant-card">
+          <div className="card p-6 md:p-10 grid gap-8 md:grid-cols-[1.2fr_1fr] items-center">
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold text-white/95">Book your discovery call</h2>
+              <p className="text-sm text-white/70">
+                Spend 15 minutes exploring how the automated funnel would plug into your stack. We’ll review quick wins, traffic
+                priorities, and what it takes to launch without disrupting current campaigns.
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-sm text-white/70">
+                <li>Audit your existing demand engine and identify the biggest conversion leaks.</li>
+                <li>Outline how voice follow-up, nurture, and reporting adapt to your buyer journey.</li>
+                <li>End with a documented next step so your team knows exactly how to move forward.</li>
+              </ul>
+            </div>
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
+              <p className="text-sm text-white/70">Ready for next steps?</p>
+              <h3 className="text-xl font-semibold text-white/95">Lock in your discovery call</h3>
+              <p className="text-sm text-white/70">
+                Pick a time that works for you or ring us now — we’ll confirm details and send prep notes right away.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Link href="/contact" className="btn">
+                  Schedule your call
+                </Link>
+                <Link href="tel:+15555551234" className="btn-ghost">
+                  Call (555) 555-1234
+                </Link>
+              </div>
             </div>
           </div>
         </section>
