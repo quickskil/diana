@@ -8,16 +8,15 @@ import { motion, useReducedMotion } from 'motion/react';
 import {
   Menu, X, ChevronDown,
   Rocket, Search, Megaphone, MousePointerClick, PhoneCall,
-  Headphones, CalendarCheck, ArrowRight,
-  BadgeDollarSign, BarChart3, UsersRound,
+  Headphones, CalendarCheck, ArrowRight
 } from 'lucide-react';
 import Image from 'next/image';
 
 const LINKS = [
-  { href: '/services', label: 'Services', icon: Rocket },
-  { href: '/pricing', label: 'Pricing', icon: BadgeDollarSign },
-  { href: '/case-studies', label: 'Case Studies', icon: BarChart3 },
-  { href: '/about', label: 'About', icon: UsersRound },
+  { href: '/services', label: 'Services' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/case-studies', label: 'Case Studies' },
+  { href: '/about', label: 'About' },
 ];
 
 const SERVICES = [
@@ -107,6 +106,9 @@ export default function Nav() {
 
   const isServicesActive = pathname?.startsWith('/services');
 
+  // Use logo hues for ring
+  const ring = 'linear-gradient(135deg, rgba(139,92,246,.95), rgba(96,165,250,.9))';
+
   return (
     <>
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-black/80 focus:px-3 focus:py-2 focus:text-white">Skip to content</a>
@@ -147,16 +149,14 @@ export default function Nav() {
               <button
                 ref={triggerRef}
                 type="button"
-                className={`btn-ghost inline-flex items-center gap-2 ${isServicesActive ? 'ring-1 ring-white/30' : ''}`}
+                className={`btn-ghost inline-flex items-center gap-1 ${isServicesActive ? 'ring-1 ring-white/30' : ''}`}
                 aria-haspopup="true"
                 aria-expanded={svcOpen}
                 aria-controls="services-mega"
                 onClick={() => setSvcOpen(v => !v)}
                 onFocus={() => setSvcOpen(true)}
               >
-                <Rocket className="size-4" aria-hidden />
-                Services
-                <ChevronDown className="size-4 opacity-80 transition" style={{ transform: svcOpen ? 'rotate(180deg)' : 'none' }} />
+                Services <ChevronDown className="size-4 opacity-80 transition" style={{ transform: svcOpen ? 'rotate(180deg)' : 'none' }} />
               </button>
 
               {/* MEGA PANEL */}
@@ -166,13 +166,14 @@ export default function Nav() {
                 initial={false}
                 animate={{ opacity: svcOpen ? 1 : 0, y: svcOpen ? 0 : -6, pointerEvents: svcOpen ? 'auto' : 'none' }}
                 transition={reduce ? { duration: 0 } : { duration: 0.16, ease: 'easeOut' }}
-                className="absolute right-0 top-full mt-2 w-[min(92vw,760px)] radiant-card shadow-2xl"
+                className="absolute right-0 top-full mt-2 w-[min(92vw,760px)] p-[1px] rounded-2xl shadow-2xl"
+                style={{ background: ring }}
                 // overlap the trigger a bit to remove any “hover gap”
                 onMouseEnter={() => scheduleOpen(0)}
                 onMouseLeave={() => scheduleClose(140)}
                 onMouseDownCapture={(e) => e.stopPropagation()}
               >
-                <div className="card bg-black/85 p-5">
+                <div className="rounded-2xl bg-black/85 border border-white/10 p-5">
                   <header className="mb-3">
                     <div className="text-[12px] text-white/60">What we do</div>
                     <div className="text-white/95 font-semibold">Simple ways to get more customers</div>
@@ -205,15 +206,15 @@ export default function Nav() {
 
                   <div className="flex flex-wrap items-center gap-2">
                     <a href="/voice-demo" className="btn-ghost h-10 gap-2">
-                      <Headphones className="size-4" aria-hidden />
+                      <Headphones className="size-4" />
                       Try the Live Voice Demo
                     </a>
                     <Link href="/pricing" className="btn-ghost h-10 gap-2">
-                      <CalendarCheck className="size-4" aria-hidden />
+                      <CalendarCheck className="size-4" />
                       See Packages & Pricing
                     </Link>
                     <Link href="/contact" className="btn h-10 gap-2 ml-auto">
-                      <PhoneCall className="size-4" aria-hidden />
+                      <PhoneCall className="size-4" />
                       Book a Call
                     </Link>
                   </div>
@@ -226,27 +227,14 @@ export default function Nav() {
             {/* other links */}
             {LINKS.filter(l => l.href !== '/services').map(l => {
               const active = pathname?.startsWith(l.href);
-              const Icon = l.icon;
               return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={`btn-ghost inline-flex items-center gap-2 ${active ? 'ring-1 ring-white/30' : ''}`}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <Icon className="size-4" aria-hidden />
+                <Link key={l.href} href={l.href} className={`btn-ghost ${active ? 'ring-1 ring-white/30' : ''}`} aria-current={active ? 'page' : undefined}>
                   {l.label}
                 </Link>
               );
             })}
-            <a href="/voice-demo" className="btn-ghost inline-flex items-center gap-2">
-              <Headphones className="size-4" aria-hidden />
-              Voice Demo
-            </a>
-            <Link href="/contact" className="btn inline-flex items-center gap-2">
-              <PhoneCall className="size-4" aria-hidden />
-              Book a Call
-            </Link>
+            <a href="/voice-demo" className="btn-ghost">Voice Demo</a>
+            <Link href="/contact" className="btn">Book a Call</Link>
           </div>
 
           {/* Mobile hamburger */}
@@ -275,10 +263,7 @@ export default function Nav() {
               <li>
                 <details className="group rounded-lg">
                   <summary className="flex w-full items-center justify-between rounded-lg px-3 py-2 hover:bg-white/10 cursor-pointer">
-                    <span className="inline-flex items-center gap-2 text-sm font-medium">
-                      <Rocket className="size-4" aria-hidden />
-                      Services
-                    </span>
+                    <span>Services</span>
                     <ChevronDown className="size-4 group-open:rotate-180 transition" />
                   </summary>
                   <div className="mt-1 grid grid-cols-1 gap-1">
@@ -299,7 +284,7 @@ export default function Nav() {
                       </Link>
                     ))}
                     <a href="/voice-demo" className="mt-1 inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/10" onClick={() => setOpen(false)}>
-                      <Headphones className="size-4" aria-hidden /> Try the Live Voice Demo
+                      <Headphones className="size-4" /> Try the Live Voice Demo
                     </a>
                   </div>
                 </details>
@@ -307,16 +292,14 @@ export default function Nav() {
 
               {LINKS.filter(l => l.href !== '/services').map(l => {
                 const active = pathname?.startsWith(l.href);
-                const Icon = l.icon;
                 return (
                   <li key={l.href}>
                     <Link
                       href={l.href}
-                      className={`flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/10 ${active ? 'bg-white/10' : ''}`}
+                      className={`block w-full rounded-lg px-3 py-2 hover:bg-white/10 ${active ? 'bg-white/10' : ''}`}
                       aria-current={active ? 'page' : undefined}
                       onClick={() => setOpen(false)}
                     >
-                      <Icon className="size-4" aria-hidden />
                       {l.label}
                     </Link>
                   </li>
@@ -324,10 +307,7 @@ export default function Nav() {
               })}
 
               <li className="pt-1">
-                <Link href="/contact" className="btn w-full inline-flex items-center justify-center gap-2" onClick={() => setOpen(false)}>
-                  <PhoneCall className="size-4" aria-hidden />
-                  Book a Call
-                </Link>
+                <Link href="/contact" className="btn w-full" onClick={() => setOpen(false)}>Book a Call</Link>
               </li>
             </ul>
             <p className="text-[12px] text-white/60 px-3 pt-2">Friendly chat. Clear plan. No long-term contracts.</p>
