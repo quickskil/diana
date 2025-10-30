@@ -13,7 +13,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useCallback, useRef } from "react";
-import MiniChart from "./MiniChart";
 
 type Service = {
   icon: React.ElementType;
@@ -25,8 +24,6 @@ type Service = {
   chipIcon: React.ElementType;
   stat: string;
   statCaption: string;
-  trend: number[];
-  color: "violet" | "sky" | "emerald";
 };
 
 const services: Service[] = [
@@ -35,34 +32,30 @@ const services: Service[] = [
     title: "Funnel Foundation",
     href: "/services/websites",
     bullets: [
-      "Conversion-focused homepage that loads fast",
+      "Conversion-focused homepage with fast load times",
       "Proof, offer, and CTA aligned above the fold",
       "Simple CMS so updates take minutes",
     ],
-    cta: "See the site play",
+    cta: "View site approach",
     chip: "Launch fast",
     chipIcon: Sparkles,
     stat: "+37% more booked calls",
     statCaption: "Fresh copy + frictionless booking",
-    trend: [6, 7, 9, 13, 17, 22, 26, 30],
-    color: "violet",
   },
   {
     icon: Search,
     title: "Traffic Engine",
     href: "/services/google-ads",
     bullets: [
-      "Search + paid social that mirror the page promise",
-      "Weekly trims keep budget on winning terms",
-      "Creative refreshes based on what converts",
+      "Search and paid social mirror the landing page promise",
+      "Weekly optimisation keeps budget on performing terms",
+      "Creative refreshes tied to conversion data",
     ],
-    cta: "See traffic plan",
+    cta: "View traffic plan",
     chip: "Always optimizing",
     chipIcon: CheckCircle2,
     stat: "-28% cost per lead",
     statCaption: "Message match cuts waste",
-    trend: [72, 69, 65, 61, 58, 55, 52, 49],
-    color: "sky",
   },
   {
     icon: PhoneCall,
@@ -73,13 +66,11 @@ const services: Service[] = [
       "Warm transfers during open hours",
       "After-hours callers book automatically",
     ],
-    cta: "See response plan",
+    cta: "View response plan",
     chip: "24/7 coverage",
     chipIcon: PhoneCall,
     stat: "93% answer rate",
     statCaption: "No more missed calls",
-    trend: [68, 72, 78, 84, 89, 92, 94, 96],
-    color: "emerald",
   },
 ];
 
@@ -91,7 +82,7 @@ export default function ServicesGrid() {
       <div className="container space-y-8">
         <h2 id="services-title" className="text-center">What we ship</h2>
         <p className="text-center text-white/70 max-w-2xl mx-auto">
-          Pick the piece you need or let us run the full play. Every service connects so clicks turn into friendly booked calls.
+          Engage us for one capability or the full program. Each deliverable plugs into the same booked-call pipeline.
         </p>
 
         <div role="list" className="grid md:grid-cols-3 gap-4">
@@ -157,18 +148,6 @@ function ServiceCard({
         onMouseLeave={onMouseLeave}
       >
         {/* Hover glow */}
-        <motion.div
-          aria-hidden
-          className="absolute inset-0 rounded-2xl pointer-events-none"
-          initial={{ opacity: 0 }}
-          whileHover={{ opacity: reduce ? 0 : 0.08 }}
-          transition={{ duration: 0.2 }}
-          style={{
-            background:
-              'radial-gradient(600px 200px at var(--mx, 50%) var(--my, 50%), #fff, transparent 40%)',
-          }}
-        />
-
         {/* Content */}
         <div className="relative z-10 flex flex-col gap-4">
           <div className="flex items-start justify-between gap-2">
@@ -193,7 +172,7 @@ function ServiceCard({
                 <span>{s.stat}</span>
                 <ArrowRight className="size-4 text-white/60" aria-hidden />
               </div>
-              <MiniChart values={s.trend} color={s.color} ariaLabel={`${s.title} performance`} />
+              <p className="mt-2 text-xs text-white/60">{s.statCaption}</p>
             </div>
 
             <ul className="text-white/80 text-sm space-y-2">
