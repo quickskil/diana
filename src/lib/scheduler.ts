@@ -1,11 +1,12 @@
-export const DEFAULT_SCHEDULER_URL = 'https://cal.com/your-handle/intro-call';
+export const DEFAULT_SCHEDULER_URL =
+  'https://cal.com/cm-seo-bu01oy/30min?overlayCalendar=true';
 
 const schedulerUrl =
   process.env.NEXT_PUBLIC_CAL_URL ||
-  process.env.NEXT_PUBLIC_CALCOM_URL ||
-  process.env.NEXT_PUBLIC_CALENDLY_URL ||
   process.env.CAL_URL ||
+  process.env.NEXT_PUBLIC_CALCOM_URL ||
   process.env.CALCOM_URL ||
+  process.env.NEXT_PUBLIC_CALENDLY_URL ||
   process.env.CALENDLY_URL ||
   DEFAULT_SCHEDULER_URL;
 
