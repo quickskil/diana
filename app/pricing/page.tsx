@@ -108,7 +108,9 @@ export default function Page() {
                   <div className="text-3xl font-extrabold text-white/95">{tier.price}</div>
                   <div className="text-xs text-white/55">{tier.caption}</div>
                 </div>
-                <MiniChart values={tier.trend} color={tier.color} ariaLabel={`${tier.headline} ramp`} />
+                <p className="text-xs text-white/60 leading-relaxed">
+                  We’ll map the rollout for {tier.name.toLowerCase()} on a quick call so you know exactly what to expect.
+                </p>
                 <ul className="text-sm text-white/75 space-y-2">
                   {tier.bullets.map((bullet) => (
                     <li key={bullet}>{bullet}</li>
@@ -137,12 +139,16 @@ export default function Page() {
                 <span className="pill">Friendly support</span>
               </div>
             </div>
-            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
               <div className="flex items-center justify-between text-white/60">
                 <span>Onboarding timeline</span>
                 <span className="badge">2 weeks</span>
               </div>
-              <MiniChart values={[0, 25, 45, 65, 78, 90, 100, 100]} color="emerald" ariaLabel="Two-week onboarding timeline" />
+              <ol className="space-y-2 text-xs text-white/60">
+                <li><strong className="text-white/80">Days 1-3:</strong> Kickoff, asset review, and copy outline.</li>
+                <li><strong className="text-white/80">Days 4-7:</strong> Design & build the conversion flow.</li>
+                <li><strong className="text-white/80">Days 8-14:</strong> Launch, QA, and campaign alignment.</li>
+              </ol>
               <p className="text-xs text-white/55">We handle the heavy lifting — you just review and approve.</p>
             </div>
           </div>

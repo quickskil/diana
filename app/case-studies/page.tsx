@@ -95,8 +95,10 @@ export default function Page() {
                   <span className="badge">{study.metric}</span>
                 </div>
                 <h2 className="text-lg font-semibold text-white/95">{study.title}</h2>
-                <MiniChart values={study.trend} color={study.color} ariaLabel={`${study.title} performance`} />
                 <p className="text-sm text-white/70">{study.outcome}</p>
+                <Link href="/contact" className="text-xs font-semibold text-white/80 underline decoration-white/30 underline-offset-4 hover:decoration-white">
+                  Ask for the full playbook
+                </Link>
               </div>
             </div>
           ))}

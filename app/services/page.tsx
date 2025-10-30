@@ -50,16 +50,20 @@ export default function Page() {
                     <span>Booked calls</span>
                     <span className="badge">+40% avg</span>
                   </div>
-                  <MiniChart values={[8, 12, 15, 18, 24, 30, 34, 39]} color="violet" ariaLabel="Booked calls trending up" />
-                  <p className="text-xs text-white/55">Conversion-first pages + follow-up keep leads moving.</p>
+                  <p className="mt-3 text-xs text-white/60 leading-relaxed">
+                    Conversion-first pages and immediate follow-up keep new leads warm. Most teams add double-digit conversations
+                    within the first month.
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/75">
                   <div className="flex items-center justify-between text-white/60">
                     <span>Cost per lead</span>
                     <span className="badge">-26%</span>
                   </div>
-                  <MiniChart values={[82, 78, 73, 68, 63, 59, 55, 52]} color="sky" ariaLabel="Cost per lead trending down" />
-                  <p className="text-xs text-white/55">Message match and fast pages save media spend.</p>
+                  <p className="mt-3 text-xs text-white/60 leading-relaxed">
+                    Message match from ad to page cuts wasted spend. We review campaigns every week so budget flows to the
+                    clicks that book calls.
+                  </p>
                 </div>
               </div>
             </div>

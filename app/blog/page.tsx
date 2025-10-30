@@ -60,7 +60,7 @@ export default function Page() {
                 </div>
                 <h2 className="text-lg font-semibold text-white/95">{item.title}</h2>
                 <p className="text-sm text-white/70">{item.summary}</p>
-                <MiniChart values={item.trend} color={index === 1 ? "sky" : index === 2 ? "emerald" : "violet"} ariaLabel={`${item.title} preview chart`} />
+                <p className="text-xs text-white/55">Hop on a quick call and we’ll send the working doc ahead of the release.</p>
               </div>
             </div>
           ))}
