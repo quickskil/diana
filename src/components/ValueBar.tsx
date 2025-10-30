@@ -16,11 +16,9 @@ type Item = {
 };
 
 const DEFAULT_ITEMS: Item[] = [
-  { value: 40, suffix: '%', label: 'More booked calls', sub: 'Average uplift' },
-  { value: 95, suffix: '%', label: 'Answered leads', sub: 'After rollout' },
-  { value: 24, suffix: '/7', label: 'Lead coverage', sub: 'Always on' },
-  { value: 2, suffix: ' min', label: 'Speed to reply', sub: 'Live transfers' },
-  { value: 12, suffix: '/mo', label: 'Extra meetings', sub: 'After hours' },
+  { value: 38, suffix: '%', label: 'More booked calls', sub: 'System average' },
+  { value: 92, suffix: '%', label: 'Answered leads', sub: '24/7 coverage' },
+  { value: 14, suffix: '/mo', label: 'Hours back', sub: 'Saved from chasing' },
 ];
 
 /** Easing for the counter */
@@ -114,11 +112,9 @@ export default function ValueBar({ items = DEFAULT_ITEMS }: { items?: Item[] }) 
 
               {/* micro caption that connects to business outcomes */}
               <div className="mt-2 text-xs text-white/60">
-                {it.label === 'More booked calls' && 'Launch pages and ads that make the next step obvious.'}
-                {it.label === 'Answered leads' && 'Voice receptionist greets every caller in seconds.'}
-                {it.label === 'Lead coverage' && 'Always-on follow-up so interest never slips away.'}
-                {it.label === 'Speed to reply' && 'Live transfers while the lead is still on the line.'}
-                {it.label === 'Extra meetings' && 'After-hours scheduling fills your mornings with new calls.'}
+                {it.label === 'More booked calls' && 'Conversion-first pages make the decision simple.'}
+                {it.label === 'Answered leads' && 'The voice agent picks up instantly so no inquiry is lost.'}
+                {it.label === 'Hours back' && 'Automation handles follow-up while you focus on closing.'}
               </div>
 
               {/* hover lift / ripple */}

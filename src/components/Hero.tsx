@@ -12,7 +12,6 @@ import {
   TrendingDown,
   Rocket,
   Search,
-  Megaphone,
   Sparkles,
 } from 'lucide-react';
 
@@ -57,21 +56,19 @@ export default function Hero() {
           >
 
             <h1 className="mt-3 leading-tight">
-              Turn clicks into <span className="text-brand">clients</span> — on autopilot.
+              We build an automated funnel so you can focus on closing deals.
             </h1>
 
             <p className="lead max-w-2xl">
-              We build the full funnel: a <b>conversion-ready website</b>, <b>ads that match</b>,
-              and an <b>AI receptionist</b> that greets every lead in seconds. Visitors know what
-              you do, why it matters, and how to book a call without digging for details.
+              One partner, one system: a <b>conversion-first website</b>, <b>traffic that matches the message</b>,
+              and an <b>AI receptionist</b> that answers every lead. No jargon — just a clear path from click to booked call.
             </p>
 
             <div className="pill-grid text-sm text-white/85">
-              <span className="pill"><Rocket className="size-4" aria-hidden /> Launch-ready site</span>
-              <span className="pill"><Search className="size-4" aria-hidden /> Google demand</span>
-              <span className="pill"><Megaphone className="size-4" aria-hidden /> Meta awareness</span>
-              <span className="pill"><PhoneCall className="size-4" aria-hidden /> 24/7 receptionist</span>
-              <span className="pill"><Sparkles className="size-4" aria-hidden /> Clear, human copy</span>
+              <span className="pill"><Rocket className="size-4" aria-hidden /> Conversion site</span>
+              <span className="pill"><Search className="size-4" aria-hidden /> Demand engine</span>
+              <span className="pill"><PhoneCall className="size-4" aria-hidden /> Instant response</span>
+              <span className="pill"><Sparkles className="size-4" aria-hidden /> Plain-language copy</span>
             </div>
 
      
@@ -107,10 +104,10 @@ export default function Hero() {
                       style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent)' }}
                     />
                   )}
-                  <div className="flex items-center gap-2 font-semibold text-white/95">
-                    <I className="size-4 opacity-90" aria-hidden />
-                    {k}
-                  </div>
+                <div className="flex items-center gap-2 font-semibold text-white/95">
+                  <I className="size-4 opacity-90" aria-hidden />
+                  {k}
+                </div>
                   <div className="text-xs text-white/65 mt-1">{v}</div>
                 </div>
               </li>
