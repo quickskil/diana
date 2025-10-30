@@ -15,6 +15,7 @@ import {
   Mic,
   Share2,
   ArrowRight,
+  Headphones,
 } from "lucide-react";
 
 const stats = [
@@ -183,7 +184,7 @@ function HeroSection() {
   return (
     <section className="section">
       <div className="container">
-        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-indigo-950/80 via-slate-900/90 to-slate-950 px-10 py-16 shadow-xl">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-indigo-950/80 via-slate-900/90 to-slate-950 px-10 py-10 shadow-xl">
           <div className="absolute -top-40 -right-20 size-[420px] rounded-full bg-indigo-500/20 blur-3xl" aria-hidden />
           <div className="absolute -bottom-32 left-10 size-[320px] rounded-full bg-emerald-500/15 blur-3xl" aria-hidden />
 
@@ -257,9 +258,15 @@ function HeroSection() {
                   <span>Scorecards tie spend to revenue, so growth decisions are anchored in pipeline impact—not vanity metrics.</span>
                 </li>
               </ul>
-              <Link href="/case-studies" className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white">
-                Review live case studies <ArrowUpRight className="size-4" aria-hidden />
-              </Link>
+              <div className="space-y-3">
+                <Link href="/voice-demo" className="btn inline-flex h-11 w-full items-center justify-center gap-2 text-sm">
+                  <Headphones className="size-4" aria-hidden />
+                  Try the live voice demo
+                </Link>
+                <Link href="/case-studies" className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white">
+                  Review live case studies <ArrowUpRight className="size-4" aria-hidden />
+                </Link>
+              </div>
             </aside>
           </div>
         </div>
