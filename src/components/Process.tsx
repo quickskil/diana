@@ -4,7 +4,6 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'motion/react';
 import { Rocket, Search, PhoneCall, CheckCircle2, CalendarCheck, BadgeDollarSign } from 'lucide-react';
-import MiniChart from './MiniChart';
 
 type Step = {
   icon: React.ElementType;
@@ -18,22 +17,22 @@ const steps: Step[] = [
   {
     icon: Rocket,
     badge: 'Week 1',
-    title: 'Launch a conversion page',
-    desc: 'We write the story like a friend would: quick, clear, and proof-first.',
-    bullets: ['Loads fast on any device', 'One CTA to book a call'],
+    title: 'Launch the conversion page',
+    desc: 'Copy, proof, and scheduling are produced together so prospects can book without friction.',
+    bullets: ['Loads fast on any device', 'Single CTA to book a call'],
   },
   {
     icon: Search,
     badge: 'Week 2',
-    title: 'Send the right traffic',
-    desc: 'Ads repeat the same promise so every click lands feeling familiar.',
-    bullets: ['Search + social tuned to the offer', 'Weekly trims keep budget on winners'],
+    title: 'Send qualified traffic',
+    desc: 'Search and paid social echo the landing page so visitors arrive primed to convert.',
+    bullets: ['Search + social tuned to the offer', 'Weekly optimisation keeps budget on winners'],
   },
   {
     icon: PhoneCall,
     badge: 'Always on',
     title: 'Answer instantly',
-    desc: 'Our AI receptionist greets every lead, books meetings, and warm-transfers hot callers to you.',
+    desc: 'The AI receptionist qualifies leads, books meetings, and warms transfers to your team when available.',
     bullets: ['24/7 coverage in your tone', 'Live transfer when you’re free'],
   },
 ];
@@ -67,26 +66,6 @@ export default function Process() {
             >
               <article className="card h-full p-6 flex flex-col isolation-isolate">
                 {/* hover glow that never blocks clicks */}
-                {!reduce && (
-                  <motion.div
-                    aria-hidden
-                    className="absolute inset-0 rounded-2xl z-0 pointer-events-none"
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 0.08 }}
-                    transition={{ duration: 0.18 }}
-                    style={{
-                      background:
-                        'radial-gradient(520px 180px at var(--mx,50%) var(--my,50%), #fff, transparent 40%)',
-                    }}
-                    onMouseMove={(e) => {
-                      const el = e.currentTarget as HTMLDivElement;
-                      const r = el.getBoundingClientRect();
-                      el.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
-                      el.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`);
-                    }}
-                  />
-                )}
-
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-2">
                     <s.icon className="opacity-95" aria-hidden />
@@ -121,11 +100,14 @@ export default function Process() {
             </div>
             <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
               <div className="flex items-center justify-between text-white/60">
-                <span>Pipeline health</span>
-                <span className="badge">Live view</span>
+                <span>Visibility at a glance</span>
+                <span className="badge">Weekly summary</span>
               </div>
-              <MiniChart values={[22, 27, 35, 41, 44, 49, 57, 63]} color="emerald" ariaLabel="Pipeline health trending up" />
-              <p className="text-xs text-white/55">Weekly notes highlight what we doubled down on and what we trimmed.</p>
+              <ul className="space-y-1 text-xs text-white/60">
+                <li>• Key metrics with commentary</li>
+                <li>• Actions completed and in flight</li>
+                <li>• Risks and decisions we need from you</li>
+              </ul>
             </div>
           </div>
         </div>

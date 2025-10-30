@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import MiniChart from './MiniChart';
 
 type Item = {
   /** numeric goal/value (e.g., 2.5, 95, 24) */
@@ -15,44 +14,36 @@ type Item = {
   /** tiny subcopy (use to declare "Goal", "After rollout", etc.) */
   sub?: string;
   /** optional chart values */
-  trend?: number[];
   /** optional progress value 0-1 */
   progress?: number;
   /** optional friendly caption */
   caption?: string;
-  color?: 'violet' | 'sky' | 'emerald';
 };
 
 const DEFAULT_ITEMS: Item[] = [
   {
     value: 44,
     suffix: '%',
-    label: 'More booked calls',
-    sub: 'System average',
-    trend: [8, 12, 14, 18, 22, 27, 33, 37],
+    label: 'More booked consultations',
+    sub: 'Full-funnel average',
     progress: 0.82,
-    caption: 'Conversion-first page + follow-up = full calendar.',
-    color: 'violet',
+    caption: 'Conversion-first site, coordinated campaigns, and AI follow-up increase booked meetings.',
   },
   {
     value: 93,
     suffix: '%',
     label: 'Answered leads',
     sub: '24/7 coverage',
-    trend: [65, 71, 76, 82, 88, 90, 92, 94],
     progress: 0.93,
-    caption: 'Voice agent picks up in seconds, even at night.',
-    color: 'emerald',
+    caption: 'AI receptionist qualifies inbound requests within seconds, any time of day.',
   },
   {
     value: 14,
     suffix: ' hrs',
-    label: 'Time saved monthly',
+    label: 'Hours saved monthly',
     sub: 'No chasing',
-    trend: [2, 3, 4, 6, 9, 11, 13, 15],
     progress: 0.7,
-    caption: 'Automation handles booking + updates.',
-    color: 'sky',
+    caption: 'Automation handles booking confirmations and status updates.',
   },
 ];
 
@@ -141,13 +132,6 @@ export default function ValueBar({ items = DEFAULT_ITEMS }: { items?: Item[] }) 
               </div>
 
               <div className="grid gap-3">
-                {it.trend && (
-                  <MiniChart
-                    values={it.trend}
-                    color={it.color}
-                    ariaLabel={`${it.label} trend chart`}
-                  />
-                )}
                 <div className="text-3xl font-extrabold tracking-tight">
                   <CountUp to={it.value} suffix={it.suffix} />
                 </div>
@@ -166,25 +150,6 @@ export default function ValueBar({ items = DEFAULT_ITEMS }: { items?: Item[] }) 
 
               {it.caption && <div className="text-xs text-white/60">{it.caption}</div>}
 
-              {!shouldReduce && (
-                <motion.div
-                  aria-hidden
-                  className="absolute inset-0 rounded-2xl"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 0.08 }}
-                  transition={{ duration: 0.2 }}
-                  style={{
-                    background:
-                      'radial-gradient(600px 200px at var(--mx, 50%) var(--my, 50%), #fff, transparent 40%)',
-                  }}
-                  onMouseMove={(e) => {
-                    const el = e.currentTarget as HTMLDivElement;
-                    const rect = el.getBoundingClientRect();
-                    el.style.setProperty('--mx', `${((e.clientX - rect.left) / rect.width) * 100}%`);
-                    el.style.setProperty('--my', `${((e.clientY - rect.top) / rect.height) * 100}%`);
-                  }}
-                />
-              )}
             </div>
           </motion.div>
         ))}

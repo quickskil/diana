@@ -1,5 +1,4 @@
 // app/contact/page.tsx
-import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSchedulerUrl, toEmbedUrl } from "@/lib/scheduler";
@@ -17,29 +16,20 @@ const CAL_EMBED_URL = toEmbedUrl(CAL_URL);
 export default function Page() {
   return (
     <main className="section relative overflow-hidden" aria-labelledby="contact-title">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(1200px 600px at 0% 0%, rgba(124,58,237,.18), transparent 60%)," +
-            "radial-gradient(1000px 500px at 100% 10%, rgba(96,165,250,.16), transparent 60%)," +
-            "radial-gradient(800px 400px at 10% 95%, rgba(52,211,153,.14), transparent 60%)",
-          WebkitMaskImage: "radial-gradient(140% 100% at 50% 0%, #000 40%, transparent 85%)",
-          maskImage: "radial-gradient(140% 100% at 50% 0%, #000 40%, transparent 85%)",
-        }}
-      />
-
       <div className="container space-y-10">
         <header className="space-y-5 text-center max-w-3xl mx-auto">
-          <h1 id="contact-title">Let’s plan how we’ll get you more booked calls</h1>
+          <h1 id="contact-title">Plan the rollout for more booked calls</h1>
           <p className="text-white/70">
-            In 20 minutes we’ll learn about your offer, walk through the funnel, and size the rollout. You leave with a friendly
-            action plan — whether we work together or not.
+            In a focused 20-minute session we review your offer, identify funnel gaps, and map the launch timeline. You leave with
+            a clear next step, whether we partner or not.
           </p>
-          <div className="mx-auto max-w-sm">
-            <MiniChart values={[9, 13, 17, 22, 29, 34, 39, 45]} color="violet" ariaLabel="Projected booked calls after launch" />
-            <p className="mt-2 text-xs text-white/55">Typical ramp once the site, ads, and voice follow-up are live.</p>
+          <div className="mx-auto max-w-xl text-sm text-white/65">
+            <ul className="grid gap-1 text-left md:grid-cols-2">
+              <li>• Live review of your current journey</li>
+              <li>• Prioritised actions for site, media, and follow-up</li>
+              <li>• Implementation timeline and owners</li>
+              <li>• Budget guardrails before we start</li>
+            </ul>
           </div>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <a href={CAL_URL} target="_blank" rel="noopener noreferrer" className="btn inline-flex items-center gap-2">
@@ -62,7 +52,6 @@ export default function Page() {
                   <li>The quickest way to launch a conversion-first page</li>
                   <li>How traffic, follow-up, and reporting stay connected</li>
                 </ul>
-                <MiniChart values={[15, 18, 22, 27, 31, 36, 38, 42]} color="emerald" ariaLabel="Meeting agenda progress" />
               </div>
             </div>
 
@@ -130,8 +119,10 @@ export default function Page() {
                 <span>Lead response time</span>
                 <span className="badge">Under 30s</span>
               </div>
-              <MiniChart values={[95, 78, 62, 48, 34, 22, 18, 15]} color="sky" ariaLabel="Lead response time dropping" />
-              <p className="text-xs text-white/55">Voice automation picks up instantly so your team focuses on the closes.</p>
+              <p className="text-xs text-white/55">
+                Voice automation answers every inbound request within 30 seconds so your team stays focused on conversations that
+                convert.
+              </p>
             </div>
           </div>
         </section>

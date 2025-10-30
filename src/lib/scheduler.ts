@@ -18,10 +18,10 @@ export function toEmbedUrl(base: string, options?: { theme?: 'dark' | 'light'; l
   const { theme = 'dark', layout = 'month_view' } = options || {};
   try {
     const url = new URL(base);
-    if (url.hostname.endsWith('cal.com') && !url.pathname.startsWith('/embed')) {
-      url.pathname = `/embed${url.pathname}`.replace(/\/\/+/g, '/');
+    if (url.hostname.endsWith('cal.com')) {
+      url.pathname = url.pathname.replace(/^\/embed\//, '/');
+      url.searchParams.set('embed', 'true');
     }
-    url.searchParams.set('embed', 'true');
     if (theme) url.searchParams.set('theme', theme);
     if (layout) url.searchParams.set('layout', layout);
     return url.toString();
