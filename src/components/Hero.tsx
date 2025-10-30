@@ -15,7 +15,6 @@ import {
   Sparkles,
   ArrowUp,
 } from 'lucide-react';
-import MiniChart from './MiniChart';
 
 export default function Hero() {
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -140,12 +139,13 @@ export default function Hero() {
                       <span>Booked consultations</span>
                       <span className="badge">+42% avg</span>
                     </div>
-                    <MiniChart
-                      values={[9, 11, 13, 17, 21, 26, 33, 38]}
-                      color="violet"
-                      ariaLabel="Booked consultations trending upward 42 percent on average"
-                    />
-                    <p className="text-xs text-white/60">One connected funnel keeps prospects moving without manual follow-up.</p>
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      When the site, ads, and voice agent run together, calendars fill fast. See how it maps to your funnel in a
+                      quick strategy call.
+                    </p>
+                    <Link href="/contact" className="btn h-10 px-4 text-sm">
+                      Book a call
+                    </Link>
                   </div>
                 </div>
 

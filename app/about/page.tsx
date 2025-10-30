@@ -16,24 +16,18 @@ const pillars = [
     title: "Funnel Foundation",
     body: "We build the homepage like a trusted friend explaining what you do and why it matters.",
     stat: "+37% booked calls",
-    trend: [6, 7, 9, 12, 18, 22, 26, 31],
-    color: "violet" as const,
   },
   {
     icon: Search,
     title: "Traffic Engine",
     body: "Ads mirror the page promise so every click lands on something familiar and fast.",
     stat: "-24% cost per lead",
-    trend: [78, 75, 71, 67, 63, 59, 55, 52],
-    color: "sky" as const,
   },
   {
     icon: PhoneCall,
     title: "Lead Response",
     body: "An AI receptionist that answers right away, books meetings, and hands off hot leads with context.",
     stat: "93% answer rate",
-    trend: [68, 72, 78, 84, 88, 92, 94, 96],
-    color: "emerald" as const,
   },
 ];
 
@@ -94,9 +88,8 @@ export default function Page() {
             Design, media, and AI follow-up under one roof. We keep it conversational, share what’s working each week, and keep
             your calendar full without you chasing leads.
           </p>
-          <div className="mx-auto max-w-sm">
-            <MiniChart values={[12, 16, 22, 29, 34, 39, 44, 52]} color="violet" ariaLabel="Booked calls increasing month over month" />
-            <p className="mt-2 text-xs text-white/55">Typical ramp-up for clients once the full system is live.</p>
+          <div className="mx-auto max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/70">
+            Most teams add 8-12 qualified conversations within the first 60 days once the full system is live.
           </div>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <Link href="/contact" className="btn">Book a friendly strategy chat</Link>
@@ -111,7 +104,7 @@ export default function Page() {
             Three pieces, one pipeline. We handle the hand-off from click to booked call so you can stay focused on closing.
           </p>
           <div className="grid md:grid-cols-3 gap-4">
-            {pillars.map(({ icon: Icon, title, body, stat, trend, color }) => (
+            {pillars.map(({ icon: Icon, title, body, stat }) => (
               <div key={title} className="radiant-card">
                 <div className="card h-full p-5 space-y-3">
                   <div className="flex items-start justify-between">
@@ -122,7 +115,9 @@ export default function Page() {
                   </div>
                   <h3 className="font-semibold text-white/95">{title}</h3>
                   <p className="text-sm text-white/70">{body}</p>
-                  <MiniChart values={trend} color={color} ariaLabel={`${title} performance`} />
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/60">
+                    Clients typically report {stat} within the first 60 days.
+                  </div>
                 </div>
               </div>
             ))}
@@ -185,19 +180,28 @@ export default function Page() {
                 <span className="pill"><PhoneCall className="size-4" aria-hidden /> Call summaries in your inbox</span>
               </div>
             </div>
-            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
               <div className="flex items-center justify-between text-white/60">
                 <span>Weekly booked calls</span>
                 <span className="badge">Live dashboard</span>
               </div>
-              <MiniChart values={[14, 19, 23, 28, 31, 36, 38, 42]} color="violet" ariaLabel="Weekly booked calls trending up" />
+              <p className="text-xs text-white/60 leading-relaxed">
+                Friday updates highlight wins, trims, and next experiments. Want a sample? We’ll walk through one on a quick call.
+              </p>
+              <Link href="/contact" className="btn h-10 w-full text-sm">
+                Get a sample update
+              </Link>
               <p className="text-xs text-white/55">You get a concise loom and written recap every Friday.</p>
             </div>
           </div>
         </section>
 
-        <section className="text-center space-y-3">
+        <section className="text-center space-y-4">
           <p className="text-white/70">Want us to sketch your funnel on a quick call?</p>
+          <div className="mx-auto max-w-xs">
+            <MiniChart values={[12, 16, 22, 29, 34, 39, 44, 52]} color="violet" ariaLabel="Booked calls increasing month over month" />
+            <p className="mt-2 text-xs text-white/55">What the first eight weeks typically look like once everything is connected.</p>
+          </div>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <Link href="/contact" className="btn">
               <PhoneCall className="size-4" aria-hidden />
