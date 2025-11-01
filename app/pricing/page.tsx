@@ -39,7 +39,7 @@ const tiers: Tier[] = [
     name: "Launch + Traffic",
     headline: "Site + ads",
     price: "$1,500 setup",
-    caption: "Management 10% of ad spend",
+    caption: "Management 10% of ad spend (no retainer)",
     bullets: [
       "Search + social campaigns",
       "Message match from ad to page",

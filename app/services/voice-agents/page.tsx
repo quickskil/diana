@@ -261,7 +261,7 @@ export default function Page() {
         {/* PRICING TEASER */}
         <section aria-label="Pricing" className="grid md:grid-cols-3 gap-4">
           <Price tier="Starter" price="from $99/mo" blurb="Essential answering + scheduling for a single line." />
-          <Price tier="Growth" price="from $299/mo" blurb="Warm-transfers, CRM logging, and basic reporting." />
+          <Price tier="Growth" price="from $219/mo" blurb="Warm-transfers, CRM logging, and call reporting." />
           <Price tier="Scale" price="Custom" blurb="Multi-line, advanced compliance, call-labeling & QA." />
           <p className="text-xs text-white/50 md:col-span-3">
             Transparent per-minute usage applies. We’ll tailor a plan around your call volume and hours.
