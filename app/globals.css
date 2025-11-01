@@ -81,7 +81,7 @@ body {
 }
 
 .section {
-  @apply py-10 md:py-20;
+  @apply py-6 md:py-12;
 }
 
 h1 {

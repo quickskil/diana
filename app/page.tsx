@@ -166,7 +166,7 @@ const faqs = [
 
 export default function Page() {
   return (
-    <main className="space-y-24 pb-32">
+    <main className="space-y-12 pb-16 md:space-y-16 md:pb-24">
       <HeroSection />
       <StatsSection />
       <JourneySection />
