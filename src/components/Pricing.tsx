@@ -3,9 +3,39 @@ import { motion } from 'motion/react';
 import { CalendarCheck } from 'lucide-react';
 
 const tiers = [
-  { name: 'Starter', price: '$1,500', bullets: ['1 landing page', 'Meta or Google Ads setup', 'Basic analytics'], cta: '#book' },
-  { name: 'Growth', price: '$3,500', bullets: ['Website (up to 5 pages)', 'Meta + Google Ads', 'Funnels + testing', 'AI receptionist (1 line)'], cta: '#book' },
-  { name: 'Scale', price: 'Custom', bullets: ['Custom site', 'Full-funnel paid media', 'AI voice agents (multi-line)', 'CRO program'], cta: '#book' }
+  {
+    name: 'Launch',
+    price: '$499 setup',
+    sub: 'Hosting & care $25/mo',
+    bullets: [
+      'Conversion-ready one-page site with booking',
+      'Copy, proof, and offer aligned to convert',
+      'Speed, analytics, and handoff handled for you',
+    ],
+    cta: '#book',
+  },
+  {
+    name: 'Launch + Traffic',
+    price: '$1,500 setup',
+    sub: 'Ongoing: 10% of ad spend (no retainer)',
+    bullets: [
+      'Google & Meta campaigns matched to the page',
+      'Weekly trims, insights, and budget protection',
+      'Transparent fees — every dollar accounted for',
+    ],
+    cta: '#book',
+  },
+  {
+    name: 'Full Funnel Automation',
+    price: '$2,900 setup',
+    sub: 'AI receptionist from $99/mo',
+    bullets: [
+      'Everything in Launch + Traffic',
+      '24/7 AI voice agent with warm transfers',
+      'Lead follow-up, summaries, and CRM sync',
+    ],
+    cta: '#book',
+  },
 ];
 
 export default function Pricing() {
@@ -26,6 +56,7 @@ export default function Pricing() {
               <div className="card p-6 flex flex-col gap-4">
                 <div className="text-white/60">{t.name}</div>
                 <div className="text-4xl font-extrabold">{t.price}</div>
+                {t.sub && <div className="text-xs text-white/55">{t.sub}</div>}
                 <ul className="text-white/70 space-y-2 list-disc list-inside">
                   {t.bullets.map(b=><li key={b}>{b}</li>)}
                 </ul>
