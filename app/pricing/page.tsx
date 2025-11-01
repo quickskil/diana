@@ -161,7 +161,7 @@ export default function Page() {
               We scope to your sales cycle, creative needs, and call volume. You’ll leave with a clear roadmap and the exact
               investment to make it happen.
             </p>
-            <MiniChart values={[12, 18, 27, 35, 44, 52, 59, 67]} color="sky" ariaLabel="Custom plan ramp" />
+            
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <Link href="/contact" className="btn inline-flex items-center gap-2">
                 <PhoneCall className="size-4" aria-hidden />

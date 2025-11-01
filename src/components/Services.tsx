@@ -114,7 +114,7 @@ export default function Services() {
             <BadgeDollarSign className="size-4" aria-hidden />
             Compare Plans
           </Link>
-          <a href="#voice-demo" className="btn-ghost inline-flex items-center gap-2">
+          <a href="/voice-demo" className="btn-ghost inline-flex items-center gap-2">
             <Headphones className="size-4" aria-hidden />
             Try Voice Demo
           </a>
@@ -276,7 +276,7 @@ function ServiceCard({
               ))}
             </ul>
             <div className="mt-3">
-              <a href="#voice-demo" className="btn-ghost inline-flex items-center gap-2">
+              <a href="voice-demo" className="btn-ghost inline-flex items-center gap-2">
                 <Sparkles className="size-4" aria-hidden />
                 See it in action
               </a>

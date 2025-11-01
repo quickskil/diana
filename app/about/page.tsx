@@ -199,7 +199,7 @@ export default function Page() {
         <section className="text-center space-y-4">
           <p className="text-white/70">Want us to sketch your funnel on a quick call?</p>
           <div className="mx-auto max-w-xs">
-            <MiniChart values={[12, 16, 22, 29, 34, 39, 44, 52]} color="violet" ariaLabel="Booked calls increasing month over month" />
+           
             <p className="mt-2 text-xs text-white/55">What the first eight weeks typically look like once everything is connected.</p>
           </div>
           <div className="flex items-center justify-center gap-2 flex-wrap">

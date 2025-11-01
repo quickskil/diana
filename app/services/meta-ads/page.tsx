@@ -263,18 +263,7 @@ export default function Page() {
         </section>
       </div>
 
-      {/* Sticky footer CTA */}
-      <div className="sticky bottom-0 z-40 mt-10 bg-black/60 backdrop-blur-sm border-t border-white/10">
-        <div className="container py-3 flex flex-col gap-2 items-center justify-between md:flex-row">
-          <div className="text-sm text-white/75">
-            <b>Ready when you are.</b> Friendly chat. Clear plan. No long-term contracts.
-          </div>
-          <div className="flex gap-2">
-            <Link href="/contact" className="btn h-10 px-5">Book a Call</Link>
-            <Link href="/case-studies" className="btn-ghost h-10 px-5">See results</Link>
-          </div>
-        </div>
-      </div>
+
     </main>
   );
 }

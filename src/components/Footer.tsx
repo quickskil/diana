@@ -143,7 +143,7 @@ export default function Footer() {
             </li>
             <li>
               <a
-                href="#voice-demo"
+                href="/voice-demo"
                 className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               >
                 <span className="inline-flex items-center gap-2">

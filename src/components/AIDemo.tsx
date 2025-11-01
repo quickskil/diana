@@ -387,7 +387,7 @@ Always keep replies under 2 sentences unless asked for more detail.`;
                 <CalendarCheck className="size-4" aria-hidden />
                 Book a Strategy Call
               </a>
-              <a href="#voice-demo" className="btn-ghost inline-flex items-center gap-2">
+              <a href="/voice-demo" className="btn-ghost inline-flex items-center gap-2">
                 <PhoneForwarded className="size-4" aria-hidden />
                 See Warm Transfer Flow
               </a>

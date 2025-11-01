@@ -126,7 +126,7 @@ export default function Process() {
             </Link>
 
             <a
-              href="#voice-demo"
+              href="/voice-demo"
               className="btn-ghost inline-flex items-center gap-2 h-12 px-5 rounded-xl will-change-transform"
               aria-label="Try the live AI voice demo"
               style={{ minWidth: 200 }}
