@@ -2,7 +2,19 @@
 import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarCheck, PhoneCall, Rocket, Search, Sparkles } from "lucide-react";
+import {
+  ArrowUpRight,
+  BadgeCheck,
+  CalendarCheck,
+  Compass,
+  Lightbulb,
+  PhoneCall,
+  Rocket,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About",
@@ -10,58 +22,96 @@ export const metadata: Metadata = {
     "We build automated funnels — conversion-first sites, matching ads, and AI voice follow-up — so you can stay focused on closing deals.",
 };
 
-const pillars = [
+const system = [
   {
     icon: Rocket,
-    title: "Funnel Foundation",
-    body: "We build the homepage like a trusted friend explaining what you do and why it matters.",
-    stat: "+37% booked calls",
+    label: "Funnel launch",
+    title: "Narrative that wins trust",
+    copy: "Story-first homepage, credibility modules, and fast-loading lead flows built from customer interviews.",
+    stat: "+41% demo volume",
   },
   {
     icon: Search,
-    title: "Traffic Engine",
-    body: "Ads mirror the page promise so every click lands on something familiar and fast.",
-    stat: "-24% cost per lead",
+    label: "Traffic alignment",
+    title: "Ads that echo the promise",
+    copy: "Search, social, and retargeting creative that mirrors the on-page copy so every click feels familiar.",
+    stat: "-27% CPL",
   },
   {
     icon: PhoneCall,
-    title: "Lead Response",
-    body: "An AI receptionist that answers right away, books meetings, and hands off hot leads with context.",
+    label: "AI follow-up",
+    title: "Instant response, human handoff",
+    copy: "Voice agent answers in seconds, qualifies intent, and books meetings with full transcripts and CRM sync.",
     stat: "93% answer rate",
   },
 ];
 
-const reasons = [
+const flywheel = [
   {
-    title: "Plain-language positioning",
-    copy: "We explain your offer like a friend would, so prospects nod along within seconds.",
+    title: "Diagnose the reality",
+    body: "Deep-dive on offer, objections, and call recordings to write the positioning people repeat back.",
   },
   {
-    title: "Tight ad → page match",
-    copy: "Ads and landing pages speak the same language, lowering costs and boosting trust.",
+    title: "Design conversion paths",
+    body: "Ship one flagship funnel, retarget assets, and lead magnets that support the core storyline.",
   },
   {
-    title: "Always-on follow-up",
-    copy: "Our AI receptionist answers instantly, books meetings, and shares notes so nothing slips through.",
+    title: "Direct the demand",
+    body: "Stand up multi-channel campaigns with audience sequencing, creative testing, and offer rotation.",
+  },
+  {
+    title: "Delight every lead",
+    body: "AI receptionist answers 24/7, routes urgent prospects to humans, and shares call recaps automatically.",
+  },
+  {
+    title: "Double-down with data",
+    body: "Weekly reviews cover pipeline metrics, experiment backlog, and qualitative feedback from recorded calls.",
   },
 ];
 
-const steps = [
+const principles = [
   {
-    label: "Week 1",
-    title: "Launch the conversion page",
-    desc: "Copy, design, and proof wrapped into a single action-focused experience.",
+    icon: ShieldCheck,
+    title: "Clarity beats cleverness",
+    copy: "We translate complex products into language a distracted buyer can understand in 15 seconds.",
   },
   {
-    label: "Week 2",
-    title: "Light up the demand",
-    desc: "Search + social that mirror the page and send people to the same friendly CTA.",
+    icon: Compass,
+    title: "Marketing meets ops",
+    copy: "Every campaign is wired to your CRM, scheduling, and reporting so revenue teams have one source of truth.",
   },
   {
-    label: "Always on",
-    title: "Let the voice agent respond",
-    desc: "Every inquiry is greeted, qualified, and either booked or transferred in real time.",
+    icon: Lightbulb,
+    title: "Experiment every week",
+    copy: "We run micro-tests, share the numbers, and either scale the win or archive it with notes.",
   },
+  {
+    icon: Users,
+    title: "Human + AI partnership",
+    copy: "Voice agents never replace your closers; they tee up rich context and hand off when a human touch matters.",
+  },
+];
+
+const snapshots = [
+  {
+    title: "Buyer journey heatmap",
+    description: "Scroll depth, click trails, and question tracking turn anonymous traffic into clear prioritization cues.",
+  },
+  {
+    title: "Channel match reports",
+    description: "Ad promise, landing copy, and AI scripts updated together so no prospect hears mixed messaging.",
+  },
+  {
+    title: "Revenue room cadence",
+    description: "30-minute weekly sync with a clear agenda: wins, trims, next tests, and requested enablement assets.",
+  },
+];
+
+const stats = [
+  { label: "Average ramp", value: "21 days" },
+  { label: "Live funnels shipped", value: "58" },
+  { label: "Pipeline influenced", value: "$42M" },
+  { label: "Team response time", value: "<4 hrs" },
 ];
 
 export default function Page() {
@@ -80,139 +130,192 @@ export default function Page() {
         }}
       />
 
-      <div className="container space-y-12">
-        <header className="space-y-5 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 badge">Automated funnel, friendly team</div>
-          <h1 id="about-title">We build the whole funnel so you can just close</h1>
-          <p className="lead text-white/75">
-            Design, media, and AI follow-up under one roof. We keep it conversational, share what’s working each week, and keep
-            your calendar full without you chasing leads.
-          </p>
-          <div className="mx-auto max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/70">
-            Most teams add 8-12 qualified conversations within the first 60 days once the full system is live.
+      <div className="container space-y-16">
+        <header className="grid gap-10 rounded-[32px] border border-white/10 bg-white/[0.04] p-8 shadow-2xl shadow-violet-500/10 md:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 badge">Revenue-ready in weeks</div>
+            <h1 id="about-title" className="text-balance text-4xl font-semibold tracking-tight md:text-5xl">
+              We design the growth engine, automate the follow-up, and keep your calendar full
+            </h1>
+            <p className="lead text-white/75">
+              Business Booster pairs senior strategists, conversion design, media buying, and an AI voice desk so founders and
+              sales teams can focus on closing — not duct taping tools together.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {stats.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-white/45">{item.label}</p>
+                  <p className="mt-2 text-2xl font-semibold text-white/95">{item.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/contact" className="btn">
+                <Sparkles className="size-4" aria-hidden />
+                Book a discovery call
+              </Link>
+              <Link href="/pricing" className="btn-ghost">
+                <ArrowUpRight className="size-4" aria-hidden />
+                Explore engagement models
+              </Link>
+            </div>
+            <p className="text-xs text-white/55">No retainers until launch. Cancel anytime after the first quarter if we are not delivering pipeline.</p>
           </div>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <Link href="/contact" className="btn">Book a friendly strategy chat</Link>
-            <Link href="/pricing" className="btn-ghost">See pricing</Link>
+
+          <div className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-slate-950/60 p-6">
+            <div className="flex items-center justify-between text-sm text-white/60">
+              <span>Weekly pipeline forecast</span>
+              <span className="badge">Live dashboard</span>
+            </div>
+            <MiniChart values={[8, 12, 16, 21, 24, 29, 33, 39]} color="violet" ariaLabel="Pipeline forecast trend increasing steadily" />
+            <div className="space-y-3 text-sm text-white/70">
+              <p>
+                Every Friday you get a quick Loom walkthrough, the numbers behind it, and a list of experiments queued for the
+                next sprint.
+              </p>
+              <ul className="space-y-2 text-xs text-white/55">
+                <li className="flex items-center gap-2">
+                  <BadgeCheck className="size-3.5" aria-hidden /> Lead source attribution across ads, page, and calls
+                </li>
+                <li className="flex items-center gap-2">
+                  <BadgeCheck className="size-3.5" aria-hidden /> Voice agent transcripts with highlights and objections
+                </li>
+                <li className="flex items-center gap-2">
+                  <BadgeCheck className="size-3.5" aria-hidden /> Forecast adjustments with clear owner + next step
+                </li>
+              </ul>
+            </div>
           </div>
-          <p className="text-xs text-white/55">Start lean. Scale when the numbers work. No long-term contracts.</p>
         </header>
 
-        <section aria-labelledby="pillar-title" className="space-y-4">
-          <h2 id="pillar-title" className="text-center">What we deliver together</h2>
-          <p className="text-center text-white/70 max-w-2xl mx-auto">
-            Three pieces, one pipeline. We handle the hand-off from click to booked call so you can stay focused on closing.
-          </p>
-          <div className="grid md:grid-cols-3 gap-4">
-            {pillars.map(({ icon: Icon, title, body, stat }) => (
-              <div key={title} className="radiant-card">
-                <div className="card h-full p-5 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <span className="inline-flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                      <Icon className="size-5 opacity-90" aria-hidden />
+        <section aria-labelledby="system-title" className="space-y-6">
+          <div className="space-y-3 text-center">
+            <h2 id="system-title" className="text-3xl font-semibold text-white/95">One team, three pillars working in sync</h2>
+            <p className="mx-auto max-w-2xl text-sm text-white/70">
+              Most agencies ship assets and disappear. We stay embedded with your revenue org, continuously refining the funnel,
+              ads, and AI scripts based on what real buyers are saying.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {system.map(({ icon: Icon, label, title, copy, stat }) => (
+              <article key={title} className="radiant-card">
+                <div className="card h-full space-y-4 p-6">
+                  <div className="flex items-center justify-between text-xs text-white/60">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                      <Icon className="size-3.5" aria-hidden />
+                      {label}
                     </span>
                     <span className="badge">{stat}</span>
                   </div>
-                  <h3 className="font-semibold text-white/95">{title}</h3>
-                  <p className="text-sm text-white/70">{body}</p>
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/60">
-                    Clients typically report {stat} within the first 60 days.
+                  <h3 className="text-lg font-semibold text-white/95">{title}</h3>
+                  <p className="text-sm text-white/70">{copy}</p>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
+                    Includes analytics wiring, copy playbooks, design systems, and technical implementation.
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </section>
 
-        <section aria-labelledby="reason-title" className="space-y-4">
-          <h2 id="reason-title" className="text-center">Why the system works</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {reasons.map((item) => (
-              <div key={item.title} className="radiant-card">
-                <div className="card h-full p-5 space-y-3">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
-                    <Sparkles className="size-3.5" aria-hidden />
-                    Real-world playbook
+        <section aria-labelledby="flywheel-title" className="radiant-card">
+          <div className="card p-8">
+            <div className="space-y-3 text-center">
+              <h2 id="flywheel-title" className="text-3xl font-semibold text-white/95">Our revenue flywheel</h2>
+              <p className="mx-auto max-w-3xl text-sm text-white/70">
+                We plug into your stack in under a month, ship a conversion system, and then keep iterating alongside your sales
+                crew. Here’s what the lifecycle looks like once we are in motion.
+              </p>
+            </div>
+            <ol className="mt-8 grid gap-6 md:grid-cols-5">
+              {flywheel.map((item, index) => (
+                <li key={item.title} className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/[0.02] p-5 text-left">
+                  <div className="text-xs uppercase tracking-[0.28em] text-white/45">Phase {index + 1}</div>
+                  <h3 className="text-base font-semibold text-white/95">{item.title}</h3>
+                  <p className="text-sm text-white/70">{item.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section aria-labelledby="principles-title" className="space-y-6">
+          <div className="space-y-3 text-center">
+            <h2 id="principles-title" className="text-3xl font-semibold text-white/95">How we show up every week</h2>
+            <p className="mx-auto max-w-2xl text-sm text-white/70">
+              Working with us feels like adding an operator that cares about the entire journey — from first impression to signed
+              agreement.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {principles.map(({ icon: Icon, title, copy }) => (
+              <article key={title} className="radiant-card">
+                <div className="card h-full space-y-3 p-6">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">
+                    <Icon className="size-4" aria-hidden />
+                    Operating principle
                   </div>
-                  <h3 className="font-semibold text-white/95">{item.title}</h3>
-                  <p className="text-sm text-white/70">{item.copy}</p>
+                  <h3 className="text-lg font-semibold text-white/95">{title}</h3>
+                  <p className="text-sm text-white/70">{copy}</p>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </section>
 
-        <section aria-labelledby="step-title" className="space-y-4">
-          <h2 id="step-title" className="text-center">How we plug in</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {steps.map((step, idx) => (
-              <div key={step.title} className="radiant-card">
-                <div className="card h-full p-5 space-y-3">
-                  <div className="flex items-center justify-between text-sm text-white/60">
-                    <span>{step.label}</span>
-                    <span className="badge">Done for you</span>
-                  </div>
-                  <h3 className="font-semibold text-white/95">{step.title}</h3>
-                  <p className="text-sm text-white/70">{step.desc}</p>
-                  <div className="space-y-1">
-                    <div className="progress-track" aria-hidden>
-                      <div className="progress-bar" style={{ width: `${((idx + 1) / steps.length) * 100}%` }} />
-                    </div>
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Step {idx + 1}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="radiant-card">
-          <div className="card grid gap-6 p-6 md:grid-cols-[minmax(0,1fr)_minmax(220px,260px)] md:items-center">
-            <div className="space-y-3 text-center md:text-left">
-              <h2 className="text-2xl font-bold text-white/95">We stay close to the numbers</h2>
+        <section aria-labelledby="snapshots-title" className="radiant-card">
+          <div className="card grid gap-8 p-8 md:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] md:items-center">
+            <div className="space-y-4">
+              <h2 id="snapshots-title" className="text-3xl font-semibold text-white/95">What partnership feels like</h2>
               <p className="text-sm text-white/70">
-                Weekly check-ins keep the funnel sharp. We show what booked, what we trimmed, and the next experiment — all in
-                plain language.
+                We operate as an extension of your go-to-market team. That means proactive reporting, accessible experts, and
+                rapid experimentation that compounds.
               </p>
-              <div className="flex items-center justify-center gap-2 flex-wrap text-sm text-white/80 md:justify-start">
-                <span className="pill"><Sparkles className="size-4" aria-hidden /> Conversion-first updates</span>
-                <span className="pill"><Search className="size-4" aria-hidden /> Spend focused on wins</span>
-                <span className="pill"><PhoneCall className="size-4" aria-hidden /> Call summaries in your inbox</span>
+              <div className="space-y-3">
+                {snapshots.map((snapshot) => (
+                  <div key={snapshot.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <h3 className="text-base font-semibold text-white/90">{snapshot.title}</h3>
+                    <p className="text-sm text-white/65">{snapshot.description}</p>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
-              <div className="flex items-center justify-between text-white/60">
-                <span>Weekly booked calls</span>
-                <span className="badge">Live dashboard</span>
-              </div>
-              <p className="text-xs text-white/60 leading-relaxed">
-                Friday updates highlight wins, trims, and next experiments. Want a sample? We’ll walk through one on a quick call.
-              </p>
-              <Link href="/contact" className="btn h-10 w-full text-sm">
-                Get a sample update
+            <div className="space-y-4 rounded-[28px] border border-white/10 bg-slate-950/60 p-6 text-sm text-white/70">
+              <h3 className="text-lg font-semibold text-white/95">Inside a weekly sync</h3>
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-start gap-3">
+                  <Sparkles className="mt-1 size-4" aria-hidden />
+                  <span>Quick wins board with new demos, ad angles, and copy tests that outperformed the control.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <PhoneCall className="mt-1 size-4" aria-hidden />
+                  <span>Call snippets highlighting objections, competitor mentions, and next-step commitments.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CalendarCheck className="mt-1 size-4" aria-hidden />
+                  <span>Shared roadmap showing what ships next and who on your team is in the loop.</span>
+                </li>
+              </ul>
+              <Link href="/case-studies" className="btn-ghost w-full justify-center">
+                See recent wins
               </Link>
-              <p className="text-xs text-white/55">You get a concise loom and written recap every Friday.</p>
             </div>
           </div>
         </section>
 
-        <section className="text-center space-y-4">
-          <p className="text-white/70">Want us to sketch your funnel on a quick call?</p>
-          <div className="mx-auto max-w-xs">
-           
-            <p className="mt-2 text-xs text-white/55">What the first eight weeks typically look like once everything is connected.</p>
-          </div>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
+        <section className="space-y-4 text-center">
+          <p className="text-sm text-white/70">Ready for a funnel that feels bespoke to your buyers and effortless for your team?</p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Link href="/contact" className="btn">
               <PhoneCall className="size-4" aria-hidden />
-              Book a call
+              Book a strategy session
             </Link>
             <Link href="/pricing" className="btn-ghost">
               <CalendarCheck className="size-4" aria-hidden />
-              Explore pricing
+              Compare plans
             </Link>
           </div>
-          <p className="text-xs text-white/55">Zero pressure. Leave with a roadmap either way.</p>
+          <p className="text-xs text-white/55">Zero-pressure call. Walk away with a funnel outline and launch checklist even if we are not a fit.</p>
         </section>
       </div>
     </main>
