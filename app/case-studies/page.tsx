@@ -167,7 +167,7 @@ export default function Page() {
                 <Link href="/contact" className="btn">
                   Schedule your call
                 </Link>
-                <Link href="tel:+15555551234" className="btn-ghost">
+                <Link href="tel:+12136810660" className="btn-ghost">
                   Call (555) 555-1234
                 </Link>
               </div>

@@ -31,7 +31,7 @@ function ValueChip({
 
 export default function VoiceDemoPage() {
   const BRAND = "Business Booster AI";
-  const DEMO_NUMBER = "+1 (213) 681-0660";
+  const DEMO_NUMBER = "+1 (213) 681 0660";
   const telHref = `tel:${cleanTel(DEMO_NUMBER)}`;
 
   return (
