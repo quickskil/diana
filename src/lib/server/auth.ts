@@ -175,7 +175,7 @@ async function deleteSession(token: string) {
 }
 
 export async function clearSessionCookie() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (token) {
     await deleteSession(token);
@@ -188,7 +188,7 @@ export async function createSession(userId: string): Promise<string> {
   const token = randomUUID();
   await sql`DELETE FROM sessions WHERE user_id = ${userId};`;
   await sql`INSERT INTO sessions (token, user_id) VALUES (${token}, ${userId});`;
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -201,7 +201,7 @@ export async function createSession(userId: string): Promise<string> {
 
 export async function getSessionUser(): Promise<SafeUser | null> {
   await ensureDatabase();
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) {
     return null;
