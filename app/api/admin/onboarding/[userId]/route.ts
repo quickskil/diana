@@ -4,10 +4,10 @@ import type { OnboardingStatus } from '@/lib/types/user';
 
 const allowedStatuses: OnboardingStatus[] = ['not-started', 'submitted', 'in-progress', 'launch-ready'];
 
-export async function PATCH(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function PATCH(request: NextRequest, context: { params: { userId: string } }) {
   try {
     await requireAdminUser();
-    const { userId } = params;
+    const { userId } = context.params;
     if (!userId) {
       return NextResponse.json({ ok: false, message: 'User ID missing.' }, { status: 400 });
     }
