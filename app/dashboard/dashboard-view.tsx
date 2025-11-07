@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CreditCard, FolderKanban, Plus, Settings2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { PLAN_CATALOG, PLAN_LIST } from '@/lib/plans';
 import { defaultOnboarding, type OnboardingForm, type OnboardingStatus, type SafeUser } from '@/lib/types/user';
@@ -49,6 +50,10 @@ export default function DashboardView() {
   const { hydrated, currentUser, saveOnboarding, updateAccount } = useAuth();
   const [allowedUser, setAllowedUser] = useState<SafeUser | null>(null);
   const [form, setForm] = useState<OnboardingForm>({ ...defaultOnboarding });
+  const [activeSection, setActiveSection] = useState<'projects' | 'payments' | 'settings'>('projects');
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [projectLabel, setProjectLabel] = useState('New onboarding');
+  const [creatingProject, setCreatingProject] = useState(false);
   const [saving, setSaving] = useState(false);
   const [stepSaving, setStepSaving] = useState(false);
   const [onboardingFeedback, setOnboardingFeedback] = useState<string | null>(null);
@@ -91,11 +96,16 @@ export default function DashboardView() {
 
   useEffect(() => {
     if (!allowedUser) return;
-    const onboarding = allowedUser.onboarding?.data
-      ? { ...defaultOnboarding, ...allowedUser.onboarding.data }
-      : { ...defaultOnboarding };
-    setForm(onboarding);
-    setStepIndex(0);
+    const projects = Array.isArray(allowedUser.onboardingProjects)
+      ? [...allowedUser.onboardingProjects]
+      : [];
+    projects.sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : a.updatedAt < b.updatedAt ? 1 : 0));
+    setSelectedProjectId(prev => {
+      if (prev && projects.some(project => project.id === prev)) {
+        return prev;
+      }
+      return projects[0]?.id ?? null;
+    });
     setAccountForm({
       name: allowedUser.name ?? '',
       email: allowedUser.email ?? '',
@@ -107,10 +117,83 @@ export default function DashboardView() {
   }, [allowedUser]);
 
   useEffect(() => {
+    if (!allowedUser) return;
+    const projects = allowedUser.onboardingProjects ?? [];
+    const activeProject = selectedProjectId
+      ? projects.find(project => project.id === selectedProjectId) ?? null
+      : null;
+    if (activeProject) {
+      setForm({ ...defaultOnboarding, ...activeProject.data });
+      setProjectLabel(activeProject.label || 'Project');
+    } else {
+      setForm({ ...defaultOnboarding });
+      setProjectLabel(prev => {
+        if (prev && prev.trim()) {
+          return prev;
+        }
+        return allowedUser.company ? `${allowedUser.company} onboarding` : 'New onboarding';
+      });
+    }
+    setStepIndex(0);
+  }, [allowedUser, selectedProjectId]);
+
+  useEffect(() => {
     setDepositSummary(null);
     setDepositFeedback(null);
     depositPaidRef.current = false;
   }, [allowedUser?.id]);
+
+  const selectedProject = useMemo(() => {
+    if (!allowedUser?.onboardingProjects) {
+      return null;
+    }
+    if (!selectedProjectId) {
+      return null;
+    }
+    return allowedUser.onboardingProjects.find(project => project.id === selectedProjectId) ?? null;
+  }, [allowedUser?.onboardingProjects, selectedProjectId]);
+
+  const tabs = useMemo(
+    () => [
+      { id: 'projects' as const, label: 'Projects', icon: FolderKanban },
+      { id: 'payments' as const, label: 'Payments', icon: CreditCard },
+      { id: 'settings' as const, label: 'Settings', icon: Settings2 }
+    ],
+    []
+  );
+
+  const handleStartNewProject = useCallback(async () => {
+    if (!allowedUser || creatingProject) return;
+    setActiveSection('projects');
+    setCreatingProject(true);
+    setOnboardingFeedback(null);
+    const labelBase = allowedUser.company ? `${allowedUser.company} project` : 'Project';
+    const label = `${labelBase} ${(allowedUser.onboardingProjects?.length ?? 0) + 1}`;
+    setProjectLabel(label);
+    setSelectedProjectId(null);
+    setForm({ ...defaultOnboarding });
+    setStepIndex(0);
+    const result = await saveOnboarding({
+      form: { ...defaultOnboarding },
+      label,
+      createNew: true
+    });
+    if (!result.ok) {
+      setOnboardingFeedback(result.message ?? 'Unable to start a new project right now.');
+      setCreatingProject(false);
+      return;
+    }
+    const updatedUser = result.user ?? allowedUser;
+    if (updatedUser?.onboardingProjects?.length) {
+      const newest = [...updatedUser.onboardingProjects].sort((a, b) =>
+        a.createdAt > b.createdAt ? -1 : a.createdAt < b.createdAt ? 1 : 0
+      )[0];
+      if (newest?.id) {
+        setSelectedProjectId(newest.id);
+      }
+    }
+    setCreatingProject(false);
+  }, [allowedUser, creatingProject, saveOnboarding]);
 
   const refreshEvents = useCallback(async () => {
     if (!allowedUser?.email) return;
@@ -230,7 +313,6 @@ export default function DashboardView() {
       return `${(currency || 'USD').toUpperCase()} ${amount.toFixed(2)}`;
     }
   }, []);
-
   const steps = [
     {
       id: 'kickoff',
@@ -244,29 +326,31 @@ export default function DashboardView() {
               {PLAN_LIST.map(plan => {
                 const active = form.plan === plan.key;
                 return (
-                  <label
+                  <button
                     key={plan.key}
-                    className={`relative block cursor-pointer rounded-2xl border ${active ? 'border-sky-400 bg-sky-400/10 shadow-lg shadow-sky-500/15' : 'border-white/12 bg-black/40 hover:border-white/25'}`}
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, plan: plan.key }))}
+                    className={`group flex h-full flex-col justify-between rounded-2xl border px-4 py-4 text-left transition ${active ? 'border-sky-400/80 bg-sky-500/20 shadow-[0_0_25px_rgba(56,189,248,0.35)]' : 'border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10'}`}
+                    aria-pressed={active}
                   >
-                    <input
-                      type="radio"
-                      name="plan"
-                      className="sr-only"
-                      value={plan.key}
-                      checked={active}
-                      onChange={() => setForm(prev => ({ ...prev, plan: plan.key }))}
-                    />
-                    <div className="flex h-full flex-col gap-2 p-5 text-white">
-                      <div className="text-sm uppercase tracking-wide text-white/60">{plan.tagline}</div>
-                      <div className="text-xl font-semibold">{plan.name}</div>
-                      <div className="text-sm text-white/70">{plan.price}</div>
-                      <ul className="mt-3 space-y-1 text-sm text-white/70">
-                        {plan.bullets.map(bullet => (
-                          <li key={bullet}>• {bullet}</li>
-                        ))}
-                      </ul>
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
+                          <p className="text-sm text-white/70">{plan.tagline}</p>
+                        </div>
+                        {active && (
+                          <span className="rounded-full border border-emerald-400/70 bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-100">
+                            Selected
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-3 text-sm text-white/65">{plan.price}</p>
                     </div>
-                  </label>
+                    <span className="mt-4 inline-flex items-center text-xs font-semibold text-sky-200 group-hover:text-sky-100">
+                      Tap to choose
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -296,6 +380,7 @@ export default function DashboardView() {
               />
             </div>
           </div>
+
           <div>
             <label htmlFor="billingNotes" className="block text-sm font-medium text-white/80">Billing notes or PO requirements (optional)</label>
             <textarea
@@ -307,6 +392,7 @@ export default function DashboardView() {
               placeholder="Share PO numbers, billing addresses, or anything else we should include."
             />
           </div>
+
           <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4 text-sm text-emerald-100">
             <p className="text-emerald-200 font-semibold">How payment works</p>
             <ul className="mt-2 space-y-1 text-emerald-100/90">
@@ -315,89 +401,6 @@ export default function DashboardView() {
               <li>• The remaining balance is invoiced only after you approve the launch.</li>
             </ul>
           </div>
-
-          <section className="rounded-2xl border border-white/10 bg-black/30 p-5 text-white shadow-inner shadow-black/20">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white">Kickoff deposit</h3>
-                <p className="text-sm text-white/70">Secure your build slot with a $99 Stripe payment.</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void refreshDeposit()}
-                  disabled={depositLoading}
-                  className="rounded-xl border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {depositLoading ? 'Checking…' : 'Refresh status'}
-                </button>
-                {depositSample && (
-                  <span className="rounded-full border border-amber-300/60 bg-amber-500/10 px-3 py-1 text-[0.7rem] text-amber-200">
-                    Demo data — add STRIPE_SECRET_KEY for live payments
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {depositError && (
-              <p className="mt-3 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{depositError}</p>
-            )}
-
-            <div className="mt-4 space-y-3 text-sm text-white/75">
-              {depositSummary ? (
-                <>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        depositSummary.paid ? 'bg-emerald-500/15 text-emerald-200' : 'bg-amber-500/15 text-amber-200'
-                      }`}
-                    >
-                      {depositSummary.paid ? 'Paid' : 'Awaiting deposit'}
-                    </span>
-                    <span>{formatCurrency(depositSummary.amount, depositSummary.currency)}</span>
-                    {depositSummary.lastPaymentAt && (
-                      <span className="text-xs text-white/60">
-                        Updated {formatDate(depositSummary.lastPaymentAt)}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-white/70">
-                    {depositSummary.paid
-                      ? 'Awesome! We’re already lining up design and copy so you can approve the launch faster.'
-                      : 'Submit the deposit to trigger the build sprint. We’ll notify you as soon as the payment clears.'}
-                  </p>
-                  {depositSummary.receiptUrl && (
-                    <a
-                      href={depositSummary.receiptUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex text-xs font-semibold text-sky-300 underline-offset-4 hover:underline"
-                    >
-                      View Stripe receipt
-                    </a>
-                  )}
-                </>
-              ) : (
-                <p className="text-white/70">
-                  When you’re ready we’ll redirect you to Stripe to submit the $99 kickoff deposit. It’s fully credited toward your final balance.
-                </p>
-              )}
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                type="button"
-                onClick={() => void handleDepositCheckout()}
-                disabled={depositCheckoutLoading || depositSummary?.paid}
-                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {depositSummary?.paid ? 'Deposit received' : depositCheckoutLoading ? 'Redirecting…' : 'Pay $99 kickoff deposit'}
-              </button>
-              {depositFeedback && (
-                <p className={`text-xs ${depositSummary?.paid ? 'text-emerald-200' : 'text-white/70'}`}>{depositFeedback}</p>
-              )}
-            </div>
-          </section>
         </div>
       )
     },
@@ -501,21 +504,21 @@ export default function DashboardView() {
                 type="text"
                 value={form.voiceCoverage}
                 onChange={(e) => setForm(prev => ({ ...prev, voiceCoverage: e.target.value }))}
-                placeholder="Weekdays 8a-6p ET"
+                placeholder="24/7 with warm transfer weekdays 9-5"
                 className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
               />
             </div>
-          </div>
-          <div>
-            <label htmlFor="calLink" className="block text-sm font-medium text-white/80">Cal.com booking link</label>
-            <input
-              id="calLink"
-              type="url"
-              value={form.calLink}
-              onChange={(e) => setForm(prev => ({ ...prev, calLink: e.target.value }))}
-              placeholder="https://cal.com/your-team/demo"
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-            />
+            <div className="md:col-span-2">
+              <label htmlFor="calLink" className="block text-sm font-medium text-white/80">Primary booking link</label>
+              <input
+                id="calLink"
+                type="url"
+                value={form.calLink}
+                onChange={(e) => setForm(prev => ({ ...prev, calLink: e.target.value }))}
+                placeholder="https://cal.com/yourteam"
+                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              />
+            </div>
           </div>
         </div>
       )
@@ -671,18 +674,47 @@ export default function DashboardView() {
       )
     }
   ];
-
   const totalSteps = steps.length;
   const isLastStep = totalSteps > 0 ? stepIndex >= totalSteps - 1 : true;
-  const progressPct = totalSteps > 1 ? (stepIndex / (totalSteps - 1)) * 100 : 100;
+  const progressPct = totalSteps > 1 ? (stepIndex / (totalSteps - 1)) * 100 : totalSteps === 1 ? 100 : 0;
   const currentStep = steps[stepIndex] ?? steps[0];
-  const goToStep = (index: number) => {
-    if (totalSteps === 0) return;
-    const next = Math.max(0, Math.min(totalSteps - 1, index));
-    setStepIndex(next);
-  };
 
-  const onSubmit = async (event: FormEvent) => {
+  const goToStep = useCallback(
+    (index: number) => {
+      if (totalSteps === 0) return;
+      const next = Math.max(0, Math.min(totalSteps - 1, index));
+      setStepIndex(next);
+    },
+    [totalSteps]
+  );
+
+  const persistOnboarding = useCallback(async () => {
+    if (!allowedUser) {
+      return { ok: false, message: 'You need to be logged in to save.' } as const;
+    }
+    const result = await saveOnboarding({
+      form,
+      projectId: selectedProject?.id ?? undefined,
+      label: projectLabel
+    });
+    return result;
+  }, [allowedUser, form, projectLabel, saveOnboarding, selectedProject?.id]);
+
+  const onSaveDraft = useCallback(async () => {
+    if (!allowedUser || stepSaving) return;
+    setStepSaving(true);
+    setOnboardingFeedback(null);
+    const result = await persistOnboarding();
+    if (!result.ok) {
+      setOnboardingFeedback(result.message ?? 'We could not save your onboarding details.');
+      setStepSaving(false);
+      return;
+    }
+    setOnboardingFeedback(result.message ?? 'Onboarding saved.');
+    setStepSaving(false);
+  }, [allowedUser, persistOnboarding, stepSaving]);
+
+  const onSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!allowedUser) return;
     if (!isLastStep) {
@@ -692,7 +724,7 @@ export default function DashboardView() {
     if (saving) return;
     setSaving(true);
     setOnboardingFeedback(null);
-    const result = await saveOnboarding(form);
+    const result = await persistOnboarding();
     if (!result.ok) {
       setOnboardingFeedback(result.message ?? 'We could not save your onboarding details.');
       setSaving(false);
@@ -700,23 +732,9 @@ export default function DashboardView() {
     }
     setOnboardingFeedback(result.message ?? 'Onboarding saved.');
     setSaving(false);
-  };
+  }, [allowedUser, goToStep, isLastStep, persistOnboarding, saving, stepIndex]);
 
-  const onSaveDraft = async () => {
-    if (!allowedUser || stepSaving) return;
-    setStepSaving(true);
-    setOnboardingFeedback(null);
-    const result = await saveOnboarding(form);
-    if (!result.ok) {
-      setOnboardingFeedback(result.message ?? 'We could not save your onboarding details.');
-      setStepSaving(false);
-      return;
-    }
-    setOnboardingFeedback(result.message ?? 'Onboarding saved.');
-    setStepSaving(false);
-  };
-
-  const onAccountSubmit = async (event: FormEvent) => {
+  const onAccountSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!allowedUser || accountSaving) return;
     setAccountSaving(true);
@@ -742,7 +760,7 @@ export default function DashboardView() {
     setAccountFeedback(result.message ?? 'Account updated.');
     setAccountSaving(false);
     setAccountForm(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
-  };
+  }, [accountForm, accountSaving, allowedUser, updateAccount]);
 
   if (!allowedUser) {
     return (
@@ -756,7 +774,7 @@ export default function DashboardView() {
 
   return (
     <main id="main" className="container py-12 md:py-20">
-      <div className="mx-auto max-w-6xl space-y-12">
+      <div className="mx-auto max-w-6xl space-y-10">
         <header className="rounded-3xl border border-white/10 bg-gradient-to-br from-black/60 via-black/40 to-purple-900/20 p-10 text-white shadow-lg">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -767,19 +785,21 @@ export default function DashboardView() {
               </p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-black/30 px-5 py-4 text-sm text-white/75">
-              <div className="text-xs uppercase tracking-wide text-white/60">Current plan</div>
+              <div className="text-xs uppercase tracking-wide text-white/60">Active plan</div>
               <div className="mt-1 text-lg font-semibold">{planDetails.name}</div>
               <div className="text-white/60">{planDetails.tagline}</div>
-              {allowedUser.onboarding?.completedAt && (
+              {selectedProject?.completedAt ? (
                 <div className="mt-3 text-xs text-emerald-300">
-                  Last updated {formatDate(allowedUser.onboarding.completedAt)}
+                  Last updated {formatDate(selectedProject.completedAt)}
                 </div>
+              ) : (
+                <div className="mt-3 text-xs text-white/50">No onboarding submitted yet.</div>
               )}
-              {allowedUser.onboarding?.status && (
+              {selectedProject?.status && (
                 <div className="mt-2 text-xs text-white/60">
-                  Status: {statusLabels[allowedUser.onboarding.status] ?? allowedUser.onboarding.status}
-                  {allowedUser.onboarding.statusNote && (
-                    <span className="block text-[0.7rem] text-white/50">{allowedUser.onboarding.statusNote}</span>
+                  Status: {statusLabels[selectedProject.status] ?? selectedProject.status}
+                  {selectedProject.statusNote && (
+                    <span className="block text-[0.7rem] text-white/50">{selectedProject.statusNote}</span>
                   )}
                 </div>
               )}
@@ -787,294 +807,457 @@ export default function DashboardView() {
           </div>
         </header>
 
-        <div className="grid gap-8 lg:grid-cols-[1.65fr,1fr]">
-          <form onSubmit={onSubmit} className="space-y-8 rounded-3xl border border-white/10 bg-black/40 p-8 shadow-xl backdrop-blur">
-            <div className="space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-                <div className="flex flex-wrap gap-3">
-                  {steps.map((step, index) => {
-                    const status = index < stepIndex ? 'complete' : index === stepIndex ? 'current' : 'upcoming';
-                    return (
-                      <button
-                        key={step.id}
-                        type="button"
-                        onClick={() => goToStep(index)}
-                        className={`group flex flex-1 min-w-[220px] items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${status === 'current' ? 'border-sky-400/70 bg-sky-500/15' : status === 'complete' ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-100' : 'border-white/10 bg-white/5 hover:border-white/25'}`}
-                      >
-                        <span
-                          className={`flex size-8 items-center justify-center rounded-full text-sm font-semibold ${status === 'complete' ? 'bg-emerald-500/80 text-white' : status === 'current' ? 'bg-sky-500 text-white' : 'bg-white/10 text-white/70 group-hover:text-white'}`}
-                        >
-                          {index + 1}
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-black/30 p-2">
+          {tabs.map(tab => {
+            const active = activeSection === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveSection(tab.id)}
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition ${active ? 'bg-white text-black font-semibold shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+              >
+                <Icon className="size-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {activeSection === 'projects' && (
+          <>
+            <div className="grid gap-8 lg:grid-cols-[1.65fr,1fr]">
+              <form onSubmit={onSubmit} className="space-y-6 rounded-3xl border border-white/10 bg-black/40 p-8 shadow-xl backdrop-blur">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {allowedUser.onboardingProjects?.map(project => {
+                        const active = project.id === selectedProject?.id;
+                        return (
+                          <button
+                            key={project.id}
+                            type="button"
+                            onClick={() => setSelectedProjectId(project.id)}
+                            className={`rounded-full px-3 py-1 text-xs transition ${active ? 'border border-sky-400 bg-sky-500/20 text-white' : 'border border-white/20 text-white/70 hover:border-white/40 hover:text-white'}`}
+                          >
+                            {project.label || 'Project'}
+                          </button>
+                        );
+                      })}
+                      {!selectedProject && (
+                        <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+                          Draft project
                         </span>
-                        <span>
-                          <span className="block text-sm font-semibold text-white">{step.title}</span>
-                          <span className="text-xs text-white/60">{step.subtitle}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleStartNewProject()}
+                      disabled={creatingProject}
+                      className="inline-flex items-center gap-1 rounded-full border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Plus className="size-4" />
+                      {creatingProject ? 'Creating…' : 'Start new project'}
+                    </button>
+                  </div>
+
+                  <div>
+                    <label htmlFor="projectLabel" className="block text-sm font-medium text-white/80">Project name</label>
+                    <input
+                      id="projectLabel"
+                      type="text"
+                      value={projectLabel}
+                      onChange={(event) => setProjectLabel(event.target.value)}
+                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                      placeholder="e.g. Q2 funnel refresh"
+                    />
+                    <p className="mt-1 text-xs text-white/50">Name each onboarding so you can track multiple launches at once.</p>
+                  </div>
                 </div>
-                <div className="mt-4 h-1.5 w-full rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
-                    style={{ width: `${progressPct}%` }}
+
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                    <div className="flex flex-wrap gap-3">
+                      {steps.map((step, index) => {
+                        const status = index < stepIndex ? 'complete' : index === stepIndex ? 'current' : 'upcoming';
+                        return (
+                          <button
+                            key={step.id}
+                            type="button"
+                            onClick={() => goToStep(index)}
+                            className={`group flex flex-1 min-w-[220px] items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${status === 'current' ? 'border-sky-400/70 bg-sky-500/15' : status === 'complete' ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-100' : 'border-white/10 bg-white/5 hover:border-white/25'}`}
+                          >
+                            <span
+                              className={`flex size-8 items-center justify-center rounded-full text-sm font-semibold ${status === 'complete' ? 'bg-emerald-500/80 text-white' : status === 'current' ? 'bg-sky-500 text-white' : 'bg-white/10 text-white/70 group-hover:text-white'}`}
+                            >
+                              {index + 1}
+                            </span>
+                            <span>
+                              <span className="block text-sm font-semibold text-white">{step.title}</span>
+                              <span className="text-xs text-white/60">{step.subtitle}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 h-1.5 w-full rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <section className="space-y-4">
+                    <header className="space-y-1">
+                      <h2 className="text-xl font-semibold text-white">{stepIndex + 1}. {currentStep.title}</h2>
+                      <p className="text-sm text-white/70">{currentStep.subtitle}</p>
+                    </header>
+                    {currentStep.render()}
+                  </section>
+                </div>
+
+                {onboardingFeedback && (
+                  <p className={`rounded-xl px-4 py-3 text-sm ${onboardingFeedback.includes('not') || onboardingFeedback.includes('Unable') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                    {onboardingFeedback}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {stepIndex > 0 && (
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => goToStep(stepIndex - 1)}
+                    >
+                      Previous step
+                    </button>
+                  )}
+                  <div className="ml-auto flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => void onSaveDraft()}
+                      disabled={stepSaving || saving}
+                    >
+                      {stepSaving ? 'Saving…' : 'Save progress'}
+                    </button>
+                    <button
+                      type={isLastStep ? 'submit' : 'button'}
+                      className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-3 font-semibold text-white shadow-lg shadow-sky-500/20 transition disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={!isLastStep ? () => goToStep(stepIndex + 1) : undefined}
+                      disabled={isLastStep ? saving : false}
+                    >
+                      {isLastStep ? (saving ? 'Submitting…' : 'Submit onboarding') : 'Next step'}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-white/60">We’ll email a copy of these notes to your strategist before kickoff.</p>
+              </form>
+
+              <aside className="space-y-6 rounded-3xl border border-white/10 bg-black/30 p-6 text-white shadow-lg">
+                <section>
+                  <h3 className="text-lg font-semibold">Your rollout blueprint</h3>
+                  <p className="mt-1 text-sm text-white/70">Here’s what we execute once onboarding is complete.</p>
+                  <ul className="mt-4 space-y-3 text-sm text-white/75">
+                    <li>
+                      <span className="font-semibold text-white">Week 0:</span> Strategy call to align on metrics, message, and required assets.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-white">Weeks 1-2:</span> Build the conversion flow, draft ads, and script the AI receptionist.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-white">Week 3:</span> Launch, QA across devices, and plug insights into your reporting hub.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-white">Week 4:</span> Optimisation sprint with scorecards on booked calls and answered leads.
+                    </li>
+                  </ul>
+                </section>
+                <section>
+                  <h3 className="text-lg font-semibold">Plan highlights</h3>
+                  <p className="mt-1 text-sm text-white/70">{planDetails.description}</p>
+                  <ul className="mt-3 space-y-2 text-sm text-white/75">
+                    {planDetails.bullets.map(point => (
+                      <li key={point}>• {point}</li>
+                    ))}
+                  </ul>
+                </section>
+                <section className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/80">
+                  <h4 className="text-sm font-semibold text-white">Need a tailored quote?</h4>
+                  <p className="mt-1 text-sm">
+                    If your scope spans multiple brands or requires deeper integrations, drop us a line at{' '}
+                    <a className="text-sky-300 underline-offset-4 hover:underline" href="mailto:hello@businessbooster.ai">hello@businessbooster.ai</a>.
+                  </p>
+                  <p className="mt-2 text-xs text-white/60">We’ll reply within one business day with next steps.</p>
+                </section>
+              </aside>
+            </div>
+            <section className="rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold">Your Cal.com events</h2>
+                  <p className="text-sm text-white/70">We sync bookings tied to {allowedUser.email}. Refresh anytime.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void refreshEvents()}
+                    disabled={eventsLoading}
+                    className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {eventsLoading ? 'Refreshing…' : 'Refresh events'}
+                  </button>
+                  {usingSampleData && (
+                    <span className="rounded-full border border-amber-300/60 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
+                      Demo data — add CALCOM_API_KEY for live bookings
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {eventsError && (
+                <p className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{eventsError}</p>
+              )}
+
+              <div className="mt-6 overflow-x-auto">
+                <table className="min-w-full divide-y divide-white/10 text-left text-sm">
+                  <thead className="text-xs uppercase tracking-wide text-white/60">
+                    <tr>
+                      <th className="px-4 py-3">Event</th>
+                      <th className="px-4 py-3">When</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Attendees</th>
+                      <th className="px-4 py-3">Link</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {events.length === 0 && !eventsLoading ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-6 text-center text-white/60">
+                          No bookings yet. As soon as calls land on your calendar, they will appear here.
+                        </td>
+                      </tr>
+                    ) : (
+                      events.map(event => (
+                        <tr key={event.id}>
+                          <td className="px-4 py-4 text-white/80">
+                            <div className="font-semibold text-white">{event.title || 'Cal.com booking'}</div>
+                            {event.description && (
+                              <div className="text-xs text-white/55">{event.description}</div>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-white/75">{formatDate(event.startTime)} → {formatDate(event.endTime)}</td>
+                          <td className="px-4 py-4 text-white/75">{event.status || 'Scheduled'}</td>
+                          <td className="px-4 py-4 text-white/75">
+                            {event.attendees && event.attendees.length > 0
+                              ? event.attendees.map(att => att.email || att.name || 'Guest').join(', ')
+                              : '—'}
+                          </td>
+                          <td className="px-4 py-4">
+                            {event.bookingUrl ? (
+                              <a
+                                href={event.bookingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sky-300 underline-offset-4 hover:underline"
+                              >
+                                Open
+                              </a>
+                            ) : (
+                              <span className="text-white/40">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        )}
+
+        {activeSection === 'payments' && (
+          <section className="space-y-6 rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
+            <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold">Kickoff deposit</h2>
+                <p className="text-sm text-white/70">Secure your build slot with a $99 Stripe payment.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void refreshDeposit()}
+                  disabled={depositLoading}
+                  className="rounded-xl border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {depositLoading ? 'Checking…' : 'Refresh status'}
+                </button>
+                {depositSample && (
+                  <span className="rounded-full border border-amber-300/60 bg-amber-500/10 px-3 py-1 text-[0.7rem] text-amber-200">
+                    Demo data — add STRIPE_SECRET_KEY for live payments
+                  </span>
+                )}
+              </div>
+            </header>
+
+            <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+              <p className="font-semibold text-emerald-200">How payment works</p>
+              <ul className="mt-2 space-y-1 text-emerald-100/90">
+                <li>• Reserve your build slot with a $99 kickoff deposit.</li>
+                <li>• We sprint on copy, design, and automation as soon as the deposit clears.</li>
+                <li>• The remaining balance is invoiced only after you approve the launch.</li>
+              </ul>
+            </div>
+
+            {depositError && (
+              <p className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{depositError}</p>
+            )}
+
+            <div className="space-y-3 text-sm text-white/75">
+              {depositSummary ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${depositSummary.paid ? 'bg-emerald-500/15 text-emerald-200' : 'bg-amber-500/15 text-amber-200'}`}
+                    >
+                      {depositSummary.paid ? 'Paid' : 'Awaiting deposit'}
+                    </span>
+                    <span>{formatCurrency(depositSummary.amount, depositSummary.currency)}</span>
+                    {depositSummary.lastPaymentAt && (
+                      <span className="text-xs text-white/60">Updated {formatDate(depositSummary.lastPaymentAt)}</span>
+                    )}
+                  </div>
+                  <p className="text-white/70">
+                    {depositSummary.paid
+                      ? 'Awesome! We’re already lining up design and copy so you can approve the launch faster.'
+                      : 'Submit the deposit to trigger the build sprint. We’ll notify you as soon as the payment clears.'}
+                  </p>
+                  {depositSummary.receiptUrl && (
+                    <a
+                      href={depositSummary.receiptUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex text-xs font-semibold text-sky-300 underline-offset-4 hover:underline"
+                    >
+                      View Stripe receipt
+                    </a>
+                  )}
+                </>
+              ) : (
+                <p className="text-white/70">
+                  When you’re ready we’ll redirect you to Stripe to submit the $99 kickoff deposit. It’s fully credited toward your final balance.
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={() => void handleDepositCheckout()}
+                disabled={depositCheckoutLoading || depositSummary?.paid}
+                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {depositSummary?.paid ? 'Deposit received' : depositCheckoutLoading ? 'Redirecting…' : 'Pay $99 kickoff deposit'}
+              </button>
+              {depositFeedback && (
+                <p className={`text-xs ${depositSummary?.paid ? 'text-emerald-200' : 'text-white/70'}`}>{depositFeedback}</p>
+              )}
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'settings' && (
+          <section className="rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">Account & access</h2>
+              <span className="rounded-full border border-sky-400/50 bg-sky-500/10 px-3 py-1 text-xs text-sky-200">Client portal</span>
+            </div>
+            <p className="mt-2 text-sm text-white/70">Update your login details or billing contact. Email changes require your current password.</p>
+            <form onSubmit={onAccountSubmit} className="mt-6 space-y-4">
+              <div className="grid gap-4">
+                <div>
+                  <label htmlFor="accountName" className="block text-xs font-medium uppercase tracking-wide text-white/60">Full name</label>
+                  <input
+                    id="accountName"
+                    type="text"
+                    value={accountForm.name}
+                    onChange={(e) => setAccountForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="accountEmail" className="block text-xs font-medium uppercase tracking-wide text-white/60">Email</label>
+                  <input
+                    id="accountEmail"
+                    type="email"
+                    value={accountForm.email}
+                    onChange={(e) => setAccountForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="accountCompany" className="block text-xs font-medium uppercase tracking-wide text-white/60">Company (optional)</label>
+                  <input
+                    id="accountCompany"
+                    type="text"
+                    value={accountForm.company}
+                    onChange={(e) => setAccountForm(prev => ({ ...prev, company: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
                   />
                 </div>
               </div>
-
-              <section className="space-y-4">
-                <header className="space-y-1">
-                  <h2 className="text-xl font-semibold text-white">{stepIndex + 1}. {currentStep.title}</h2>
-                  <p className="text-sm text-white/70">{currentStep.subtitle}</p>
-                </header>
-                {currentStep.render()}
-              </section>
-            </div>
-
-            {onboardingFeedback && (
-              <p className={`rounded-xl px-4 py-3 text-sm ${onboardingFeedback.includes('not') || onboardingFeedback.includes('Unable') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
-                {onboardingFeedback}
-              </p>
-            )}
-
-            <div className="flex flex-wrap items-center gap-3">
-              {stepIndex > 0 && (
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => goToStep(stepIndex - 1)}
-                >
-                  Previous step
-                </button>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="currentPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">Current password</label>
+                  <input
+                    id="currentPassword"
+                    type="password"
+                    value={accountForm.currentPassword}
+                    onChange={(e) => setAccountForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                    placeholder="Required to change email or password"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="newPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">New password</label>
+                  <input
+                    id="newPassword"
+                    type="password"
+                    value={accountForm.newPassword}
+                    onChange={(e) => setAccountForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                    placeholder="Leave blank to keep current"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="confirmPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">Confirm new password</label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={accountForm.confirmPassword}
+                    onChange={(e) => setAccountForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+              {accountFeedback && (
+                <p className={`rounded-xl px-4 py-2 text-xs ${accountFeedback.includes('not') || accountFeedback.includes('Unable') || accountFeedback.includes('match') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                  {accountFeedback}
+                </p>
               )}
-              <div className="ml-auto flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => void onSaveDraft()}
-                  disabled={stepSaving || saving}
-                >
-                  {stepSaving ? 'Saving…' : 'Save progress'}
-                </button>
-                <button
-                  type={isLastStep ? 'submit' : 'button'}
-                  className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-3 font-semibold text-white shadow-lg shadow-sky-500/20 transition disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={!isLastStep ? () => goToStep(stepIndex + 1) : undefined}
-                  disabled={isLastStep ? saving : false}
-                >
-                  {isLastStep ? (saving ? 'Submitting…' : 'Submit onboarding') : 'Next step'}
-                </button>
-              </div>
-            </div>
-            <p className="text-sm text-white/60">We’ll email a copy of these notes to your strategist before kickoff.</p>
-          </form>
-
-          <aside className="space-y-6 rounded-3xl border border-white/10 bg-black/30 p-6 text-white shadow-lg">
-            <section className="rounded-2xl border border-white/10 bg-black/40 p-5 text-white">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Account & access</h3>
-                <span className="rounded-full border border-sky-400/50 bg-sky-500/10 px-3 py-1 text-xs text-sky-200">Client portal</span>
-              </div>
-              <p className="mt-2 text-sm text-white/70">Update your login details or billing contact. Email changes require your current password.</p>
-              <form onSubmit={onAccountSubmit} className="mt-4 space-y-4">
-                <div className="grid gap-4">
-                  <div>
-                    <label htmlFor="accountName" className="block text-xs font-medium uppercase tracking-wide text-white/60">Full name</label>
-                    <input
-                      id="accountName"
-                      type="text"
-                      value={accountForm.name}
-                      onChange={(e) => setAccountForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="accountEmail" className="block text-xs font-medium uppercase tracking-wide text-white/60">Email</label>
-                    <input
-                      id="accountEmail"
-                      type="email"
-                      value={accountForm.email}
-                      onChange={(e) => setAccountForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="accountCompany" className="block text-xs font-medium uppercase tracking-wide text-white/60">Company (optional)</label>
-                    <input
-                      id="accountCompany"
-                      type="text"
-                      value={accountForm.company}
-                      onChange={(e) => setAccountForm(prev => ({ ...prev, company: e.target.value }))}
-                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label htmlFor="currentPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">Current password</label>
-                    <input
-                      id="currentPassword"
-                      type="password"
-                      value={accountForm.currentPassword}
-                      onChange={(e) => setAccountForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                      placeholder="Required to change email or password"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="newPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">New password</label>
-                    <input
-                      id="newPassword"
-                      type="password"
-                      value={accountForm.newPassword}
-                      onChange={(e) => setAccountForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                      placeholder="Leave blank to keep current"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label htmlFor="confirmPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">Confirm new password</label>
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      value={accountForm.confirmPassword}
-                      onChange={(e) => setAccountForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                    />
-                  </div>
-                </div>
-                {accountFeedback && (
-                  <p className={`rounded-xl px-4 py-2 text-xs ${accountFeedback.includes('not') || accountFeedback.includes('Unable') || accountFeedback.includes('match') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
-                    {accountFeedback}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={accountSaving}
-                >
-                  {accountSaving ? 'Updating account…' : 'Save account settings'}
-                </button>
-              </form>
-            </section>
-            <section>
-              <h3 className="text-lg font-semibold">Your rollout blueprint</h3>
-              <p className="mt-1 text-sm text-white/70">Here’s what we execute once onboarding is complete.</p>
-              <ul className="mt-4 space-y-3 text-sm text-white/75">
-                <li>
-                  <span className="font-semibold text-white">Week 0:</span> Strategy call to align on metrics, message, and required assets.
-                </li>
-                <li>
-                  <span className="font-semibold text-white">Weeks 1-2:</span> Build the conversion flow, draft ads, and script the AI receptionist.
-                </li>
-                <li>
-                  <span className="font-semibold text-white">Week 3:</span> Launch, QA across devices, and plug insights into your reporting hub.
-                </li>
-                <li>
-                  <span className="font-semibold text-white">Week 4:</span> Optimisation sprint with scorecards on booked calls and answered leads.
-                </li>
-              </ul>
-            </section>
-            <section>
-              <h3 className="text-lg font-semibold">Plan highlights</h3>
-              <p className="mt-1 text-sm text-white/70">{planDetails.description}</p>
-              <ul className="mt-3 space-y-2 text-sm text-white/75">
-                {planDetails.bullets.map(point => (
-                  <li key={point}>• {point}</li>
-                ))}
-              </ul>
-            </section>
-            <section className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/80">
-              <h4 className="text-sm font-semibold text-white">Need a tailored quote?</h4>
-              <p className="mt-1 text-sm">
-                If your scope spans multiple brands or requires deeper integrations, drop us a line at{' '}
-                <a className="text-sky-300 underline-offset-4 hover:underline" href="mailto:hello@businessbooster.ai">hello@businessbooster.ai</a>.
-              </p>
-              <p className="mt-2 text-xs text-white/60">We’ll reply within one business day with next steps.</p>
-            </section>
-          </aside>
-        </div>
-
-        <section className="rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold">Your Cal.com events</h2>
-              <p className="text-sm text-white/70">We sync bookings tied to {allowedUser.email}. Refresh anytime.</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
               <button
-                type="button"
-                onClick={() => void refreshEvents()}
-                disabled={eventsLoading}
-                className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
+                type="submit"
+                className="w-full rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={accountSaving}
               >
-                {eventsLoading ? 'Refreshing…' : 'Refresh events'}
+                {accountSaving ? 'Updating account…' : 'Save account settings'}
               </button>
-              {usingSampleData && (
-                <span className="rounded-full border border-amber-300/60 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
-                  Demo data — add CALCOM_API_KEY for live bookings
-                </span>
-              )}
-            </div>
-          </div>
-
-          {eventsError && (
-            <p className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{eventsError}</p>
-          )}
-
-          <div className="mt-6 overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/10 text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-white/60">
-                <tr>
-                  <th className="px-4 py-3">Event</th>
-                  <th className="px-4 py-3">When</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Attendees</th>
-                  <th className="px-4 py-3">Link</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {events.length === 0 && !eventsLoading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-white/60">
-                      No bookings yet. As soon as calls land on your calendar, they will appear here.
-                    </td>
-                  </tr>
-                ) : (
-                  events.map(event => (
-                    <tr key={event.id} className="hover:bg-white/5">
-                      <td className="px-4 py-4">
-                        <div className="font-medium text-white">{event.title ?? 'Cal.com booking'}</div>
-                        {event.description && <div className="text-xs text-white/60">{event.description}</div>}
-                      </td>
-                      <td className="px-4 py-4 text-white/75">{formatDate(event.startTime)} → {formatDate(event.endTime)}</td>
-                      <td className="px-4 py-4 text-white/70">{event.status ?? 'pending'}</td>
-                      <td className="px-4 py-4 text-white/75">
-                        {event.attendees?.length
-                          ? event.attendees.map(att => att.email || att.name).filter(Boolean).join(', ')
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-4">
-                        {event.bookingUrl ? (
-                          <a
-                            href={event.bookingUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sky-300 underline-offset-4 hover:underline"
-                          >
-                            Open
-                          </a>
-                        ) : (
-                          <span className="text-white/40">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+            </form>
+          </section>
+        )}
       </div>
     </main>
   );

@@ -101,13 +101,24 @@ export async function POST(request: NextRequest) {
     const user = await requireSessionUser();
 
     // Parse JSON leniently; tolerate empty/invalid bodies
-    const body = await readJsonOrEmpty<Partial<OnboardingForm>>(request);
+    const body = await readJsonOrEmpty<Record<string, unknown>>(request);
+
+    const rawForm = typeof body.form === 'object' && body.form !== null
+      ? (body.form as Partial<OnboardingForm>)
+      : (body as Partial<OnboardingForm>);
+    const projectId = typeof body.projectId === 'string' && body.projectId.trim() ? body.projectId.trim() : null;
+    const projectLabel = typeof body.projectLabel === 'string' ? body.projectLabel : null;
+    const createNew = Boolean(body.createNew);
 
     // Normalise + validate
-    const form = normaliseForm(body);
+    const form = normaliseForm(rawForm);
 
     // Persist
-    const savedUser = await saveOnboardingForUser(user.id, form);
+    const savedUser = await saveOnboardingForUser(user.id, form, {
+      projectId,
+      label: projectLabel,
+      createNew
+    });
 
     return NextResponse.json(
       { ok: true, user: savedUser, message: 'Onboarding saved.' },

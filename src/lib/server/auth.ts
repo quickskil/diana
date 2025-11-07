@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { ensureDatabase, sql } from '@/lib/db';
-import { defaultOnboarding, type OnboardingForm, type OnboardingStatus, type SafeUser } from '@/lib/types/user';
+import { defaultOnboarding, type OnboardingForm, type OnboardingProject, type OnboardingStatus, type SafeUser } from '@/lib/types/user';
 
 const PROTECTED_STATUSES: OnboardingStatus[] = ['in-progress', 'launch-ready'];
 
@@ -32,18 +32,63 @@ function mergeOnboarding(data: unknown): OnboardingForm {
   return { ...defaultOnboarding, ...(data as Partial<OnboardingForm>) };
 }
 
-function mapRowToSafeUser(row: Record<string, any>): SafeUser {
-  const onboardingData = row.onboarding_data;
-  const onboardingStatus = row.onboarding_status as OnboardingStatus | null | undefined;
-  const onboarding = onboardingData
-    ? {
-        data: mergeOnboarding(onboardingData),
-        completedAt: normaliseDate(row.onboarding_completed_at),
-        status: onboardingStatus ?? 'submitted',
-        statusNote: row.onboarding_status_note ?? null,
-        statusUpdatedAt: normaliseDate(row.onboarding_updated_at) ?? normaliseDate(row.created_at) ?? new Date().toISOString()
+function parseProjects(value: unknown): OnboardingProject[] {
+  let items: unknown[] = [];
+  if (!value) {
+    items = [];
+  } else if (Array.isArray(value)) {
+    items = value;
+  } else if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        items = parsed;
       }
-    : null;
+    } catch {
+      items = [];
+    }
+  }
+
+  const projects: OnboardingProject[] = [];
+
+  for (const item of items) {
+    if (!item || typeof item !== 'object') {
+      continue;
+    }
+
+    const record = item as Record<string, any>;
+    const id = typeof record.id === 'string' ? record.id : null;
+    if (!id) continue;
+
+    const labelRaw = typeof record.label === 'string' ? record.label : null;
+    const label = labelRaw && labelRaw.trim() ? labelRaw.trim() : 'Project';
+    const data = mergeOnboarding(record.data);
+    const createdAt = normaliseDate(record.created_at) ?? new Date().toISOString();
+    const updatedAt = normaliseDate(record.updated_at) ?? createdAt;
+    const completedAt = normaliseDate(record.completed_at);
+    const status = (record.status as OnboardingStatus) ?? 'submitted';
+    const statusNote = record.status_note ?? record.statusNote ?? null;
+    const statusUpdatedAt = normaliseDate(record.status_updated_at ?? record.updated_at) ?? updatedAt;
+
+    projects.push({
+      id,
+      label,
+      data,
+      createdAt,
+      updatedAt,
+      completedAt,
+      status,
+      statusNote: statusNote ? String(statusNote) : null,
+      statusUpdatedAt
+    } satisfies OnboardingProject);
+  }
+
+  return projects;
+}
+
+function mapRowToSafeUser(row: Record<string, any>): SafeUser {
+  const onboardingProjects = parseProjects(row.onboarding_projects ?? row.onboarding_projects_json ?? []);
+  const onboarding = onboardingProjects[0] ?? null;
 
   return {
     id: row.id,
@@ -52,7 +97,8 @@ function mapRowToSafeUser(row: Record<string, any>): SafeUser {
     email: row.email,
     company: row.company ?? null,
     createdAt: normaliseDate(row.created_at) ?? new Date().toISOString(),
-    onboarding
+    onboarding,
+    onboardingProjects
   };
 }
 
@@ -66,13 +112,28 @@ async function getUserRowById(userId: string): Promise<Record<string, any> | nul
       u.role,
       u.company,
       u.created_at,
-      o.data AS onboarding_data,
-      o.status AS onboarding_status,
-      o.status_note AS onboarding_status_note,
-      o.completed_at AS onboarding_completed_at,
-      o.updated_at AS onboarding_updated_at
+      (
+        SELECT COALESCE(
+          json_agg(
+            json_build_object(
+              'id', o.id,
+              'label', o.label,
+              'data', o.data,
+              'status', o.status,
+              'status_note', o.status_note,
+              'completed_at', o.completed_at,
+              'updated_at', o.updated_at,
+              'created_at', o.created_at,
+              'status_updated_at', o.updated_at
+            )
+            ORDER BY o.created_at DESC
+          ),
+          '[]'::json
+        )
+        FROM onboardings o
+        WHERE o.user_id = u.id
+      ) AS onboarding_projects
     FROM users u
-    LEFT JOIN onboardings o ON o.user_id = u.id
     WHERE u.id = ${userId}
     LIMIT 1;
   `;
@@ -93,13 +154,28 @@ async function getUserRowByEmail(email: string): Promise<Record<string, any> | n
       u.company,
       u.created_at,
       u.password_hash,
-      o.data AS onboarding_data,
-      o.status AS onboarding_status,
-      o.status_note AS onboarding_status_note,
-      o.completed_at AS onboarding_completed_at,
-      o.updated_at AS onboarding_updated_at
+      (
+        SELECT COALESCE(
+          json_agg(
+            json_build_object(
+              'id', o.id,
+              'label', o.label,
+              'data', o.data,
+              'status', o.status,
+              'status_note', o.status_note,
+              'completed_at', o.completed_at,
+              'updated_at', o.updated_at,
+              'created_at', o.created_at,
+              'status_updated_at', o.updated_at
+            )
+            ORDER BY o.created_at DESC
+          ),
+          '[]'::json
+        )
+        FROM onboardings o
+        WHERE o.user_id = u.id
+      ) AS onboarding_projects
     FROM users u
-    LEFT JOIN onboardings o ON o.user_id = u.id
     WHERE LOWER(u.email) = ${email.toLowerCase()}
     LIMIT 1;
   `;
@@ -205,13 +281,28 @@ export async function listSafeUsers(): Promise<SafeUser[]> {
       u.role,
       u.company,
       u.created_at,
-      o.data AS onboarding_data,
-      o.status AS onboarding_status,
-      o.status_note AS onboarding_status_note,
-      o.completed_at AS onboarding_completed_at,
-      o.updated_at AS onboarding_updated_at
+      (
+        SELECT COALESCE(
+          json_agg(
+            json_build_object(
+              'id', o.id,
+              'label', o.label,
+              'data', o.data,
+              'status', o.status,
+              'status_note', o.status_note,
+              'completed_at', o.completed_at,
+              'updated_at', o.updated_at,
+              'created_at', o.created_at,
+              'status_updated_at', o.updated_at
+            )
+            ORDER BY o.created_at DESC
+          ),
+          '[]'::json
+        )
+        FROM onboardings o
+        WHERE o.user_id = u.id
+      ) AS onboarding_projects
     FROM users u
-    LEFT JOIN onboardings o ON o.user_id = u.id
     ORDER BY u.created_at DESC;
   `;
   return result.rows.map(mapRowToSafeUser);
@@ -294,14 +385,29 @@ export async function getSessionUser(): Promise<SafeUser | null> {
       u.role,
       u.company,
       u.created_at,
-      o.data AS onboarding_data,
-      o.status AS onboarding_status,
-      o.status_note AS onboarding_status_note,
-      o.completed_at AS onboarding_completed_at,
-      o.updated_at AS onboarding_updated_at
+      (
+        SELECT COALESCE(
+          json_agg(
+            json_build_object(
+              'id', o.id,
+              'label', o.label,
+              'data', o.data,
+              'status', o.status,
+              'status_note', o.status_note,
+              'completed_at', o.completed_at,
+              'updated_at', o.updated_at,
+              'created_at', o.created_at,
+              'status_updated_at', o.updated_at
+            )
+            ORDER BY o.created_at DESC
+          ),
+          '[]'::json
+        )
+        FROM onboardings o
+        WHERE o.user_id = u.id
+      ) AS onboarding_projects
     FROM sessions s
     JOIN users u ON u.id = s.user_id
-    LEFT JOIN onboardings o ON o.user_id = u.id
     WHERE s.token = ${token}
     LIMIT 1;
   `;
@@ -329,30 +435,64 @@ export async function requireAdminUser(): Promise<SafeUser> {
   return user;
 }
 
-export async function saveOnboardingForUser(userId: string, form: OnboardingForm): Promise<SafeUser> {
+export async function saveOnboardingForUser(
+  userId: string,
+  form: OnboardingForm,
+  options?: { projectId?: string | null; label?: string | null; createNew?: boolean }
+): Promise<SafeUser> {
   await ensureDatabase();
-  const existing = await sql`SELECT status, status_note FROM onboardings WHERE user_id = ${userId} LIMIT 1;`;
+
   const now = new Date().toISOString();
-  const existingRow = existing.rows[0] as { status?: OnboardingStatus; status_note?: string | null } | undefined;
-  const existingStatus = existingRow?.status;
-  const persistStatus: OnboardingStatus = existingStatus && PROTECTED_STATUSES.includes(existingStatus)
-    ? existingStatus
-    : 'submitted';
-  const persistNote = persistStatus === existingStatus ? existingRow?.status_note ?? null : null;
-
   const payloadJson = JSON.stringify(form);
+  const desiredLabel = options?.label?.trim() ? options.label.trim() : null;
+  let projectId = options?.projectId?.trim() || null;
 
-  await sql`
-    INSERT INTO onboardings (user_id, data, status, status_note, completed_at, updated_at)
-    VALUES (${userId}, ${payloadJson}::jsonb, ${persistStatus}, ${persistNote}, ${now}, ${now})
-    ON CONFLICT (user_id)
-    DO UPDATE SET
-      data = ${payloadJson}::jsonb,
-      status = ${persistStatus},
-      status_note = ${persistNote},
-      completed_at = ${now},
-      updated_at = ${now};
-  `;
+  if (options?.createNew) {
+    projectId = null;
+  }
+
+  let persistStatus: OnboardingStatus = 'submitted';
+  let persistNote: string | null = null;
+
+  if (projectId) {
+    const existing = await sql`
+      SELECT id, status, status_note
+      FROM onboardings
+      WHERE id = ${projectId} AND user_id = ${userId}
+      LIMIT 1;
+    `;
+    if (existing.rows.length > 0) {
+      const existingRow = existing.rows[0] as { id: string; status?: OnboardingStatus; status_note?: string | null };
+      const existingStatus = existingRow.status;
+      persistStatus = existingStatus && PROTECTED_STATUSES.includes(existingStatus) ? existingStatus : 'submitted';
+      persistNote = persistStatus === existingStatus ? existingRow.status_note ?? null : null;
+      await sql`
+        UPDATE onboardings
+        SET
+          data = ${payloadJson}::jsonb,
+          status = ${persistStatus},
+          status_note = ${persistNote},
+          completed_at = ${now},
+          updated_at = ${now},
+          label = COALESCE(${desiredLabel}, label)
+        WHERE id = ${existingRow.id} AND user_id = ${userId};
+      `;
+    } else {
+      projectId = null;
+    }
+  }
+
+  if (!projectId) {
+    projectId = randomUUID();
+    persistStatus = 'submitted';
+    persistNote = null;
+    const label = desiredLabel ?? 'Project';
+    await sql`
+      INSERT INTO onboardings (id, user_id, label, data, status, status_note, completed_at, created_at, updated_at)
+      VALUES (${projectId}, ${userId}, ${label}, ${payloadJson}::jsonb, ${persistStatus}, ${persistNote}, ${now}, ${now}, ${now});
+    `;
+  }
+
   const row = await getUserRowById(userId);
   if (!row) {
     throw new Error('Failed to load user after saving onboarding');
@@ -360,20 +500,34 @@ export async function saveOnboardingForUser(userId: string, form: OnboardingForm
   return mapRowToSafeUser(row);
 }
 
-export async function updateOnboardingStatusForUser(userId: string, status: OnboardingStatus, note?: string | null): Promise<SafeUser> {
+export async function updateOnboardingStatusForUser(
+  userId: string,
+  projectId: string,
+  status: OnboardingStatus,
+  note?: string | null
+): Promise<SafeUser> {
   await ensureDatabase();
+  if (!projectId) {
+    throw new Error('Project ID is required.');
+  }
+
   const now = new Date().toISOString();
   const payloadJson = JSON.stringify(defaultOnboarding);
 
-  await sql`
-    INSERT INTO onboardings (user_id, data, status, status_note, completed_at, updated_at)
-    VALUES (${userId}, ${payloadJson}::jsonb, ${status}, ${note ?? null}, ${now}, ${now})
-    ON CONFLICT (user_id)
-    DO UPDATE SET
-      status = ${status},
-      status_note = ${note ?? null},
-      updated_at = ${now};
+  const updated = await sql`
+    UPDATE onboardings
+    SET status = ${status}, status_note = ${note ?? null}, updated_at = ${now}
+    WHERE id = ${projectId} AND user_id = ${userId};
   `;
+
+  if (updated.rowCount === 0) {
+    await sql`
+      INSERT INTO onboardings (id, user_id, label, data, status, status_note, completed_at, created_at, updated_at)
+      VALUES (${projectId}, ${userId}, 'Project', ${payloadJson}::jsonb, ${status}, ${note ?? null}, ${now}, ${now}, ${now})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+  }
+
   const row = await getUserRowById(userId);
   if (!row) {
     throw new Error('Failed to update onboarding status');

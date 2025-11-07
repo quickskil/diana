@@ -32,8 +32,12 @@ export interface OnboardingForm {
   integrations: string;
 }
 
-export interface OnboardingSnapshot {
+export interface OnboardingProject {
+  id: string;
+  label: string;
   data: OnboardingForm;
+  createdAt: string;
+  updatedAt: string;
   completedAt: string | null;
   status: OnboardingStatus;
   statusNote?: string | null;
@@ -47,7 +51,8 @@ export interface SafeUser {
   email: string;
   company?: string | null;
   createdAt: string;
-  onboarding?: OnboardingSnapshot | null;
+  onboarding?: OnboardingProject | null;
+  onboardingProjects: OnboardingProject[];
 }
 
 export const defaultOnboarding: OnboardingForm = {

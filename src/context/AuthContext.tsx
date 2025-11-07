@@ -11,8 +11,8 @@ interface AuthContextValue {
   register: (payload: { name: string; email: string; password: string; company?: string }) => Promise<{ ok: boolean; message?: string }>;
   login: (payload: { email: string; password: string }) => Promise<{ ok: boolean; message?: string }>;
   logout: () => Promise<void>;
-  saveOnboarding: (payload: OnboardingForm) => Promise<{ ok: boolean; message?: string }>;
-  updateOnboardingStatus: (payload: { userId: string; status: OnboardingStatus; note?: string }) => Promise<{ ok: boolean; message?: string }>;
+  saveOnboarding: (payload: { form: OnboardingForm; projectId?: string | null; label?: string | null; createNew?: boolean }) => Promise<{ ok: boolean; message?: string; user?: SafeUser | null }>;
+  updateOnboardingStatus: (payload: { userId: string; projectId: string; status: OnboardingStatus; note?: string }) => Promise<{ ok: boolean; message?: string }>;
   updateAccount: (payload: { name?: string; email?: string; company?: string; currentPassword?: string; newPassword?: string | null }) => Promise<{ ok: boolean; message?: string }>;
 }
 
@@ -173,14 +173,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const saveOnboarding = useCallback<AuthContextValue['saveOnboarding']>(async payload => {
     try {
+      const body: Record<string, unknown> = { form: payload.form };
+      if (payload.projectId) {
+        body.projectId = payload.projectId;
+      }
+      if (payload.label && payload.label.trim()) {
+        body.projectLabel = payload.label.trim();
+      }
+      if (payload.createNew) {
+        body.createNew = true;
+      }
+
       const res = await fetch(ONBOARDING_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(body)
       });
       const data = await parseJson<{ ok?: boolean; message?: string; user?: SafeUser | null }>(res);
       if (!res.ok || data.ok === false) {
-        return { ok: false, message: data.message ?? 'Unable to save onboarding right now.' };
+        return { ok: false, message: data.message ?? 'Unable to save onboarding right now.', user: data.user ?? null };
       }
       if (data.user) {
         setCurrentUser(data.user);
@@ -188,10 +199,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAdminUsersLoaded(false);
         }
       }
-      return { ok: true, message: data.message ?? 'Onboarding saved.' };
+      return { ok: true, message: data.message ?? 'Onboarding saved.', user: data.user ?? null };
     } catch (error) {
       console.error('Failed to save onboarding', error);
-      return { ok: false, message: 'Unable to save onboarding right now.' };
+      return { ok: false, message: 'Unable to save onboarding right now.', user: null };
     }
   }, []);
 
@@ -225,7 +236,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`/api/admin/onboarding/${encodeURIComponent(payload.userId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: payload.status, note: payload.note })
+        body: JSON.stringify({
+          projectId: payload.projectId,
+          status: payload.status,
+          note: payload.note
+        })
       });
       const data = await parseJson<{ ok?: boolean; message?: string; user?: SafeUser | null }>(res);
       if (!res.ok || data.ok === false) {

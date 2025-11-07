@@ -78,6 +78,7 @@ export default function AdminView() {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [usingSampleData, setUsingSampleData] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [statusDraft, setStatusDraft] = useState<OnboardingStatus>('not-started');
   const [statusNote, setStatusNote] = useState('');
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
@@ -108,7 +109,10 @@ export default function AdminView() {
   }, [currentUser, hydrated, router]);
 
   const clients = useMemo(() => users.filter(u => u.role === 'client'), [users]);
-  const onboardedClients = useMemo(() => clients.filter(c => Boolean(c.onboarding)), [clients]);
+  const onboardedClients = useMemo(
+    () => clients.filter(c => Array.isArray(c.onboardingProjects) && c.onboardingProjects.length > 0),
+    [clients]
+  );
 
   useEffect(() => {
     if (clients.length === 0) {
@@ -125,6 +129,30 @@ export default function AdminView() {
 
   const selectedClient = useMemo(() => clients.find(c => c.id === selectedClientId) ?? null, [clients, selectedClientId]);
 
+  useEffect(() => {
+    if (!selectedClient?.onboardingProjects?.length) {
+      setSelectedProjectId(null);
+      return;
+    }
+    setSelectedProjectId(prev => {
+      if (prev && selectedClient.onboardingProjects?.some(project => project.id === prev)) {
+        return prev;
+      }
+      return selectedClient.onboardingProjects[0]?.id ?? null;
+    });
+  }, [selectedClient]);
+
+  const selectedProject = useMemo(() => {
+    if (!selectedClient?.onboardingProjects?.length) {
+      return null;
+    }
+    const fallback = selectedClient.onboardingProjects[0] ?? null;
+    if (!selectedProjectId) {
+      return fallback;
+    }
+    return selectedClient.onboardingProjects.find(project => project.id === selectedProjectId) ?? fallback;
+  }, [selectedClient?.onboardingProjects, selectedProjectId]);
+
   const selectedClientEvents = useMemo(() => {
     if (!selectedClient?.email) return [] as CalEvent[];
     const email = selectedClient.email.toLowerCase();
@@ -135,18 +163,18 @@ export default function AdminView() {
   }, [events, selectedClient?.email]);
 
   useEffect(() => {
-    if (!selectedClient?.onboarding) {
+    if (!selectedProject) {
       setStatusDraft('not-started');
       setStatusNote('');
       setStatusFeedback(null);
       setStatusSuccess(null);
       return;
     }
-    setStatusDraft(selectedClient.onboarding.status ?? 'not-started');
-    setStatusNote(selectedClient.onboarding.statusNote ?? '');
+    setStatusDraft(selectedProject.status ?? 'not-started');
+    setStatusNote(selectedProject.statusNote ?? '');
     setStatusFeedback(null);
     setStatusSuccess(null);
-  }, [selectedClient]);
+  }, [selectedProject]);
 
   useEffect(() => {
     if (!selectedClient) {
@@ -157,7 +185,7 @@ export default function AdminView() {
       setFinalFeedbackState('neutral');
       return;
     }
-    const planKey = selectedClient.onboarding?.data.plan;
+    const planKey = selectedProject?.data.plan;
     if (planKey && FINAL_BALANCE_SUGGESTIONS[planKey] !== undefined) {
       setFinalAmount(FINAL_BALANCE_SUGGESTIONS[planKey].toString());
       setFinalDescription(`${PLAN_CATALOG[planKey]?.name ?? 'Website'} final balance`);
@@ -168,7 +196,7 @@ export default function AdminView() {
     setFinalCheckoutUrl(null);
     setFinalFeedback(null);
     setFinalFeedbackState('neutral');
-  }, [selectedClient]);
+  }, [selectedClient, selectedProject]);
 
   const statusOptions: { value: OnboardingStatus; label: string; description: string }[] = [
     { value: 'not-started', label: 'Not started', description: 'Waiting for onboarding submission.' },
@@ -211,15 +239,19 @@ export default function AdminView() {
   );
 
   const handleStatusUpdate = useCallback(async () => {
-    if (!selectedClient) return;
-    if (!selectedClient.onboarding) {
+    if (!selectedClient || !selectedProject) {
       setStatusFeedback('Client has not submitted onboarding yet.');
       return;
     }
     setStatusSaving(true);
     setStatusFeedback(null);
     setStatusSuccess(null);
-    const result = await updateOnboardingStatus({ userId: selectedClient.id, status: statusDraft, note: statusNote });
+    const result = await updateOnboardingStatus({
+      userId: selectedClient.id,
+      projectId: selectedProject.id,
+      status: statusDraft,
+      note: statusNote
+    });
     if (!result.ok) {
       setStatusFeedback(result.message ?? 'Unable to update status.');
       setStatusSuccess(false);
@@ -229,7 +261,7 @@ export default function AdminView() {
     setStatusFeedback(result.message ?? 'Status updated.');
     setStatusSuccess(true);
     setStatusSaving(false);
-  }, [selectedClient, statusDraft, statusNote, updateOnboardingStatus]);
+  }, [selectedClient, selectedProject, statusDraft, statusNote, updateOnboardingStatus]);
 
   const refreshEvents = useCallback(async () => {
     setEventsLoading(true);
@@ -407,8 +439,9 @@ export default function AdminView() {
                   </tr>
                 ) : (
                   clients.map(client => {
-                    const onboarding = client.onboarding;
-                    const planName = onboarding ? PLAN_CATALOG[onboarding.data.plan]?.name ?? onboarding.data.plan : '—';
+                    const projects = client.onboardingProjects ?? [];
+                    const primary = projects[0] ?? null;
+                    const planName = primary ? PLAN_CATALOG[primary.data.plan]?.name ?? primary.data.plan : '—';
                     return (
                       <tr key={client.id} className={`hover:bg-white/5 ${client.id === selectedClientId ? 'bg-white/5' : ''}`}>
                         <td className="px-4 py-4">
@@ -417,13 +450,13 @@ export default function AdminView() {
                           {client.company && <div className="text-xs text-white/55">{client.company}</div>}
                         </td>
                         <td className="px-4 py-4 text-white/75">{planName}</td>
-                        <td className="px-4 py-4 text-white/75">{onboarding?.data.primaryMetric ?? '—'}</td>
-                        <td className="px-4 py-4 text-white/75">{onboarding?.data.launchTimeline || '—'}</td>
-                        <td className="px-4 py-4 text-white/75">{onboarding ? statusLabelMap[onboarding.status ?? 'submitted'] : 'Not started'}</td>
+                        <td className="px-4 py-4 text-white/75">{primary?.data.primaryMetric ?? '—'}</td>
+                        <td className="px-4 py-4 text-white/75">{primary?.data.launchTimeline || '—'}</td>
+                        <td className="px-4 py-4 text-white/75">{primary ? statusLabelMap[primary.status ?? 'submitted'] : 'Not started'}</td>
                         <td className="px-4 py-4">
-                          {onboarding?.data.calLink ? (
+                          {primary?.data.calLink ? (
                             <a
-                              href={onboarding.data.calLink}
+                              href={primary.data.calLink}
                               target="_blank"
                               rel="noreferrer"
                               className="text-sky-300 underline-offset-4 hover:underline"
@@ -434,14 +467,22 @@ export default function AdminView() {
                             <span className="text-white/40">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-white/60">{onboarding?.completedAt ? formatDate(onboarding.completedAt) : 'Not submitted'}</td>
+                        <td className="px-4 py-4 text-white/60">{primary?.completedAt ? formatDate(primary.completedAt) : 'Not submitted'}</td>
                         <td className="px-4 py-4 text-right">
                           <button
                             type="button"
-                            onClick={() => setSelectedClientId(client.id)}
+                            onClick={() => {
+                              setSelectedClientId(client.id);
+                              setSelectedProjectId(primary?.id ?? null);
+                            }}
                             className="rounded-xl border border-white/15 px-3 py-2 text-xs text-white/70 hover:border-white/40 hover:text-white"
                           >
                             View
+                            {projects.length > 1 && (
+                              <span className="ml-1 rounded-full border border-white/30 px-1.5 text-[10px] text-white/60">
+                                +{projects.length - 1}
+                              </span>
+                            )}
                           </button>
                         </td>
                       </tr>
@@ -463,7 +504,7 @@ export default function AdminView() {
 
           {!selectedClient ? (
             <p className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-6 text-center text-white/60">Select a client from the table above to view their onboarding details.</p>
-          ) : !selectedClient.onboarding ? (
+          ) : !selectedProject ? (
             <div className="mt-6 grid gap-6 lg:grid-cols-[1fr,320px]">
               <div className="rounded-2xl border border-white/10 bg-black/30 p-6 text-white/70">
                 <h3 className="text-lg font-semibold text-white">{selectedClient.name || selectedClient.email}</h3>
@@ -476,48 +517,66 @@ export default function AdminView() {
           ) : (
             <div className="mt-6 grid gap-6 lg:grid-cols-[1fr,320px]">
               <div className="space-y-6">
+                {selectedClient.onboardingProjects && selectedClient.onboardingProjects.length > 1 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedClient.onboardingProjects.map(project => {
+                      const active = project.id === selectedProject.id;
+                      return (
+                        <button
+                          key={project.id}
+                          type="button"
+                          onClick={() => setSelectedProjectId(project.id)}
+                          className={`rounded-full border px-3 py-1 text-xs transition ${active ? 'border-sky-400 bg-sky-500/20 text-white' : 'border-white/20 text-white/70 hover:border-white/40 hover:text-white'}`}
+                        >
+                          {project.label || 'Project'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-6">
                   <h3 className="text-lg font-semibold text-white">Rollout foundations</h3>
                   <dl className="mt-4 grid gap-4 text-sm text-white/75 md:grid-cols-2">
                     <div>
                       <dt className="text-white/60">Plan</dt>
-                      <dd>{PLAN_CATALOG[selectedClient.onboarding.data.plan]?.name ?? selectedClient.onboarding.data.plan}</dd>
+                      <dd>{PLAN_CATALOG[selectedProject.data.plan]?.name ?? selectedProject.data.plan}</dd>
                     </div>
                     <div>
                       <dt className="text-white/60">Primary metric</dt>
-                      <dd>{selectedClient.onboarding.data.primaryMetric || '—'}</dd>
+                      <dd>{selectedProject.data.primaryMetric || '—'}</dd>
                     </div>
                     <div>
                       <dt className="text-white/60">Billing contact</dt>
-                      <dd>{selectedClient.onboarding.data.billingContactName || '—'}</dd>
+                      <dd>{selectedProject.data.billingContactName || '—'}</dd>
                     </div>
                     <div>
                       <dt className="text-white/60">Billing email</dt>
-                      <dd>{selectedClient.onboarding.data.billingContactEmail || '—'}</dd>
+                      <dd>{selectedProject.data.billingContactEmail || '—'}</dd>
                     </div>
                     <div>
                       <dt className="text-white/60">Launch timeline</dt>
-                      <dd>{selectedClient.onboarding.data.launchTimeline || '—'}</dd>
+                      <dd>{selectedProject.data.launchTimeline || '—'}</dd>
                     </div>
                     <div>
                       <dt className="text-white/60">Monthly ad budget</dt>
-                      <dd>{selectedClient.onboarding.data.monthlyAdBudget || '—'}</dd>
+                      <dd>{selectedProject.data.monthlyAdBudget || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Goals</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.goals || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.goals || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Challenges</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.challenges || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.challenges || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Notes</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.notes || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.notes || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Billing notes</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.billingNotes || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.billingNotes || '—'}</dd>
                     </div>
                   </dl>
                 </div>
@@ -527,18 +586,18 @@ export default function AdminView() {
                   <dl className="mt-4 grid gap-4 text-sm text-white/75 md:grid-cols-2">
                     <div>
                       <dt className="text-white/60">CRM tools</dt>
-                      <dd>{selectedClient.onboarding.data.crmTools || '—'}</dd>
+                      <dd>{selectedProject.data.crmTools || '—'}</dd>
                     </div>
                     <div>
                       <dt className="text-white/60">Voice coverage</dt>
-                      <dd>{selectedClient.onboarding.data.voiceCoverage || '—'}</dd>
+                      <dd>{selectedProject.data.voiceCoverage || '—'}</dd>
                     </div>
                     <div>
                       <dt className="text-white/60">Cal.com link</dt>
                       <dd>
-                        {selectedClient.onboarding.data.calLink ? (
-                          <a className="text-sky-300 underline-offset-4 hover:underline" href={selectedClient.onboarding.data.calLink} target="_blank" rel="noreferrer">
-                            {selectedClient.onboarding.data.calLink}
+                        {selectedProject.data.calLink ? (
+                          <a className="text-sky-300 underline-offset-4 hover:underline" href={selectedProject.data.calLink} target="_blank" rel="noreferrer">
+                            {selectedProject.data.calLink}
                           </a>
                         ) : (
                           '—'
@@ -547,11 +606,11 @@ export default function AdminView() {
                     </div>
                     <div>
                       <dt className="text-white/60">Team size</dt>
-                      <dd>{selectedClient.onboarding.data.teamSize || '—'}</dd>
+                      <dd>{selectedProject.data.teamSize || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Integrations</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.integrations || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.integrations || '—'}</dd>
                     </div>
                   </dl>
                 </div>
@@ -561,31 +620,31 @@ export default function AdminView() {
                   <dl className="mt-4 grid gap-4 text-sm text-white/75 md:grid-cols-2">
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Target audience</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.targetAudience || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.targetAudience || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Value proposition</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.uniqueValueProp || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.uniqueValueProp || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Offer details</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.offerDetails || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.offerDetails || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Brand voice</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.brandVoice || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.brandVoice || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Ad channels</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.adChannels || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.adChannels || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Follow-up process</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.followUpProcess || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.followUpProcess || '—'}</dd>
                     </div>
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Voice agent instructions</dt>
-                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.receptionistInstructions || '—'}</dd>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedProject.data.receptionistInstructions || '—'}</dd>
                     </div>
                   </dl>
                 </div>
@@ -637,9 +696,9 @@ export default function AdminView() {
                       {statusFeedback}
                     </p>
                   )}
-                  {selectedClient.onboarding.statusUpdatedAt && (
+                  {selectedProject.statusUpdatedAt && (
                     <p className="mt-3 text-[0.65rem] uppercase tracking-wide text-white/50">
-                      Last updated {formatDate(selectedClient.onboarding.statusUpdatedAt)}
+                      Last updated {formatDate(selectedProject.statusUpdatedAt)}
                     </p>
                   )}
                 </div>
