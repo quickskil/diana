@@ -168,7 +168,7 @@ export default function Page() {
                   Schedule your call
                 </Link>
                 <Link href="tel:+12136810660" className="btn-ghost">
-                  Call (555) 555-1234
+                  Call (213) 681 0660
                 </Link>
               </div>
             </div>

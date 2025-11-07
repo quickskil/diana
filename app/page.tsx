@@ -133,7 +133,7 @@ const callOptions = [
     icon: PhoneCall,
     title: "Talk to our receptionist now",
     description: "Call and experience the AI receptionist first-hand. We can warm transfer you to a strategist.",
-    href: "tel:+13125550123",
+    href: "tel:+12136810660",
     action: "Call now",
   },
   {
