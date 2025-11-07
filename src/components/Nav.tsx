@@ -8,7 +8,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import {
   Menu, X, ChevronDown,
   Rocket, Search, Megaphone, MousePointerClick, PhoneCall,
-  Headphones, CalendarCheck, ArrowRight
+  Headphones, CalendarCheck, ArrowRight, LogIn, LogOut, LayoutDashboard
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
@@ -157,7 +157,7 @@ export default function Nav() {
               <button
                 ref={triggerRef}
                 type="button"
-                className={`btn-ghost inline-flex items-center gap-1 ${isServicesActive ? 'ring-1 ring-white/30' : ''}`}
+                className={`btn-ghost inline-flex h-8 items-center gap-1 px-3 text-[13px] ${isServicesActive ? 'ring-1 ring-white/30' : ''}`}
                 aria-haspopup="true"
                 aria-expanded={svcOpen}
                 aria-controls="services-mega"
@@ -233,40 +233,54 @@ export default function Nav() {
             </div>
 
             {/* other links */}
-            {LINKS.filter(l => l.href !== '/services').map(l => {
-              const active = pathname?.startsWith(l.href);
-              return (
-                <Link key={l.href} href={l.href} className={`btn-ghost ${active ? 'ring-1 ring-white/30' : ''}`} aria-current={active ? 'page' : undefined}>
-                  {l.label}
-                </Link>
-              );
-            })}
+            <div className="flex items-center gap-1 text-[13px]">
+              {LINKS.filter(l => l.href !== '/services').map(l => {
+                const active = pathname?.startsWith(l.href);
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={`btn-ghost h-8 px-2.5 ${active ? 'ring-1 ring-white/30' : ''}`}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    {l.label}
+                  </Link>
+                );
+              })}
+              <a href="/voice-demo" className="btn-ghost h-8 px-2.5">Voice Demo</a>
+              <Link href="/contact" className="btn h-8 px-3">
+                <PhoneCall className="mr-1.5 size-3.5" aria-hidden />
+                Book a Call
+              </Link>
+            </div>
             <div className="hidden xl:flex flex-col items-start gap-1 border-x border-white/10 px-4 text-[11px] text-white/60">
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/60 bg-emerald-500/10 px-2 py-0.5 text-emerald-200">
                 $99 kickoff deposit
               </span>
               <span>Pay the balance after launch approval.</span>
             </div>
-            <a href="/voice-demo" className="btn-ghost">Voice Demo</a>
-            <Link href="/contact" className="btn">Book a Call</Link>
-            <Link
-              href={clientPortalHref}
-              className="btn bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 text-white shadow-lg shadow-sky-500/30 hover:shadow-sky-500/45"
-            >
-              {clientPortalLabel}
-            </Link>
-            {isAuthed && (
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => {
-                  logout();
-                  router.push('/');
-                }}
+            <div className="ml-6 flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-1.5 py-1">
+              <Link
+                href={clientPortalHref}
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-3 py-1 text-[13px] font-medium text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                Log out
-              </button>
-            )}
+                {isAuthed ? <LayoutDashboard className="size-4" /> : <LogIn className="size-4" />}
+                <span>{clientPortalLabel}</span>
+              </Link>
+              {isAuthed && (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium text-white/85 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                  onClick={() => {
+                    logout();
+                    router.push('/');
+                  }}
+                >
+                  <LogOut className="size-4" />
+                  <span>Log out</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Mobile hamburger */}

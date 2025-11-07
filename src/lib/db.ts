@@ -60,13 +60,37 @@ async function createSchema() {
   );`;
 
   await sql`CREATE TABLE IF NOT EXISTS onboardings (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    label TEXT NOT NULL DEFAULT 'Project',
     data JSONB NOT NULL,
     status TEXT NOT NULL DEFAULT 'submitted',
     status_note TEXT,
     completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );`;
+
+  await sql`ALTER TABLE onboardings DROP CONSTRAINT IF EXISTS onboardings_pkey;`;
+  await sql`ALTER TABLE onboardings ADD COLUMN IF NOT EXISTS id UUID;`;
+  await sql`UPDATE onboardings SET id = md5(random()::text || clock_timestamp()::text)::uuid WHERE id IS NULL;`;
+  await sql`ALTER TABLE onboardings ALTER COLUMN id SET NOT NULL;`;
+  await sql`ALTER TABLE onboardings ADD CONSTRAINT onboardings_pkey PRIMARY KEY (id);`;
+
+  await sql`ALTER TABLE onboardings ADD COLUMN IF NOT EXISTS label TEXT;`;
+  await sql`UPDATE onboardings SET label = COALESCE(NULLIF(label, ''), 'Project') WHERE label IS NULL OR label = '';`;
+  await sql`ALTER TABLE onboardings ALTER COLUMN label SET NOT NULL;`;
+  await sql`ALTER TABLE onboardings ALTER COLUMN label SET DEFAULT 'Project';`;
+
+  await sql`ALTER TABLE onboardings ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;`;
+  await sql`UPDATE onboardings SET created_at = COALESCE(created_at, updated_at, completed_at, NOW()) WHERE created_at IS NULL;`;
+  await sql`ALTER TABLE onboardings ALTER COLUMN created_at SET NOT NULL;`;
+  await sql`ALTER TABLE onboardings ALTER COLUMN created_at SET DEFAULT NOW();`;
+
+  await sql`ALTER TABLE onboardings ALTER COLUMN updated_at SET DEFAULT NOW();`;
+  await sql`ALTER TABLE onboardings ALTER COLUMN user_id SET NOT NULL;`;
+
+  await sql`CREATE INDEX IF NOT EXISTS idx_onboardings_user_id ON onboardings(user_id);`;
 
   const admin = await sql`SELECT id FROM users WHERE email = ${ADMIN_EMAIL} LIMIT 1;`;
   if (admin.rows.length === 0) {
