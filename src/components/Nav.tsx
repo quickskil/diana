@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import {
@@ -11,6 +11,7 @@ import {
   Headphones, CalendarCheck, ArrowRight
 } from 'lucide-react';
 import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
 
 const LINKS = [
   { href: '/services', label: 'Services' },
@@ -29,6 +30,11 @@ const SERVICES = [
 
 export default function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { hydrated, currentUser, logout } = useAuth();
+  const isAuthed = hydrated && !!currentUser;
+  const dashboardHref = currentUser?.role === 'admin' ? '/admin' : '/dashboard';
+  const dashboardLabel = currentUser?.role === 'admin' ? 'Admin' : 'Dashboard';
   const reduce = useReducedMotion();
 
   const [atTop, setAtTop] = useState(true);
@@ -235,6 +241,26 @@ export default function Nav() {
             })}
             <a href="/voice-demo" className="btn-ghost">Voice Demo</a>
             <Link href="/contact" className="btn">Book a Call</Link>
+            {isAuthed ? (
+              <>
+                <Link href={dashboardHref} className="btn-ghost">{dashboardLabel}</Link>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => {
+                    logout();
+                    router.push('/');
+                  }}
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="btn-ghost">Log in</Link>
+                <Link href="/register" className="btn-ghost">Client Portal</Link>
+              </>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -306,8 +332,39 @@ export default function Nav() {
                 );
               })}
 
-              <li className="pt-1">
+              <li className="pt-1 space-y-2">
                 <Link href="/contact" className="btn w-full" onClick={() => setOpen(false)}>Book a Call</Link>
+                {isAuthed ? (
+                  <>
+                    <Link
+                      href={dashboardHref}
+                      className="btn-ghost w-full"
+                      onClick={() => setOpen(false)}
+                    >
+                      {dashboardLabel}
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn-ghost w-full"
+                      onClick={() => {
+                        setOpen(false);
+                        logout();
+                        router.push('/');
+                      }}
+                    >
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" className="btn-ghost w-full" onClick={() => setOpen(false)}>
+                      Log in
+                    </Link>
+                    <Link href="/register" className="btn-ghost w-full" onClick={() => setOpen(false)}>
+                      Client Portal
+                    </Link>
+                  </>
+                )}
               </li>
             </ul>
             <p className="text-[12px] text-white/60 px-3 pt-2">Friendly chat. Clear plan. No long-term contracts.</p>
