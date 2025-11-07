@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSessionUser, saveOnboardingForUser } from '@/lib/server/auth';
 import { PLAN_LIST } from '@/lib/plans';
 import { defaultOnboarding, type OnboardingForm } from '@/lib/types/user';
+import type { PlanKey } from '@/lib/plans';
 
 /** Precompute valid plan keys for O(1) checks */
-const VALID_PLAN_KEYS = new Set(PLAN_LIST.map(p => p.key));
+const VALID_PLAN_KEYS: Set<PlanKey> = new Set(PLAN_LIST.map(p => p.key));
+
+function isPlanKey(value: string): value is PlanKey {
+  return VALID_PLAN_KEYS.has(value as PlanKey);
+}
 
 /** Narrow payload to only the fields we expect from OnboardingForm */
 type PartialOnboardingUnknown = Partial<Record<keyof OnboardingForm, unknown>>;
@@ -31,11 +36,22 @@ function normaliseForm(payload: Partial<OnboardingForm> | null | undefined): Onb
   const merged: OnboardingForm = { ...base };
 
   for (const k of allowedKeys) {
-    if (Object.prototype.hasOwnProperty.call(input, k)) {
-      // Coerce non-string values to string; keep strings as-is but trimmed
-      const incoming = input[k];
-      merged[k] = typeof incoming === 'string' ? incoming.trim() : toCleanString(incoming);
+    if (!Object.prototype.hasOwnProperty.call(input, k)) {
+      continue;
     }
+
+    const incoming = input[k];
+
+    if (k === 'plan') {
+      const candidate = typeof incoming === 'string' ? incoming.trim() : toCleanString(incoming);
+      if (candidate && isPlanKey(candidate)) {
+        merged.plan = candidate;
+      }
+      continue;
+    }
+
+    // Coerce non-string values to string; keep strings as-is but trimmed
+    merged[k] = typeof incoming === 'string' ? incoming.trim() : toCleanString(incoming);
   }
 
   // Validate and correct plan
