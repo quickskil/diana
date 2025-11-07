@@ -15,8 +15,8 @@
     "motion": "11.14.3",
     "lucide-react": "0.453.0",
     "swr": "2.2.5",
-    "@vercel/postgres": "0.10.0",
-    "bcryptjs": "2.4.3"
+    "bcryptjs": "2.4.3",
+    "pg": "8.13.1"
   },
   "devDependencies": {
     "@types/node": "20.11.30",
