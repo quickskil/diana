@@ -6,6 +6,9 @@ export type OnboardingStatus = 'not-started' | 'submitted' | 'in-progress' | 'la
 
 export interface OnboardingForm {
   plan: PlanKey;
+  billingContactName: string;
+  billingContactEmail: string;
+  billingNotes: string;
   companyName: string;
   website: string;
   primaryMetric: string;
@@ -49,6 +52,9 @@ export interface SafeUser {
 
 export const defaultOnboarding: OnboardingForm = {
   plan: 'launch',
+  billingContactName: '',
+  billingContactEmail: '',
+  billingNotes: '',
   companyName: '',
   website: '',
   primaryMetric: 'Booked consultations',

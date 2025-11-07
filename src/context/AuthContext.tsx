@@ -13,6 +13,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   saveOnboarding: (payload: OnboardingForm) => Promise<{ ok: boolean; message?: string }>;
   updateOnboardingStatus: (payload: { userId: string; status: OnboardingStatus; note?: string }) => Promise<{ ok: boolean; message?: string }>;
+  updateAccount: (payload: { name?: string; email?: string; company?: string; currentPassword?: string; newPassword?: string | null }) => Promise<{ ok: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -194,6 +195,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateAccount = useCallback<AuthContextValue['updateAccount']>(async payload => {
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await parseJson<{ ok?: boolean; message?: string; user?: SafeUser | null }>(res);
+      if (!res.ok || data.ok === false) {
+        return { ok: false, message: data.message ?? 'Unable to update account.' };
+      }
+      if (data.user) {
+        setCurrentUser(data.user);
+        setUsers(prev => prev.map(user => (user.id === data.user?.id ? data.user! : user)));
+        if (data.user.role === 'admin') {
+          setAdminUsersLoaded(false);
+        }
+      }
+      return { ok: true, message: data.message ?? 'Account updated.' };
+    } catch (error) {
+      console.error('Failed to update account', error);
+      return { ok: false, message: 'Unable to update account.' };
+    }
+  }, []);
+
   const updateOnboardingStatus = useCallback<AuthContextValue['updateOnboardingStatus']>(async payload => {
     try {
       const res = await fetch(`/api/admin/onboarding/${encodeURIComponent(payload.userId)}`, {
@@ -230,8 +256,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     saveOnboarding,
+    updateAccount,
     updateOnboardingStatus
-  }), [currentUser, hydrated, login, logout, register, saveOnboarding, updateOnboardingStatus, users]);
+  }), [currentUser, hydrated, login, logout, register, saveOnboarding, updateAccount, updateOnboardingStatus, users]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
