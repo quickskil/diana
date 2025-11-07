@@ -35,7 +35,6 @@ export default function Nav() {
   const isAuthed = hydrated && !!currentUser;
   const dashboardHref = currentUser?.role === 'admin' ? '/admin' : '/dashboard';
   const dashboardLabel = currentUser?.role === 'admin' ? 'Admin' : 'Dashboard';
-  const clientPortalHref = isAuthed ? dashboardHref : '/login';
   const clientPortalLabel = isAuthed ? dashboardLabel : 'Client Portal';
   const reduce = useReducedMotion();
 
@@ -43,6 +42,7 @@ export default function Nav() {
   const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);      // mobile drawer
   const [svcOpen, setSvcOpen] = useState(false);// desktop mega
+  const [accountOpen, setAccountOpen] = useState(false);
   const lastY = useRef(0);
 
   // headroom + atTop
@@ -69,7 +69,12 @@ export default function Nav() {
 
   // Esc to close
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => (e.key === 'Escape') && (setOpen(false), setSvcOpen(false));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setOpen(false);
+      setSvcOpen(false);
+      setAccountOpen(false);
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
@@ -92,6 +97,9 @@ export default function Nav() {
   const closeTimer = useRef<number | null>(null);
   const megaWrapRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const accountWrapRef = useRef<HTMLDivElement | null>(null);
+  const accountTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   const clearTimers = () => {
     if (openTimer.current) { window.clearTimeout(openTimer.current); openTimer.current = null; }
@@ -111,6 +119,17 @@ export default function Nav() {
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, [svcOpen]);
+
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      if (!accountOpen) return;
+      const target = e.target as Node;
+      if (accountWrapRef.current?.contains(target)) return;
+      setAccountOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [accountOpen]);
 
   const isServicesActive = pathname?.startsWith('/services');
 
@@ -259,27 +278,102 @@ export default function Nav() {
               </span>
               <span>Pay the balance after launch approval.</span>
             </div>
-            <div className="ml-6 flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-1.5 py-1">
-              <Link
-                href={clientPortalHref}
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-3 py-1 text-[13px] font-medium text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-500/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            <div
+              className="relative ml-6 flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-1.5 py-1"
+              ref={accountWrapRef}
+              onMouseEnter={() => setAccountOpen(true)}
+              onMouseLeave={() => setAccountOpen(false)}
+              onBlur={(event) => {
+                const next = event.relatedTarget as Node | null;
+                if (next && accountWrapRef.current?.contains(next)) return;
+                setAccountOpen(false);
+              }}
+            >
+              <button
+                ref={accountTriggerRef}
+                type="button"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-3 py-1 text-[13px] font-medium text-white shadow-lg shadow-sky-500/25 transition hover:shadow-sky-500/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                aria-haspopup="menu"
+                aria-expanded={accountOpen}
+                aria-controls="account-menu"
+                onClick={() => setAccountOpen((v) => !v)}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    setAccountOpen(true);
+                    const firstItem = accountMenuRef.current?.querySelector<HTMLElement>('[data-menuitem]');
+                    firstItem?.focus();
+                  }
+                }}
               >
                 {isAuthed ? <LayoutDashboard className="size-4" /> : <LogIn className="size-4" />}
                 <span>{clientPortalLabel}</span>
-              </Link>
-              {isAuthed && (
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium text-white/85 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                  onClick={() => {
-                    logout();
-                    router.push('/');
-                  }}
-                >
-                  <LogOut className="size-4" />
-                  <span>Log out</span>
-                </button>
-              )}
+                <ChevronDown className="size-4" aria-hidden />
+              </button>
+
+              <motion.div
+                id="account-menu"
+                ref={accountMenuRef}
+                initial={false}
+                animate={{
+                  opacity: accountOpen ? 1 : 0,
+                  y: accountOpen ? 0 : -6,
+                  pointerEvents: accountOpen ? 'auto' : 'none'
+                }}
+                transition={reduce ? { duration: 0 } : { duration: 0.16, ease: 'easeOut' }}
+                className="absolute right-0 top-full mt-2 w-60 rounded-2xl p-[1px] shadow-2xl"
+                style={{ background: ring }}
+                role="menu"
+                aria-label="Account"
+              >
+                <div className="rounded-2xl border border-white/10 bg-black/85 py-3 text-[13px]">
+                  {isAuthed ? (
+                    <>
+                      <Link
+                        href={dashboardHref}
+                        className="flex items-center gap-2 px-4 py-2 text-white/90 transition hover:bg-white/10 focus-visible:bg-white/10"
+                        role="menuitem"
+                        data-menuitem
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        <LayoutDashboard className="size-4" />
+                        <span>{dashboardLabel}</span>
+                      </Link>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-white/90 transition hover:bg-white/10 focus-visible:bg-white/10"
+                        role="menuitem"
+                        data-menuitem
+                        onClick={async () => {
+                          await logout();
+                          setAccountOpen(false);
+                          router.push('/');
+                          accountTriggerRef.current?.focus();
+                        }}
+                      >
+                        <LogOut className="size-4" />
+                        <span>Log out</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        className="flex items-center gap-2 px-4 py-2 text-white/90 transition hover:bg-white/10 focus-visible:bg-white/10"
+                        role="menuitem"
+                        data-menuitem
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        <LogIn className="size-4" />
+                        <span>Client Portal</span>
+                      </Link>
+                      <p className="px-4 pt-1 text-[12px] text-white/65">
+                        Create your workspace inside — the $99 kickoff deposit is collected once we launch together.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </motion.div>
             </div>
           </div>
 
