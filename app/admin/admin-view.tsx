@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { PLAN_CATALOG } from '@/lib/plans';
 import type { OnboardingStatus } from '@/lib/types/user';
+import type { PaymentRecord } from '@/lib/types/payments';
 
 interface CalAttendee {
   name?: string;
@@ -38,6 +39,36 @@ const statusLabelMap: Record<OnboardingStatus, string> = {
   'launch-ready': 'Launch-ready'
 };
 
+const PAYMENT_TYPE_LABELS: Record<string, string> = {
+  'kickoff-deposit': 'Kickoff deposit',
+  'final-balance': 'Final balance',
+  other: 'Other'
+};
+
+const FINAL_BALANCE_SUGGESTIONS: Record<string, number> = {
+  launch: 400,
+  'launch-traffic': 1401,
+  'full-funnel': 2801
+};
+
+const formatPaymentStatus = (value?: string | null) => {
+  if (!value) return 'Unknown';
+  switch (value) {
+    case 'succeeded':
+      return 'Paid';
+    case 'processing':
+      return 'Processing';
+    case 'requires_action':
+      return 'Action required';
+    case 'requires_payment_method':
+      return 'Awaiting payment method';
+    case 'canceled':
+      return 'Canceled';
+    default:
+      return value.replace(/_/g, ' ');
+  }
+};
+
 export default function AdminView() {
   const router = useRouter();
   const { hydrated, currentUser, users, updateOnboardingStatus } = useAuth();
@@ -52,6 +83,16 @@ export default function AdminView() {
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
   const [statusSuccess, setStatusSuccess] = useState<boolean | null>(null);
   const [statusSaving, setStatusSaving] = useState(false);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsError, setPaymentsError] = useState<string | null>(null);
+  const [paymentsSample, setPaymentsSample] = useState(false);
+  const [finalAmount, setFinalAmount] = useState('');
+  const [finalDescription, setFinalDescription] = useState('Final website balance');
+  const [finalFeedback, setFinalFeedback] = useState<string | null>(null);
+  const [finalFeedbackState, setFinalFeedbackState] = useState<'neutral' | 'error' | 'success'>('neutral');
+  const [finalCheckoutUrl, setFinalCheckoutUrl] = useState<string | null>(null);
+  const [finalLoading, setFinalLoading] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -107,12 +148,67 @@ export default function AdminView() {
     setStatusSuccess(null);
   }, [selectedClient]);
 
+  useEffect(() => {
+    if (!selectedClient) {
+      setFinalAmount('');
+      setFinalDescription('Final website balance');
+      setFinalCheckoutUrl(null);
+      setFinalFeedback(null);
+      setFinalFeedbackState('neutral');
+      return;
+    }
+    const planKey = selectedClient.onboarding?.data.plan;
+    if (planKey && FINAL_BALANCE_SUGGESTIONS[planKey] !== undefined) {
+      setFinalAmount(FINAL_BALANCE_SUGGESTIONS[planKey].toString());
+      setFinalDescription(`${PLAN_CATALOG[planKey]?.name ?? 'Website'} final balance`);
+    } else {
+      setFinalAmount('');
+      setFinalDescription('Final website balance');
+    }
+    setFinalCheckoutUrl(null);
+    setFinalFeedback(null);
+    setFinalFeedbackState('neutral');
+  }, [selectedClient]);
+
   const statusOptions: { value: OnboardingStatus; label: string; description: string }[] = [
     { value: 'not-started', label: 'Not started', description: 'Waiting for onboarding submission.' },
     { value: 'submitted', label: 'Submitted for review', description: 'Client has delivered onboarding details.' },
     { value: 'in-progress', label: 'In progress', description: 'Strategy, creative, or AI training underway.' },
     { value: 'launch-ready', label: 'Launch-ready', description: 'Green-lit for go-live and automation handoff.' }
   ];
+
+  const formatCurrency = useCallback((amount: number, currency: string) => {
+    try {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'USD' }).format(amount);
+    } catch {
+      return `${(currency || 'USD').toUpperCase()} ${amount.toFixed(2)}`;
+    }
+  }, []);
+
+  const selectedClientPayments = useMemo(() => {
+    if (!selectedClient) return [] as PaymentRecord[];
+    return payments.filter(payment => payment.metadata?.userId === selectedClient.id);
+  }, [payments, selectedClient]);
+
+  const latestDeposit = useMemo(() => {
+    const deposits = selectedClientPayments.filter(payment => payment.type === 'kickoff-deposit');
+    if (deposits.length === 0) return null;
+    return [...deposits].sort((a, b) => (a.createdAt > b.createdAt ? -1 : a.createdAt < b.createdAt ? 1 : 0))[0];
+  }, [selectedClientPayments]);
+
+  const depositPaid = Boolean(
+    latestDeposit && (latestDeposit.status === 'succeeded' || latestDeposit.charge?.status === 'succeeded')
+  );
+
+  const finalPayments = useMemo(
+    () => selectedClientPayments.filter(payment => payment.type === 'final-balance'),
+    [selectedClientPayments]
+  );
+
+  const finalPaymentsSorted = useMemo(
+    () => [...finalPayments].sort((a, b) => (a.createdAt > b.createdAt ? -1 : a.createdAt < b.createdAt ? 1 : 0)),
+    [finalPayments]
+  );
 
   const handleStatusUpdate = useCallback(async () => {
     if (!selectedClient) return;
@@ -153,10 +249,96 @@ export default function AdminView() {
     }
   }, []);
 
+  const refreshPayments = useCallback(async () => {
+    setPaymentsLoading(true);
+    setPaymentsError(null);
+    try {
+      const res = await fetch('/api/admin/payments', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.message || 'Unable to load payments.');
+      }
+      setPayments(Array.isArray(data.payments) ? data.payments : []);
+      setPaymentsSample(Boolean(data.sample));
+    } catch (error) {
+      setPaymentsError((error as Error).message);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, []);
+
+  const handleGenerateFinalCheckout = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!selectedClient) return;
+
+      setFinalLoading(true);
+      setFinalFeedback(null);
+      setFinalFeedbackState('neutral');
+      setFinalCheckoutUrl(null);
+
+      const numericAmount = Number.parseFloat(finalAmount);
+      if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+        setFinalLoading(false);
+        setFinalFeedback('Enter a valid amount greater than zero.');
+        setFinalFeedbackState('error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/payments/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: selectedClient.id,
+            amount: numericAmount,
+            currency: 'usd',
+            description: finalDescription
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || data.ok === false || !data.url) {
+          throw new Error(data.message || 'Unable to create checkout session.');
+        }
+        setFinalCheckoutUrl(data.url as string);
+        setFinalFeedback('Checkout link ready to share.');
+        setFinalFeedbackState('success');
+        void refreshPayments();
+      } catch (error) {
+        setFinalFeedback((error as Error).message);
+        setFinalFeedbackState('error');
+      } finally {
+        setFinalLoading(false);
+      }
+    },
+    [finalAmount, finalDescription, refreshPayments, selectedClient]
+  );
+
+  const handleCopyCheckoutUrl = useCallback(async () => {
+    if (!finalCheckoutUrl) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(finalCheckoutUrl);
+        setFinalFeedback('Checkout link copied to clipboard.');
+        setFinalFeedbackState('success');
+        return;
+      }
+    } catch (error) {
+      console.error('Clipboard copy failed', error);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.prompt('Copy this checkout link', finalCheckoutUrl);
+      setFinalFeedback('Checkout link ready to share.');
+      setFinalFeedbackState('success');
+    }
+  }, [finalCheckoutUrl]);
+
   useEffect(() => {
     if (!ready) return;
     void refreshEvents();
-  }, [ready, refreshEvents]);
+    void refreshPayments();
+  }, [ready, refreshEvents, refreshPayments]);
 
   if (!ready) {
     return (
@@ -174,7 +356,7 @@ export default function AdminView() {
         <header className="rounded-3xl border border-white/10 bg-gradient-to-r from-black/70 via-black/40 to-sky-900/30 p-10 text-white shadow-lg">
           <h1 className="text-3xl font-semibold md:text-4xl">Admin control centre</h1>
           <p className="mt-3 max-w-2xl text-white/75">
-            Review onboarding submissions, keep tabs on go-live readiness, and monitor every booking pulled from Cal.com.
+            Review onboarding submissions, monitor Stripe deposits, and keep tabs on every booking pulled from Cal.com.
           </p>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/15 bg-black/40 p-5">
@@ -306,6 +488,14 @@ export default function AdminView() {
                       <dd>{selectedClient.onboarding.data.primaryMetric || '—'}</dd>
                     </div>
                     <div>
+                      <dt className="text-white/60">Billing contact</dt>
+                      <dd>{selectedClient.onboarding.data.billingContactName || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-white/60">Billing email</dt>
+                      <dd>{selectedClient.onboarding.data.billingContactEmail || '—'}</dd>
+                    </div>
+                    <div>
                       <dt className="text-white/60">Launch timeline</dt>
                       <dd>{selectedClient.onboarding.data.launchTimeline || '—'}</dd>
                     </div>
@@ -324,6 +514,10 @@ export default function AdminView() {
                     <div className="md:col-span-2">
                       <dt className="text-white/60">Notes</dt>
                       <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.notes || '—'}</dd>
+                    </div>
+                    <div className="md:col-span-2">
+                      <dt className="text-white/60">Billing notes</dt>
+                      <dd className="whitespace-pre-wrap text-white/80">{selectedClient.onboarding.data.billingNotes || '—'}</dd>
                     </div>
                   </dl>
                 </div>
@@ -482,6 +676,273 @@ export default function AdminView() {
               </aside>
             </div>
           )}
+        </section>
+
+        <section className="rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Payments & billing operations</h2>
+              <p className="text-sm text-white/70">Track Stripe deposits and fire off final balances without leaving the portal.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void refreshPayments()}
+                disabled={paymentsLoading}
+                className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {paymentsLoading ? 'Refreshing…' : 'Refresh payments'}
+              </button>
+              {paymentsSample && (
+                <span className="rounded-full border border-amber-300/60 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
+                  Demo data — add STRIPE_SECRET_KEY for live payments
+                </span>
+              )}
+            </div>
+          </div>
+
+          {paymentsError && (
+            <p className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{paymentsError}</p>
+          )}
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-[2fr,1fr]">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-white/10 text-left text-sm">
+                <thead className="text-xs uppercase tracking-wide text-white/60">
+                  <tr>
+                    <th className="px-4 py-3">Client</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Amount</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Updated</th>
+                    <th className="px-4 py-3">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {paymentsLoading && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-6 text-center text-white/60">Loading payments…</td>
+                    </tr>
+                  )}
+                  {!paymentsLoading && payments.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-6 text-center text-white/60">
+                        No Stripe activity yet. Kickoff deposits and launch balances will appear here automatically.
+                      </td>
+                    </tr>
+                  )}
+                  {!paymentsLoading &&
+                    payments.map(payment => {
+                      const client = clients.find(c => c.id === payment.metadata?.userId);
+                      const clientName = payment.metadata?.clientName || client?.name || 'Client';
+                      const clientEmail = payment.metadata?.clientEmail || client?.email || '—';
+                      const statusClass =
+                        payment.status === 'succeeded'
+                          ? 'bg-emerald-500/15 text-emerald-200'
+                          : payment.status === 'processing'
+                            ? 'bg-sky-500/15 text-sky-200'
+                            : payment.status === 'canceled'
+                              ? 'bg-white/10 text-white/70'
+                              : 'bg-amber-500/15 text-amber-200';
+
+                      return (
+                        <tr key={payment.id} className="hover:bg-white/5">
+                          <td className="px-4 py-4">
+                            <div className="font-medium text-white">{clientName}</div>
+                            <div className="text-xs text-white/60">{clientEmail}</div>
+                          </td>
+                          <td className="px-4 py-4 text-white/75">{PAYMENT_TYPE_LABELS[payment.type] ?? 'Payment'}</td>
+                          <td className="px-4 py-4 text-white">
+                            {formatCurrency(payment.amount, payment.currency)}
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}>
+                              {formatPaymentStatus(payment.status)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-white/70">{formatDate(payment.charge?.paidAt ?? payment.createdAt)}</td>
+                          <td className="px-4 py-4">
+                            {payment.charge?.receiptUrl ? (
+                              <a
+                                href={payment.charge.receiptUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sky-300 underline-offset-4 hover:underline"
+                              >
+                                View receipt
+                              </a>
+                            ) : (
+                              <span className="text-white/40">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+
+            <aside className="space-y-5 rounded-2xl border border-white/10 bg-black/30 p-6 text-sm text-white/75">
+              <div>
+                <h3 className="text-base font-semibold text-white">Kickoff deposit</h3>
+                {!selectedClient ? (
+                  <p className="mt-2 text-sm text-white/60">Select a client to review their kickoff deposit.</p>
+                ) : latestDeposit ? (
+                  <div className="mt-3 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/60">Status</span>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          depositPaid ? 'bg-emerald-500/15 text-emerald-200' : 'bg-amber-500/15 text-amber-200'
+                        }`}
+                      >
+                        {formatPaymentStatus(latestDeposit.status)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-white/70">
+                      <span>Amount</span>
+                      <span className="font-semibold text-white">
+                        {formatCurrency(latestDeposit.amount, latestDeposit.currency)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-white/70">
+                      <span>Updated</span>
+                      <span>{formatDate(latestDeposit.charge?.paidAt ?? latestDeposit.createdAt)}</span>
+                    </div>
+                    {latestDeposit.charge?.receiptUrl && (
+                      <a
+                        href={latestDeposit.charge.receiptUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center text-xs font-semibold text-sky-300 underline-offset-4 hover:underline"
+                      >
+                        View Stripe receipt
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-white/60">
+                    No deposit on file yet. Once the client submits the $99 kickoff payment the receipt and status will display here.
+                  </p>
+                )}
+              </div>
+
+              {selectedClient && finalPaymentsSorted.length > 0 && (
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-xs">
+                  <p className="font-semibold text-white">Final payment history</p>
+                  <ul className="mt-2 space-y-2 text-white/65">
+                    {finalPaymentsSorted.map(payment => (
+                      <li key={payment.id} className="rounded-lg border border-white/10 bg-black/30 p-3">
+                        <div className="flex items-center justify-between text-white">
+                          <span>{formatCurrency(payment.amount, payment.currency)}</span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[0.65rem] font-semibold ${
+                              payment.status === 'succeeded'
+                                ? 'bg-emerald-500/15 text-emerald-200'
+                                : 'bg-amber-500/15 text-amber-200'
+                            }`}
+                          >
+                            {formatPaymentStatus(payment.status)}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[0.65rem] text-white/60">
+                          {formatDate(payment.charge?.paidAt ?? payment.createdAt)}
+                        </div>
+                        {payment.charge?.receiptUrl && (
+                          <a
+                            href={payment.charge.receiptUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-1 inline-flex text-[0.65rem] text-sky-300 underline-offset-4 hover:underline"
+                          >
+                            Receipt
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-base font-semibold text-white">Send final balance</h3>
+                <p className="mt-1 text-xs text-white/60">Generate a checkout link once the client approves their launch.</p>
+                {!selectedClient ? (
+                  <p className="mt-3 text-sm text-white/60">Select a client to prepare a final payment link.</p>
+                ) : (
+                  <form className="mt-3 space-y-3" onSubmit={event => void handleGenerateFinalCheckout(event)}>
+                    <div>
+                      <label
+                        htmlFor="finalAmount"
+                        className="block text-xs font-semibold uppercase tracking-wide text-white/60"
+                      >
+                        Amount (USD)
+                      </label>
+                      <input
+                        id="finalAmount"
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        value={finalAmount}
+                        onChange={event => setFinalAmount(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white focus:border-sky-400 focus:outline-none"
+                        placeholder="Enter final balance"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="finalDescription"
+                        className="block text-xs font-semibold uppercase tracking-wide text-white/60"
+                      >
+                        Description
+                      </label>
+                      <input
+                        id="finalDescription"
+                        type="text"
+                        value={finalDescription}
+                        onChange={event => setFinalDescription(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white focus:border-sky-400 focus:outline-none"
+                        placeholder="Final website balance"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={finalLoading}
+                      className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {finalLoading ? 'Creating link…' : 'Create checkout link'}
+                    </button>
+                    {finalCheckoutUrl && (
+                      <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-xs text-white/70">
+                        <p className="font-semibold text-white">Share this link</p>
+                        <p className="mt-1 break-words text-white/70">{finalCheckoutUrl}</p>
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyCheckoutUrl()}
+                          className="mt-2 inline-flex items-center rounded-lg border border-sky-400/60 px-3 py-1 text-[0.7rem] font-semibold text-sky-200 hover:border-sky-300 hover:text-sky-100"
+                        >
+                          Copy link
+                        </button>
+                      </div>
+                    )}
+                    {finalFeedback && (
+                      <p
+                        className={`rounded-xl px-3 py-2 text-xs ${
+                          finalFeedbackState === 'success'
+                            ? 'bg-emerald-500/10 text-emerald-200'
+                            : finalFeedbackState === 'error'
+                              ? 'bg-red-500/10 text-red-200'
+                              : 'bg-white/10 text-white/70'
+                        }`}
+                      >
+                        {finalFeedback}
+                      </p>
+                    )}
+                  </form>
+                )}
+              </div>
+            </aside>
+          </div>
         </section>
 
         <section className="rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">

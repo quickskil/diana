@@ -14,6 +14,7 @@ type Tier = {
   headline: string;
   price: string;
   caption: string;
+  balance: string;
   bullets: string[];
   cta: string;
   trend: number[];
@@ -24,8 +25,9 @@ const tiers: Tier[] = [
   {
     name: "Launch",
     headline: "Conversion website",
-    price: "$499 setup",
-    caption: "Hosting & care $25/mo",
+    price: "$99 kickoff deposit",
+    caption: "Balance $400 once you approve launch",
+    balance: "$25/mo hosting & care",
     bullets: [
       "One-page funnel with booking",
       "Story, proof, and offer aligned",
@@ -38,8 +40,9 @@ const tiers: Tier[] = [
   {
     name: "Launch + Traffic",
     headline: "Site + ads",
-    price: "$1,500 setup",
-    caption: "Management 10% of ad spend (no retainer)",
+    price: "$99 kickoff deposit",
+    caption: "$1,401 balance once launch is signed off",
+    balance: "Management 10% of ad spend (no retainer)",
     bullets: [
       "Search + social campaigns",
       "Message match from ad to page",
@@ -52,8 +55,9 @@ const tiers: Tier[] = [
   {
     name: "Full Funnel Automation",
     headline: "Site + ads + voice",
-    price: "$2,900 setup",
-    caption: "Voice from $99/mo",
+    price: "$99 kickoff deposit",
+    caption: "$2,801 balance after your approval",
+    balance: "Voice from $99/mo",
     bullets: [
       "Everything in Launch + Traffic",
       "AI receptionist answers instantly",
@@ -107,6 +111,8 @@ export default function Page() {
                   <div className="text-lg font-semibold text-white/90">{tier.headline}</div>
                   <div className="text-3xl font-extrabold text-white/95">{tier.price}</div>
                   <div className="text-xs text-white/55">{tier.caption}</div>
+                  <div className="mt-1 text-[11px] uppercase tracking-wide text-emerald-300">Balance due only after launch approval</div>
+                  <div className="text-[11px] text-white/45">{tier.balance}</div>
                 </div>
                 <p className="text-xs text-white/60 leading-relaxed">
                   We’ll map the rollout for {tier.name.toLowerCase()} on a quick call so you know exactly what to expect.
@@ -151,6 +157,32 @@ export default function Page() {
               </ol>
               <p className="text-xs text-white/55">We handle the heavy lifting — you just review and approve.</p>
             </div>
+          </div>
+        </section>
+
+        <section className="radiant-card">
+          <div className="card p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-white/95">Two-step payment flow</h2>
+            <p className="text-sm text-white/70 max-w-3xl">
+              We only collect a $99 kickoff deposit to reserve your build slot. The remaining balance is invoiced once you’ve approved the launch and are thrilled with the results.
+            </p>
+            <ol className="grid gap-3 md:grid-cols-3 text-sm text-white/75">
+              <li className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4">
+                <div className="text-xs uppercase tracking-wide text-emerald-200">Step 1</div>
+                <div className="mt-1 font-semibold text-white">Kickoff deposit</div>
+                <p className="mt-1 text-emerald-100/80">Secure your slot with $99 and complete onboarding so we can start copy, design, and automations immediately.</p>
+              </li>
+              <li className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-4">
+                <div className="text-xs uppercase tracking-wide text-sky-200">Step 2</div>
+                <div className="mt-1 font-semibold text-white">Build & review</div>
+                <p className="mt-1 text-sky-100/80">We share progress, implement feedback, and align everything from ads to AI receptionists.</p>
+              </li>
+              <li className="rounded-2xl border border-indigo-400/40 bg-indigo-500/10 p-4">
+                <div className="text-xs uppercase tracking-wide text-indigo-200">Step 3</div>
+                <div className="mt-1 font-semibold text-white">Approve & pay balance</div>
+                <p className="mt-1 text-indigo-100/80">Once you sign off on the launch, we issue the final invoice and push everything live.</p>
+              </li>
+            </ol>
           </div>
         </section>
 

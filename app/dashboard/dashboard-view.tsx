@@ -1,10 +1,11 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { PLAN_CATALOG, PLAN_LIST } from '@/lib/plans';
 import { defaultOnboarding, type OnboardingForm, type OnboardingStatus, type SafeUser } from '@/lib/types/user';
+import type { DepositSummary } from '@/lib/types/payments';
 
 interface CalAttendee {
   name?: string;
@@ -45,15 +46,35 @@ const statusLabels: Record<OnboardingStatus, string> = {
 
 export default function DashboardView() {
   const router = useRouter();
-  const { hydrated, currentUser, saveOnboarding } = useAuth();
+  const { hydrated, currentUser, saveOnboarding, updateAccount } = useAuth();
   const [allowedUser, setAllowedUser] = useState<SafeUser | null>(null);
   const [form, setForm] = useState<OnboardingForm>({ ...defaultOnboarding });
   const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [stepSaving, setStepSaving] = useState(false);
+  const [onboardingFeedback, setOnboardingFeedback] = useState<string | null>(null);
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [usingSampleData, setUsingSampleData] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [accountForm, setAccountForm] = useState({
+    name: '',
+    email: '',
+    company: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [accountFeedback, setAccountFeedback] = useState<string | null>(null);
+  const [accountSaving, setAccountSaving] = useState(false);
+  const initialStepRender = useRef(true);
+  const [depositSummary, setDepositSummary] = useState<DepositSummary | null>(null);
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositError, setDepositError] = useState<string | null>(null);
+  const [depositSample, setDepositSample] = useState(false);
+  const [depositFeedback, setDepositFeedback] = useState<string | null>(null);
+  const [depositCheckoutLoading, setDepositCheckoutLoading] = useState(false);
+  const depositPaidRef = useRef(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -74,7 +95,22 @@ export default function DashboardView() {
       ? { ...defaultOnboarding, ...allowedUser.onboarding.data }
       : { ...defaultOnboarding };
     setForm(onboarding);
+    setStepIndex(0);
+    setAccountForm({
+      name: allowedUser.name ?? '',
+      email: allowedUser.email ?? '',
+      company: allowedUser.company ?? '',
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
   }, [allowedUser]);
+
+  useEffect(() => {
+    setDepositSummary(null);
+    setDepositFeedback(null);
+    depositPaidRef.current = false;
+  }, [allowedUser?.id]);
 
   const refreshEvents = useCallback(async () => {
     if (!allowedUser?.email) return;
@@ -95,27 +131,618 @@ export default function DashboardView() {
     }
   }, [allowedUser?.email]);
 
+  const refreshDeposit = useCallback(async () => {
+    setDepositLoading(true);
+    setDepositError(null);
+    try {
+      const res = await fetch('/api/payments/summary', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.message || 'Unable to check payments.');
+      }
+      setDepositSummary(data.deposit ?? null);
+      setDepositSample(Boolean(data.sample));
+    } catch (error) {
+      setDepositError((error as Error).message);
+    } finally {
+      setDepositLoading(false);
+    }
+  }, []);
+
+  const handleDepositCheckout = useCallback(async () => {
+    setDepositCheckoutLoading(true);
+    setDepositFeedback(null);
+    setDepositError(null);
+    try {
+      const res = await fetch('/api/payments/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false || !data.url) {
+        throw new Error(data.message || 'Unable to start checkout.');
+      }
+      if (typeof window !== 'undefined') {
+        window.location.href = data.url as string;
+      }
+    } catch (error) {
+      setDepositFeedback((error as Error).message);
+    } finally {
+      setDepositCheckoutLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!allowedUser?.email) return;
     void refreshEvents();
-  }, [allowedUser?.email, refreshEvents]);
+    void refreshDeposit();
+  }, [allowedUser?.email, refreshDeposit, refreshEvents]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('deposit') === 'success') {
+      setDepositFeedback('Thanks! Your kickoff deposit is confirmed.');
+      url.searchParams.delete('deposit');
+      const next = `${url.pathname}${url.searchParams.toString() ? `?${url.searchParams.toString()}` : ''}`;
+      router.replace(next || '/dashboard');
+      void refreshDeposit();
+    }
+  }, [hydrated, refreshDeposit, router]);
+
+  useEffect(() => {
+    if (!depositSummary) {
+      if (!depositLoading) {
+        setDepositFeedback(null);
+      }
+      depositPaidRef.current = false;
+      return;
+    }
+    if (depositSummary.paid) {
+      if (!depositPaidRef.current) {
+        setDepositFeedback('Kickoff deposit received! We’ll reach out with next steps.');
+      }
+      depositPaidRef.current = true;
+    } else {
+      depositPaidRef.current = false;
+    }
+  }, [depositLoading, depositSummary]);
+
+  useEffect(() => {
+    if (initialStepRender.current) {
+      initialStepRender.current = false;
+      return;
+    }
+    setOnboardingFeedback(null);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [stepIndex]);
+
+  const planDetails = useMemo(() => PLAN_CATALOG[form.plan] ?? PLAN_CATALOG['launch'], [form.plan]);
+
+  const formatCurrency = useCallback((amount: number, currency: string) => {
+    try {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'USD' }).format(amount);
+    } catch {
+      return `${(currency || 'USD').toUpperCase()} ${amount.toFixed(2)}`;
+    }
+  }, []);
+
+  const steps = [
+    {
+      id: 'kickoff',
+      title: 'Kickoff & billing contact',
+      subtitle: 'Choose your rollout plan and who we coordinate payment with.',
+      render: () => (
+        <div className="space-y-6">
+          <section>
+            <p className="text-sm text-white/70">Pick the package that fits your current goals. You can upgrade at any time.</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {PLAN_LIST.map(plan => {
+                const active = form.plan === plan.key;
+                return (
+                  <label
+                    key={plan.key}
+                    className={`relative block cursor-pointer rounded-2xl border ${active ? 'border-sky-400 bg-sky-400/10 shadow-lg shadow-sky-500/15' : 'border-white/12 bg-black/40 hover:border-white/25'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="plan"
+                      className="sr-only"
+                      value={plan.key}
+                      checked={active}
+                      onChange={() => setForm(prev => ({ ...prev, plan: plan.key }))}
+                    />
+                    <div className="flex h-full flex-col gap-2 p-5 text-white">
+                      <div className="text-sm uppercase tracking-wide text-white/60">{plan.tagline}</div>
+                      <div className="text-xl font-semibold">{plan.name}</div>
+                      <div className="text-sm text-white/70">{plan.price}</div>
+                      <ul className="mt-3 space-y-1 text-sm text-white/70">
+                        {plan.bullets.map(bullet => (
+                          <li key={bullet}>• {bullet}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="grid gap-5 md:grid-cols-2">
+            <div>
+              <label htmlFor="billingContactName" className="block text-sm font-medium text-white/80">Billing contact name</label>
+              <input
+                id="billingContactName"
+                type="text"
+                value={form.billingContactName}
+                onChange={(e) => setForm(prev => ({ ...prev, billingContactName: e.target.value }))}
+                placeholder="Who should receive invoices?"
+                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="billingContactEmail" className="block text-sm font-medium text-white/80">Billing contact email</label>
+              <input
+                id="billingContactEmail"
+                type="email"
+                value={form.billingContactEmail}
+                onChange={(e) => setForm(prev => ({ ...prev, billingContactEmail: e.target.value }))}
+                placeholder="billing@company.com"
+                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="billingNotes" className="block text-sm font-medium text-white/80">Billing notes or PO requirements (optional)</label>
+            <textarea
+              id="billingNotes"
+              value={form.billingNotes}
+              onChange={(e) => setForm(prev => ({ ...prev, billingNotes: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="Share PO numbers, billing addresses, or anything else we should include."
+            />
+          </div>
+          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+            <p className="text-emerald-200 font-semibold">How payment works</p>
+            <ul className="mt-2 space-y-1 text-emerald-100/90">
+              <li>• Reserve your build slot with a $99 kickoff deposit.</li>
+              <li>• We sprint on copy, design, and automation as soon as the deposit clears.</li>
+              <li>• The remaining balance is invoiced only after you approve the launch.</li>
+            </ul>
+          </div>
+
+          <section className="rounded-2xl border border-white/10 bg-black/30 p-5 text-white shadow-inner shadow-black/20">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Kickoff deposit</h3>
+                <p className="text-sm text-white/70">Secure your build slot with a $99 Stripe payment.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void refreshDeposit()}
+                  disabled={depositLoading}
+                  className="rounded-xl border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {depositLoading ? 'Checking…' : 'Refresh status'}
+                </button>
+                {depositSample && (
+                  <span className="rounded-full border border-amber-300/60 bg-amber-500/10 px-3 py-1 text-[0.7rem] text-amber-200">
+                    Demo data — add STRIPE_SECRET_KEY for live payments
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {depositError && (
+              <p className="mt-3 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{depositError}</p>
+            )}
+
+            <div className="mt-4 space-y-3 text-sm text-white/75">
+              {depositSummary ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        depositSummary.paid ? 'bg-emerald-500/15 text-emerald-200' : 'bg-amber-500/15 text-amber-200'
+                      }`}
+                    >
+                      {depositSummary.paid ? 'Paid' : 'Awaiting deposit'}
+                    </span>
+                    <span>{formatCurrency(depositSummary.amount, depositSummary.currency)}</span>
+                    {depositSummary.lastPaymentAt && (
+                      <span className="text-xs text-white/60">
+                        Updated {formatDate(depositSummary.lastPaymentAt)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-white/70">
+                    {depositSummary.paid
+                      ? 'Awesome! We’re already lining up design and copy so you can approve the launch faster.'
+                      : 'Submit the deposit to trigger the build sprint. We’ll notify you as soon as the payment clears.'}
+                  </p>
+                  {depositSummary.receiptUrl && (
+                    <a
+                      href={depositSummary.receiptUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex text-xs font-semibold text-sky-300 underline-offset-4 hover:underline"
+                    >
+                      View Stripe receipt
+                    </a>
+                  )}
+                </>
+              ) : (
+                <p className="text-white/70">
+                  When you’re ready we’ll redirect you to Stripe to submit the $99 kickoff deposit. It’s fully credited toward your final balance.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={() => void handleDepositCheckout()}
+                disabled={depositCheckoutLoading || depositSummary?.paid}
+                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {depositSummary?.paid ? 'Deposit received' : depositCheckoutLoading ? 'Redirecting…' : 'Pay $99 kickoff deposit'}
+              </button>
+              {depositFeedback && (
+                <p className={`text-xs ${depositSummary?.paid ? 'text-emerald-200' : 'text-white/70'}`}>{depositFeedback}</p>
+              )}
+            </div>
+          </section>
+        </div>
+      )
+    },
+    {
+      id: 'business',
+      title: 'Business basics',
+      subtitle: 'Tell us who you are and what success looks like.',
+      render: () => (
+        <div className="grid gap-5 md:grid-cols-2">
+          <div>
+            <label htmlFor="companyName" className="block text-sm font-medium text-white/80">Company name</label>
+            <input
+              id="companyName"
+              type="text"
+              value={form.companyName}
+              onChange={(e) => setForm(prev => ({ ...prev, companyName: e.target.value }))}
+              placeholder="Business Booster AI"
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="website" className="block text-sm font-medium text-white/80">Website or landing page</label>
+            <input
+              id="website"
+              type="url"
+              value={form.website}
+              onChange={(e) => setForm(prev => ({ ...prev, website: e.target.value }))}
+              placeholder="https://businessbooster.ai"
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="primaryMetric" className="block text-sm font-medium text-white/80">Primary success metric</label>
+            <input
+              id="primaryMetric"
+              type="text"
+              value={form.primaryMetric}
+              onChange={(e) => setForm(prev => ({ ...prev, primaryMetric: e.target.value }))}
+              placeholder="Booked consultations, demos, etc."
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="monthlyAdBudget" className="block text-sm font-medium text-white/80">Monthly ad budget (if any)</label>
+            <input
+              id="monthlyAdBudget"
+              type="text"
+              value={form.monthlyAdBudget}
+              onChange={(e) => setForm(prev => ({ ...prev, monthlyAdBudget: e.target.value }))}
+              placeholder="$3k/mo on Meta + Google"
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="salesCycle" className="block text-sm font-medium text-white/80">Average sales cycle</label>
+            <input
+              id="salesCycle"
+              type="text"
+              value={form.salesCycle}
+              onChange={(e) => setForm(prev => ({ ...prev, salesCycle: e.target.value }))}
+              placeholder="e.g. 2 calls across 14 days"
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="teamSize" className="block text-sm font-medium text-white/80">Team answering leads</label>
+            <input
+              id="teamSize"
+              type="text"
+              value={form.teamSize}
+              onChange={(e) => setForm(prev => ({ ...prev, teamSize: e.target.value }))}
+              placeholder="Sales pod of 3 reps"
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+            />
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'systems',
+      title: 'Systems & availability',
+      subtitle: 'Connect the dots so every lead is routed instantly.',
+      render: () => (
+        <div className="space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div>
+              <label htmlFor="crmTools" className="block text-sm font-medium text-white/80">CRM & routing tools</label>
+              <input
+                id="crmTools"
+                type="text"
+                value={form.crmTools}
+                onChange={(e) => setForm(prev => ({ ...prev, crmTools: e.target.value }))}
+                placeholder="HubSpot, Salesforce, etc."
+                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="voiceCoverage" className="block text-sm font-medium text-white/80">Voice coverage & hours</label>
+              <input
+                id="voiceCoverage"
+                type="text"
+                value={form.voiceCoverage}
+                onChange={(e) => setForm(prev => ({ ...prev, voiceCoverage: e.target.value }))}
+                placeholder="Weekdays 8a-6p ET"
+                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="calLink" className="block text-sm font-medium text-white/80">Cal.com booking link</label>
+            <input
+              id="calLink"
+              type="url"
+              value={form.calLink}
+              onChange={(e) => setForm(prev => ({ ...prev, calLink: e.target.value }))}
+              placeholder="https://cal.com/your-team/demo"
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+            />
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'goals',
+      title: 'Goals & launch timeline',
+      subtitle: 'Share expectations so we can architect the rollout.',
+      render: () => (
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <label htmlFor="goals" className="block text-sm font-medium text-white/80">What does success look like?</label>
+            <textarea
+              id="goals"
+              value={form.goals}
+              onChange={(e) => setForm(prev => ({ ...prev, goals: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="E.g. 30 booked consultations per month within 60 days."
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label htmlFor="challenges" className="block text-sm font-medium text-white/80">Biggest challenges today</label>
+            <textarea
+              id="challenges"
+              value={form.challenges}
+              onChange={(e) => setForm(prev => ({ ...prev, challenges: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="Share any messaging gaps, follow-up issues, or technical blockers."
+            />
+          </div>
+          <div>
+            <label htmlFor="launchTimeline" className="block text-sm font-medium text-white/80">Preferred launch timeline</label>
+            <input
+              id="launchTimeline"
+              type="text"
+              value={form.launchTimeline}
+              onChange={(e) => setForm(prev => ({ ...prev, launchTimeline: e.target.value }))}
+              placeholder="Kickoff this month, go live within 21 days"
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-white/80">Any extra context?</label>
+            <textarea
+              id="notes"
+              value={form.notes}
+              onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="Share stakeholder names, compliance requirements, or creative assets."
+            />
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'voice',
+      title: 'Voice agent & creative playbook',
+      subtitle: 'Everything the AI receptionist and ad squads need to sound like you.',
+      render: () => (
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <label htmlFor="targetAudience" className="block text-sm font-medium text-white/80">Primary audience segments</label>
+            <textarea
+              id="targetAudience"
+              value={form.targetAudience}
+              onChange={(e) => setForm(prev => ({ ...prev, targetAudience: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="E.g. Operations leaders at B2B SaaS brands, Med spa owners in Austin, etc."
+            />
+          </div>
+          <div>
+            <label htmlFor="uniqueValueProp" className="block text-sm font-medium text-white/80">Core promise / proof</label>
+            <textarea
+              id="uniqueValueProp"
+              value={form.uniqueValueProp}
+              onChange={(e) => setForm(prev => ({ ...prev, uniqueValueProp: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="Share your positioning, differentiators, and testimonials to feature."
+            />
+          </div>
+          <div>
+            <label htmlFor="offerDetails" className="block text-sm font-medium text-white/80">Offer details</label>
+            <textarea
+              id="offerDetails"
+              value={form.offerDetails}
+              onChange={(e) => setForm(prev => ({ ...prev, offerDetails: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="Outline the packages, pricing ranges, and any promos we should highlight."
+            />
+          </div>
+          <div>
+            <label htmlFor="brandVoice" className="block text-sm font-medium text-white/80">Brand voice guidelines</label>
+            <textarea
+              id="brandVoice"
+              value={form.brandVoice}
+              onChange={(e) => setForm(prev => ({ ...prev, brandVoice: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="E.g. Confident, friendly, and data-backed. Words or phrases to embrace or avoid."
+            />
+          </div>
+          <div>
+            <label htmlFor="adChannels" className="block text-sm font-medium text-white/80">Active or desired ad channels</label>
+            <textarea
+              id="adChannels"
+              value={form.adChannels}
+              onChange={(e) => setForm(prev => ({ ...prev, adChannels: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="List search, social, retargeting, or offline channels we should prioritise."
+            />
+          </div>
+          <div>
+            <label htmlFor="followUpProcess" className="block text-sm font-medium text-white/80">Current follow-up process</label>
+            <textarea
+              id="followUpProcess"
+              value={form.followUpProcess}
+              onChange={(e) => setForm(prev => ({ ...prev, followUpProcess: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="Describe how leads are nurtured today, including SLAs and hand-offs."
+            />
+          </div>
+          <div>
+            <label htmlFor="receptionistInstructions" className="block text-sm font-medium text-white/80">Voice agent scripts & guardrails</label>
+            <textarea
+              id="receptionistInstructions"
+              value={form.receptionistInstructions}
+              onChange={(e) => setForm(prev => ({ ...prev, receptionistInstructions: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="Share greetings, qualification questions, hand-off triggers, and compliance language."
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label htmlFor="integrations" className="block text-sm font-medium text-white/80">Integrations & tools to connect</label>
+            <textarea
+              id="integrations"
+              value={form.integrations}
+              onChange={(e) => setForm(prev => ({ ...prev, integrations: e.target.value }))}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+              placeholder="E.g. HubSpot pipeline, Slack alerts, call tracking, or other systems we should sync."
+            />
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  const totalSteps = steps.length;
+  const isLastStep = totalSteps > 0 ? stepIndex >= totalSteps - 1 : true;
+  const progressPct = totalSteps > 1 ? (stepIndex / (totalSteps - 1)) * 100 : 100;
+  const currentStep = steps[stepIndex] ?? steps[0];
+  const goToStep = (index: number) => {
+    if (totalSteps === 0) return;
+    const next = Math.max(0, Math.min(totalSteps - 1, index));
+    setStepIndex(next);
+  };
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!allowedUser || saving) return;
+    if (!allowedUser) return;
+    if (!isLastStep) {
+      goToStep(stepIndex + 1);
+      return;
+    }
+    if (saving) return;
     setSaving(true);
-    setFeedback(null);
+    setOnboardingFeedback(null);
     const result = await saveOnboarding(form);
     if (!result.ok) {
-      setFeedback(result.message ?? 'We could not save your onboarding details.');
+      setOnboardingFeedback(result.message ?? 'We could not save your onboarding details.');
       setSaving(false);
       return;
     }
-    setFeedback(result.message ?? 'Onboarding saved.');
+    setOnboardingFeedback(result.message ?? 'Onboarding saved.');
     setSaving(false);
   };
 
-  const planDetails = useMemo(() => PLAN_CATALOG[form.plan] ?? PLAN_CATALOG['launch'], [form.plan]);
+  const onSaveDraft = async () => {
+    if (!allowedUser || stepSaving) return;
+    setStepSaving(true);
+    setOnboardingFeedback(null);
+    const result = await saveOnboarding(form);
+    if (!result.ok) {
+      setOnboardingFeedback(result.message ?? 'We could not save your onboarding details.');
+      setStepSaving(false);
+      return;
+    }
+    setOnboardingFeedback(result.message ?? 'Onboarding saved.');
+    setStepSaving(false);
+  };
+
+  const onAccountSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!allowedUser || accountSaving) return;
+    setAccountSaving(true);
+    setAccountFeedback(null);
+    if (accountForm.newPassword && accountForm.newPassword !== accountForm.confirmPassword) {
+      setAccountFeedback('New password and confirmation do not match.');
+      setAccountSaving(false);
+      return;
+    }
+    const payload = {
+      name: accountForm.name.trim(),
+      email: accountForm.email.trim(),
+      company: accountForm.company.trim(),
+      currentPassword: accountForm.currentPassword ? accountForm.currentPassword : undefined,
+      newPassword: accountForm.newPassword ? accountForm.newPassword : null
+    };
+    const result = await updateAccount(payload);
+    if (!result.ok) {
+      setAccountFeedback(result.message ?? 'Unable to update your account.');
+      setAccountSaving(false);
+      return;
+    }
+    setAccountFeedback(result.message ?? 'Account updated.');
+    setAccountSaving(false);
+    setAccountForm(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
+  };
 
   if (!allowedUser) {
     return (
@@ -162,317 +789,174 @@ export default function DashboardView() {
 
         <div className="grid gap-8 lg:grid-cols-[1.65fr,1fr]">
           <form onSubmit={onSubmit} className="space-y-8 rounded-3xl border border-white/10 bg-black/40 p-8 shadow-xl backdrop-blur">
-            <section>
-              <h2 className="text-xl font-semibold text-white">1. Choose your rollout plan</h2>
-              <p className="mt-1 text-sm text-white/70">Pick the package that fits your current goals. You can upgrade at any time.</p>
-              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {PLAN_LIST.map(plan => {
-                  const active = form.plan === plan.key;
-                  return (
-                    <label
-                      key={plan.key}
-                      className={`relative block cursor-pointer rounded-2xl border ${active ? 'border-sky-400 bg-sky-400/10 shadow-lg shadow-sky-500/15' : 'border-white/12 bg-black/40 hover:border-white/25'}`}
-                    >
-                      <input
-                        type="radio"
-                        name="plan"
-                        className="sr-only"
-                        value={plan.key}
-                        checked={active}
-                        onChange={() => setForm(prev => ({ ...prev, plan: plan.key }))}
-                      />
-                      <div className="flex h-full flex-col gap-2 p-5 text-white">
-                        <div className="text-sm uppercase tracking-wide text-white/60">{plan.tagline}</div>
-                        <div className="text-xl font-semibold">{plan.name}</div>
-                        <div className="text-sm text-white/70">{plan.price}</div>
-                        <ul className="mt-3 space-y-1 text-sm text-white/70">
-                          {plan.bullets.map(bullet => (
-                            <li key={bullet}>• {bullet}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </label>
-                  );
-                })}
+            <div className="space-y-6">
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                <div className="flex flex-wrap gap-3">
+                  {steps.map((step, index) => {
+                    const status = index < stepIndex ? 'complete' : index === stepIndex ? 'current' : 'upcoming';
+                    return (
+                      <button
+                        key={step.id}
+                        type="button"
+                        onClick={() => goToStep(index)}
+                        className={`group flex flex-1 min-w-[220px] items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${status === 'current' ? 'border-sky-400/70 bg-sky-500/15' : status === 'complete' ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-100' : 'border-white/10 bg-white/5 hover:border-white/25'}`}
+                      >
+                        <span
+                          className={`flex size-8 items-center justify-center rounded-full text-sm font-semibold ${status === 'complete' ? 'bg-emerald-500/80 text-white' : status === 'current' ? 'bg-sky-500 text-white' : 'bg-white/10 text-white/70 group-hover:text-white'}`}
+                        >
+                          {index + 1}
+                        </span>
+                        <span>
+                          <span className="block text-sm font-semibold text-white">{step.title}</span>
+                          <span className="text-xs text-white/60">{step.subtitle}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 h-1.5 w-full rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
               </div>
-            </section>
 
-            <section className="space-y-5">
-              <h2 className="text-xl font-semibold text-white">2. Tell us about your business</h2>
-              <p className="text-sm text-white/70">These details help us align messaging, creative, and automation to your team.</p>
-              <div className="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium text-white/80">Company name</label>
-                  <input
-                    id="companyName"
-                    type="text"
-                    value={form.companyName}
-                    onChange={(e) => setForm(prev => ({ ...prev, companyName: e.target.value }))}
-                    placeholder="Business Booster AI"
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="website" className="block text-sm font-medium text-white/80">Website or landing page</label>
-                  <input
-                    id="website"
-                    type="url"
-                    value={form.website}
-                    onChange={(e) => setForm(prev => ({ ...prev, website: e.target.value }))}
-                    placeholder="https://businessbooster.ai"
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="primaryMetric" className="block text-sm font-medium text-white/80">Primary success metric</label>
-                  <input
-                    id="primaryMetric"
-                    type="text"
-                    value={form.primaryMetric}
-                    onChange={(e) => setForm(prev => ({ ...prev, primaryMetric: e.target.value }))}
-                    placeholder="Booked consultations, demos, etc."
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="monthlyAdBudget" className="block text-sm font-medium text-white/80">Monthly ad budget (if any)</label>
-                  <input
-                    id="monthlyAdBudget"
-                    type="text"
-                    value={form.monthlyAdBudget}
-                    onChange={(e) => setForm(prev => ({ ...prev, monthlyAdBudget: e.target.value }))}
-                    placeholder="$3k/mo on Meta + Google"
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="salesCycle" className="block text-sm font-medium text-white/80">Average sales cycle</label>
-                  <input
-                    id="salesCycle"
-                    type="text"
-                    value={form.salesCycle}
-                    onChange={(e) => setForm(prev => ({ ...prev, salesCycle: e.target.value }))}
-                    placeholder="e.g. 2 calls across 14 days"
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="teamSize" className="block text-sm font-medium text-white/80">Team answering leads</label>
-                  <input
-                    id="teamSize"
-                    type="text"
-                    value={form.teamSize}
-                    onChange={(e) => setForm(prev => ({ ...prev, teamSize: e.target.value }))}
-                    placeholder="Sales pod of 3 reps"
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-              </div>
-            </section>
+              <section className="space-y-4">
+                <header className="space-y-1">
+                  <h2 className="text-xl font-semibold text-white">{stepIndex + 1}. {currentStep.title}</h2>
+                  <p className="text-sm text-white/70">{currentStep.subtitle}</p>
+                </header>
+                {currentStep.render()}
+              </section>
+            </div>
 
-            <section className="space-y-5">
-              <h2 className="text-xl font-semibold text-white">3. Systems & availability</h2>
-              <div className="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label htmlFor="crmTools" className="block text-sm font-medium text-white/80">CRM & routing tools</label>
-                  <input
-                    id="crmTools"
-                    type="text"
-                    value={form.crmTools}
-                    onChange={(e) => setForm(prev => ({ ...prev, crmTools: e.target.value }))}
-                    placeholder="HubSpot, Salesforce, etc."
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="voiceCoverage" className="block text-sm font-medium text-white/80">Voice coverage & hours</label>
-                  <input
-                    id="voiceCoverage"
-                    type="text"
-                    value={form.voiceCoverage}
-                    onChange={(e) => setForm(prev => ({ ...prev, voiceCoverage: e.target.value }))}
-                    placeholder="Weekdays 8a-6p ET"
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="calLink" className="block text-sm font-medium text-white/80">Cal.com booking link</label>
-                <input
-                  id="calLink"
-                  type="url"
-                  value={form.calLink}
-                  onChange={(e) => setForm(prev => ({ ...prev, calLink: e.target.value }))}
-                  placeholder="https://cal.com/your-team/demo"
-                  className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                />
-              </div>
-            </section>
-
-            <section className="space-y-5">
-              <h2 className="text-xl font-semibold text-white">4. Goals & launch timeline</h2>
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="md:col-span-2">
-                  <label htmlFor="goals" className="block text-sm font-medium text-white/80">What does success look like?</label>
-                  <textarea
-                    id="goals"
-                    value={form.goals}
-                    onChange={(e) => setForm(prev => ({ ...prev, goals: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="E.g. 30 booked consultations per month within 60 days."
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label htmlFor="challenges" className="block text-sm font-medium text-white/80">Biggest challenges today</label>
-                  <textarea
-                    id="challenges"
-                    value={form.challenges}
-                    onChange={(e) => setForm(prev => ({ ...prev, challenges: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="Share any messaging gaps, follow-up issues, or technical blockers."
-                  />
-                </div>
-                <div>
-                  <label htmlFor="launchTimeline" className="block text-sm font-medium text-white/80">Preferred launch timeline</label>
-                  <input
-                    id="launchTimeline"
-                    type="text"
-                    value={form.launchTimeline}
-                    onChange={(e) => setForm(prev => ({ ...prev, launchTimeline: e.target.value }))}
-                    placeholder="Kickoff this month, go live within 21 days"
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="notes" className="block text-sm font-medium text-white/80">Any extra context?</label>
-                  <textarea
-                    id="notes"
-                    value={form.notes}
-                    onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="Share stakeholder names, compliance requirements, or creative assets."
-                  />
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-5">
-              <h2 className="text-xl font-semibold text-white">5. Voice agent & creative playbook</h2>
-              <p className="text-sm text-white/70">The AI receptionist and ad squads pull directly from these answers.</p>
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="md:col-span-2">
-                  <label htmlFor="targetAudience" className="block text-sm font-medium text-white/80">Primary audience segments</label>
-                  <textarea
-                    id="targetAudience"
-                    value={form.targetAudience}
-                    onChange={(e) => setForm(prev => ({ ...prev, targetAudience: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="E.g. Operations leaders at B2B SaaS brands, Med spa owners in Austin, etc."
-                  />
-                </div>
-                <div>
-                  <label htmlFor="uniqueValueProp" className="block text-sm font-medium text-white/80">Core promise / proof</label>
-                  <textarea
-                    id="uniqueValueProp"
-                    value={form.uniqueValueProp}
-                    onChange={(e) => setForm(prev => ({ ...prev, uniqueValueProp: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="Share your positioning, differentiators, and testimonials to feature."
-                  />
-                </div>
-                <div>
-                  <label htmlFor="offerDetails" className="block text-sm font-medium text-white/80">Offer details</label>
-                  <textarea
-                    id="offerDetails"
-                    value={form.offerDetails}
-                    onChange={(e) => setForm(prev => ({ ...prev, offerDetails: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="Outline the packages, pricing ranges, and any promos we should highlight."
-                  />
-                </div>
-                <div>
-                  <label htmlFor="brandVoice" className="block text-sm font-medium text-white/80">Brand voice guidelines</label>
-                  <textarea
-                    id="brandVoice"
-                    value={form.brandVoice}
-                    onChange={(e) => setForm(prev => ({ ...prev, brandVoice: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="E.g. Confident, friendly, and data-backed. Words or phrases to embrace or avoid."
-                  />
-                </div>
-                <div>
-                  <label htmlFor="adChannels" className="block text-sm font-medium text-white/80">Active or desired ad channels</label>
-                  <textarea
-                    id="adChannels"
-                    value={form.adChannels}
-                    onChange={(e) => setForm(prev => ({ ...prev, adChannels: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="List search, social, retargeting, or offline channels we should prioritise."
-                  />
-                </div>
-                <div>
-                  <label htmlFor="followUpProcess" className="block text-sm font-medium text-white/80">Current follow-up process</label>
-                  <textarea
-                    id="followUpProcess"
-                    value={form.followUpProcess}
-                    onChange={(e) => setForm(prev => ({ ...prev, followUpProcess: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="Describe how leads are nurtured today, including SLAs and hand-offs."
-                  />
-                </div>
-                <div>
-                  <label htmlFor="receptionistInstructions" className="block text-sm font-medium text-white/80">Voice agent scripts & guardrails</label>
-                  <textarea
-                    id="receptionistInstructions"
-                    value={form.receptionistInstructions}
-                    onChange={(e) => setForm(prev => ({ ...prev, receptionistInstructions: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="Share greetings, qualification questions, hand-off triggers, and compliance language."
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label htmlFor="integrations" className="block text-sm font-medium text-white/80">Integrations & tools to connect</label>
-                  <textarea
-                    id="integrations"
-                    value={form.integrations}
-                    onChange={(e) => setForm(prev => ({ ...prev, integrations: e.target.value }))}
-                    rows={3}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="E.g. HubSpot pipeline, Slack alerts, call tracking, or other systems we should sync."
-                  />
-                </div>
-              </div>
-            </section>
-
-            {feedback && (
-              <p className={`rounded-xl px-4 py-3 text-sm ${feedback.includes('not') || feedback.includes('Unable') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
-                {feedback}
+            {onboardingFeedback && (
+              <p className={`rounded-xl px-4 py-3 text-sm ${onboardingFeedback.includes('not') || onboardingFeedback.includes('Unable') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                {onboardingFeedback}
               </p>
             )}
 
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-3 font-semibold text-white shadow-lg shadow-sky-500/20 transition disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {saving ? 'Saving…' : 'Save onboarding'}
-              </button>
-              <span className="text-sm text-white/60">We’ll email a copy of these notes to your strategist before kickoff.</span>
+              {stepIndex > 0 && (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => goToStep(stepIndex - 1)}
+                >
+                  Previous step
+                </button>
+              )}
+              <div className="ml-auto flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => void onSaveDraft()}
+                  disabled={stepSaving || saving}
+                >
+                  {stepSaving ? 'Saving…' : 'Save progress'}
+                </button>
+                <button
+                  type={isLastStep ? 'submit' : 'button'}
+                  className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-3 font-semibold text-white shadow-lg shadow-sky-500/20 transition disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={!isLastStep ? () => goToStep(stepIndex + 1) : undefined}
+                  disabled={isLastStep ? saving : false}
+                >
+                  {isLastStep ? (saving ? 'Submitting…' : 'Submit onboarding') : 'Next step'}
+                </button>
+              </div>
             </div>
+            <p className="text-sm text-white/60">We’ll email a copy of these notes to your strategist before kickoff.</p>
           </form>
 
           <aside className="space-y-6 rounded-3xl border border-white/10 bg-black/30 p-6 text-white shadow-lg">
+            <section className="rounded-2xl border border-white/10 bg-black/40 p-5 text-white">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Account & access</h3>
+                <span className="rounded-full border border-sky-400/50 bg-sky-500/10 px-3 py-1 text-xs text-sky-200">Client portal</span>
+              </div>
+              <p className="mt-2 text-sm text-white/70">Update your login details or billing contact. Email changes require your current password.</p>
+              <form onSubmit={onAccountSubmit} className="mt-4 space-y-4">
+                <div className="grid gap-4">
+                  <div>
+                    <label htmlFor="accountName" className="block text-xs font-medium uppercase tracking-wide text-white/60">Full name</label>
+                    <input
+                      id="accountName"
+                      type="text"
+                      value={accountForm.name}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="accountEmail" className="block text-xs font-medium uppercase tracking-wide text-white/60">Email</label>
+                    <input
+                      id="accountEmail"
+                      type="email"
+                      value={accountForm.email}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, email: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="accountCompany" className="block text-xs font-medium uppercase tracking-wide text-white/60">Company (optional)</label>
+                    <input
+                      id="accountCompany"
+                      type="text"
+                      value={accountForm.company}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, company: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="currentPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">Current password</label>
+                    <input
+                      id="currentPassword"
+                      type="password"
+                      value={accountForm.currentPassword}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                      placeholder="Required to change email or password"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="newPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">New password</label>
+                    <input
+                      id="newPassword"
+                      type="password"
+                      value={accountForm.newPassword}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                      placeholder="Leave blank to keep current"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label htmlFor="confirmPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">Confirm new password</label>
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      value={accountForm.confirmPassword}
+                      onChange={(e) => setAccountForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                {accountFeedback && (
+                  <p className={`rounded-xl px-4 py-2 text-xs ${accountFeedback.includes('not') || accountFeedback.includes('Unable') || accountFeedback.includes('match') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                    {accountFeedback}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={accountSaving}
+                >
+                  {accountSaving ? 'Updating account…' : 'Save account settings'}
+                </button>
+              </form>
+            </section>
             <section>
               <h3 className="text-lg font-semibold">Your rollout blueprint</h3>
               <p className="mt-1 text-sm text-white/70">Here’s what we execute once onboarding is complete.</p>

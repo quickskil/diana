@@ -115,6 +115,86 @@ export async function getSafeUserById(userId: string): Promise<SafeUser | null> 
   return mapRowToSafeUser(row);
 }
 
+export async function updateUserAccount(
+  userId: string,
+  payload: {
+    name?: string;
+    company?: string | null;
+    email?: string;
+    newPassword?: string | null;
+    currentPassword?: string | null;
+  }
+): Promise<SafeUser> {
+  await ensureDatabase();
+  const result = await sql`
+    SELECT id, name, email, company, password_hash
+    FROM users
+    WHERE id = ${userId}
+    LIMIT 1;
+  `;
+  if (result.rows.length === 0) {
+    throw new Error('User not found.');
+  }
+  const row = result.rows[0] as { name: string; email: string; company?: string | null; password_hash: string };
+
+  const nextName = (payload.name ?? row.name ?? '').toString().trim() || row.name;
+  const nextCompanyRaw = payload.company !== undefined ? payload.company : row.company ?? null;
+  const nextCompany = nextCompanyRaw ? nextCompanyRaw.toString().trim() || null : null;
+  const requestedEmail = payload.email ? payload.email.toString().trim().toLowerCase() : row.email;
+  if (!requestedEmail) {
+    throw new Error('Email is required.');
+  }
+  const emailChanged = requestedEmail && requestedEmail !== row.email;
+
+  const wantsNewPassword = Boolean(payload.newPassword && payload.newPassword.toString().trim());
+  const newPasswordValue = wantsNewPassword ? payload.newPassword!.toString() : null;
+
+  if (wantsNewPassword && newPasswordValue && newPasswordValue.length < 6) {
+    throw new Error('New password must be at least 6 characters.');
+  }
+
+  const requiresPasswordCheck = emailChanged || wantsNewPassword;
+  if (requiresPasswordCheck) {
+    const current = payload.currentPassword ? payload.currentPassword.toString() : '';
+    if (!current) {
+      throw new Error('Enter your current password to update email or password.');
+    }
+    const ok = await bcrypt.compare(current, row.password_hash);
+    if (!ok) {
+      throw new Error('Current password is incorrect.');
+    }
+  }
+
+  if (emailChanged) {
+    const check = await sql`
+      SELECT 1 FROM users WHERE LOWER(email) = ${requestedEmail.toLowerCase()} AND id <> ${userId} LIMIT 1;
+    `;
+    if (check.rows.length > 0) {
+      throw new Error('That email is already in use.');
+    }
+  }
+
+  const passwordHash = wantsNewPassword && newPasswordValue
+    ? await bcrypt.hash(newPasswordValue, 10)
+    : row.password_hash;
+
+  await sql`
+    UPDATE users
+    SET
+      name = ${nextName},
+      email = ${requestedEmail},
+      company = ${nextCompany ?? null},
+      password_hash = ${passwordHash}
+    WHERE id = ${userId};
+  `;
+
+  const updated = await getUserRowById(userId);
+  if (!updated) {
+    throw new Error('Unable to load updated profile.');
+  }
+  return mapRowToSafeUser(updated);
+}
+
 export async function listSafeUsers(): Promise<SafeUser[]> {
   await ensureDatabase();
   const result = await sql`

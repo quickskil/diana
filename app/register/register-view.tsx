@@ -52,6 +52,9 @@ export default function RegisterView() {
         <p className="mt-2 text-white/70">
           Access the onboarding workspace, share your launch details, and monitor booked Cal.com events from your portal.
         </p>
+        <p className="mt-1 text-sm text-emerald-200/80">
+          Kick things off with a $99 deposit today — the remaining balance is invoiced only after you approve the launch.
+        </p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-5">
           <div>

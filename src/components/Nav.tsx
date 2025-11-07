@@ -35,6 +35,8 @@ export default function Nav() {
   const isAuthed = hydrated && !!currentUser;
   const dashboardHref = currentUser?.role === 'admin' ? '/admin' : '/dashboard';
   const dashboardLabel = currentUser?.role === 'admin' ? 'Admin' : 'Dashboard';
+  const clientPortalHref = isAuthed ? dashboardHref : '/login';
+  const clientPortalLabel = isAuthed ? dashboardLabel : 'Client Portal';
   const reduce = useReducedMotion();
 
   const [atTop, setAtTop] = useState(true);
@@ -239,27 +241,31 @@ export default function Nav() {
                 </Link>
               );
             })}
+            <div className="hidden xl:flex flex-col items-start gap-1 border-x border-white/10 px-4 text-[11px] text-white/60">
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/60 bg-emerald-500/10 px-2 py-0.5 text-emerald-200">
+                $99 kickoff deposit
+              </span>
+              <span>Pay the balance after launch approval.</span>
+            </div>
             <a href="/voice-demo" className="btn-ghost">Voice Demo</a>
             <Link href="/contact" className="btn">Book a Call</Link>
-            {isAuthed ? (
-              <>
-                <Link href={dashboardHref} className="btn-ghost">{dashboardLabel}</Link>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => {
-                    logout();
-                    router.push('/');
-                  }}
-                >
-                  Log out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="btn-ghost">Log in</Link>
-                <Link href="/register" className="btn-ghost">Client Portal</Link>
-              </>
+            <Link
+              href={clientPortalHref}
+              className="btn bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 text-white shadow-lg shadow-sky-500/30 hover:shadow-sky-500/45"
+            >
+              {clientPortalLabel}
+            </Link>
+            {isAuthed && (
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  logout();
+                  router.push('/');
+                }}
+              >
+                Log out
+              </button>
             )}
           </div>
 
@@ -358,16 +364,16 @@ export default function Nav() {
                 ) : (
                   <>
                     <Link href="/login" className="btn-ghost w-full" onClick={() => setOpen(false)}>
-                      Log in
-                    </Link>
-                    <Link href="/register" className="btn-ghost w-full" onClick={() => setOpen(false)}>
                       Client Portal
                     </Link>
+                    <p className="px-3 text-center text-xs text-white/55">
+                      Create your account inside — deposit is collected when we kick off.
+                    </p>
                   </>
                 )}
               </li>
             </ul>
-            <p className="text-[12px] text-white/60 px-3 pt-2">Friendly chat. Clear plan. No long-term contracts.</p>
+            <p className="text-[12px] text-white/60 px-3 pt-2">Kick off with $99. Pay the remaining launch fee only after you approve it.</p>
           </div>
         </motion.div>
       </motion.nav>
