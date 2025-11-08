@@ -21,11 +21,41 @@ const LINKS = [
 ];
 
 const SERVICES = [
-  { icon: Rocket, title: 'Websites that convert', href: '/services/websites', blurb: 'Fast, clean pages that make it easy to book a call.', chip: 'Start at $499' },
-  { icon: Search, title: 'Google Ads', href: '/services/google-ads', blurb: 'Be found when people are already looking.', chip: 'Simple 10% mgmt' },
-  { icon: Megaphone, title: 'Meta Ads', href: '/services/meta-ads', blurb: 'Reach more of the right people with creative testing.', chip: 'Creative help' },
-  { icon: MousePointerClick, title: 'Funnels & CRO', href: '/services/funnels', blurb: 'Clear steps that guide visitors to “Book a Call”.', chip: 'A/B friendly' },
-  { icon: PhoneCall, title: 'AI Voice Receptionists', href: '/services/voice-agents', blurb: 'Answers 24/7, books meetings, and warm-transfers.', chip: 'Live demo' },
+  {
+    icon: Rocket,
+    title: 'Websites that convert',
+    href: '/services/websites',
+    blurb: 'Fast, clean pages that guide visitors straight to booking.',
+    chip: 'Start at $499'
+  },
+  {
+    icon: Search,
+    title: 'Google Ads',
+    href: '/services/google-ads',
+    blurb: 'Be found when intent is highest with hand-tuned campaigns.',
+    chip: 'Simple 10% mgmt'
+  },
+  {
+    icon: Megaphone,
+    title: 'Meta Ads',
+    href: '/services/meta-ads',
+    blurb: 'Reach more of the right people with creative testing.',
+    chip: 'Creative help'
+  },
+  {
+    icon: MousePointerClick,
+    title: 'Funnels & CRO',
+    href: '/services/funnels',
+    blurb: 'Clear steps that convert clicks into booked conversations.',
+    chip: 'A/B friendly'
+  },
+  {
+    icon: PhoneCall,
+    title: 'AI Voice Receptionists',
+    href: '/services/voice-agents',
+    blurb: 'Answers 24/7, books meetings, and warm-transfers.',
+    chip: 'Live demo'
+  },
 ];
 
 export default function Nav() {
@@ -200,38 +230,59 @@ export default function Nav() {
                 onMouseLeave={() => scheduleClose(140)}
                 onMouseDownCapture={(e) => e.stopPropagation()}
               >
-                <div className="rounded-2xl bg-black/85 border border-white/10 p-5">
-                  <header className="mb-3">
-                    <div className="text-[12px] text-white/60">What we do</div>
-                    <div className="text-white/95 font-semibold">Simple ways to get more customers</div>
+                <div className="rounded-2xl bg-black/88 border border-white/10 p-5 backdrop-blur">
+                  <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[12px] uppercase tracking-[0.24em] text-white/50">What we do</div>
+                      <div className="text-white/95 text-lg font-semibold">Growth systems that book more conversations</div>
+                    </div>
+                    <div className="flex items-center gap-2 text-[12px] text-white/60">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-3 py-1">
+                        <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />
+                        Fast onboarding
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-3 py-1">
+                        <span className="size-1.5 rounded-full bg-sky-400" aria-hidden />
+                        Live collaboration
+                      </span>
+                    </div>
                   </header>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {SERVICES.map((s) => (
                       <Link
                         key={s.title}
                         href={s.href}
-                        className="rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 focus:bg-white/10 transition group"
+                        className="group relative flex h-full flex-col gap-4 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 via-white/10 to-transparent p-4 shadow-[0_15px_35px_-20px_rgba(15,23,42,0.8)] transition hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_45px_-18px_rgba(56,189,248,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
                         onClick={() => setSvcOpen(false)}
                       >
                         <div className="flex items-start gap-3">
-                          <s.icon className="mt-0.5 size-5 opacity-90" aria-hidden />
+                          <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sky-100 ring-1 ring-white/15">
+                            <s.icon className="size-5" aria-hidden />
+                          </span>
                           <div>
-                            <div className="font-semibold group-hover:underline underline-offset-4">{s.title}</div>
-                            <div className="text-sm text-white/70 mt-0.5">{s.blurb}</div>
-                            <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-white/75">
-                              <span className="rounded-full bg-white/10 px-2 py-0.5 border border-white/10">{s.chip}</span>
-                              <ArrowRight className="size-3.5 opacity-70" />
+                            <div className="font-semibold tracking-tight text-white group-hover:text-sky-100 group-hover:underline group-hover:decoration-sky-300/80 group-hover:underline-offset-4">
+                              {s.title}
                             </div>
+                            <p className="mt-1 text-sm leading-relaxed text-white/70">{s.blurb}</p>
                           </div>
+                        </div>
+                        <div className="flex items-center justify-between text-[12px] text-white/65">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-medium tracking-wide">
+                            {s.chip}
+                          </span>
+                          <span className="inline-flex items-center gap-2 font-medium text-sky-200 opacity-0 transition-opacity group-hover:opacity-100">
+                            Explore
+                            <ArrowRight className="size-3.5" aria-hidden />
+                          </span>
                         </div>
                       </Link>
                     ))}
                   </div>
 
-                  <div aria-hidden className="my-4 h-px w-full opacity-40" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent)' }} />
+                  <div aria-hidden className="my-6 h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 text-[13px]">
                     <a href="/voice-demo" className="btn-ghost h-10 gap-2">
                       <Headphones className="size-4" />
                       Try the Live Voice Demo
@@ -246,7 +297,7 @@ export default function Nav() {
                     </Link>
                   </div>
 
-                  <p className="text-[12px] text-white/60 mt-2">Friendly chat. Clear plan. No long-term contracts.</p>
+                  <p className="mt-3 text-[12px] text-white/65">Friendly chat. Clear plan. Launch together when it feels right.</p>
                 </div>
               </motion.div>
             </div>
@@ -267,16 +318,13 @@ export default function Nav() {
                 );
               })}
               <a href="/voice-demo" className="btn-ghost h-8 px-2.5">Voice Demo</a>
-              <Link href="/contact" className="btn h-8 px-3">
+              <Link
+                href="/contact"
+                className="btn h-9 px-3 font-semibold shadow-lg shadow-sky-500/25 transition hover:shadow-sky-500/40"
+              >
                 <PhoneCall className="mr-1.5 size-3.5" aria-hidden />
                 Book a Call
               </Link>
-            </div>
-            <div className="hidden xl:flex flex-col items-start gap-1 border-x border-white/10 px-4 text-[11px] text-white/60">
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/60 bg-emerald-500/10 px-2 py-0.5 text-emerald-200">
-                $99 kickoff deposit
-              </span>
-              <span>Pay the balance after launch approval.</span>
             </div>
             <div
               className="relative ml-6 flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-1.5 py-1"
@@ -368,7 +416,7 @@ export default function Nav() {
                         <span>Client Portal</span>
                       </Link>
                       <p className="px-4 pt-1 text-[12px] text-white/65">
-                        Create your workspace inside — the $99 kickoff deposit is collected once we launch together.
+                        Create your workspace inside — we’ll map out onboarding together before any payments are due.
                       </p>
                     </>
                   )}
@@ -475,13 +523,26 @@ export default function Nav() {
                       Client Portal
                     </Link>
                     <p className="px-3 text-center text-xs text-white/55">
-                      Create your account inside — deposit is collected when we kick off.
+                      Create your account inside — we’ll invite you to collaborate after onboarding.
                     </p>
                   </>
                 )}
               </li>
             </ul>
-            <p className="text-[12px] text-white/60 px-3 pt-2">Kick off with $99. Pay the remaining launch fee only after you approve it.</p>
+            <div className="mt-4 space-y-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[12px] text-white/65">
+              <div className="font-semibold text-white">Need something custom?</div>
+              <p>
+                Send over your goals and we’ll outline the exact mix of services we recommend—typically within one business day.
+              </p>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 text-sm font-medium text-sky-200 hover:text-sky-100"
+                onClick={() => setOpen(false)}
+              >
+                Start a conversation
+                <ArrowRight className="size-3.5" aria-hidden />
+              </Link>
+            </div>
           </div>
         </motion.div>
       </motion.nav>
