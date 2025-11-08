@@ -1,11 +1,8 @@
-import type { Metadata } from 'next';
-import AdminView from './admin-view';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Admin control centre',
-  description: 'Review onboarding submissions and monitor every Cal.com event across accounts.'
-};
+export const revalidate = 0;
 
-export default function AdminPage() {
-  return <AdminView />;
+export default function AdminIndexPage() {
+  redirect('/admin/overview');
 }
+
