@@ -4,7 +4,14 @@ import { cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { ensureDatabase, sql } from '@/lib/db';
-import { defaultOnboarding, type OnboardingForm, type OnboardingProject, type OnboardingStatus, type SafeUser } from '@/lib/types/user';
+import {
+  defaultOnboarding,
+  type OnboardingForm,
+  type OnboardingProject,
+  type OnboardingStatus,
+  type SafeUser,
+  type UserRole
+} from '@/lib/types/user';
 
 const PROTECTED_STATUSES: OnboardingStatus[] = ['in-progress', 'launch-ready'];
 
@@ -308,7 +315,13 @@ export async function listSafeUsers(): Promise<SafeUser[]> {
   return result.rows.map(mapRowToSafeUser);
 }
 
-export async function createUser(payload: { name: string; email: string; password: string; company?: string | null }): Promise<SafeUser> {
+export async function createUser(payload: {
+  name: string;
+  email: string;
+  password: string;
+  company?: string | null;
+  role?: UserRole;
+}): Promise<SafeUser> {
   await ensureDatabase();
   const email = payload.email.trim().toLowerCase();
   const existing = await sql`SELECT id FROM users WHERE email = ${email} LIMIT 1;`;
@@ -317,15 +330,68 @@ export async function createUser(payload: { name: string; email: string; passwor
   }
   const id = randomUUID();
   const passwordHash = await bcrypt.hash(payload.password, 10);
+  const role: UserRole = payload.role === 'admin' ? 'admin' : 'client';
   await sql`
     INSERT INTO users (id, name, email, password_hash, role, company)
-    VALUES (${id}, ${payload.name}, ${email}, ${passwordHash}, 'client', ${payload.company ?? null});
+    VALUES (${id}, ${payload.name}, ${email}, ${passwordHash}, ${role}, ${payload.company ?? null});
   `;
   const row = await getUserRowById(id);
   if (!row) {
     throw new Error('Failed to load new user');
   }
   return mapRowToSafeUser(row);
+}
+
+export async function adminUpdateUser(
+  userId: string,
+  payload: { name?: string; email?: string; company?: string | null; role?: UserRole | null }
+): Promise<SafeUser> {
+  await ensureDatabase();
+  const current = await getUserRowById(userId);
+  if (!current) {
+    throw new Error('User not found.');
+  }
+
+  const nextName = payload.name !== undefined ? payload.name.toString().trim() || current.name : current.name;
+  const nextCompanyRaw = payload.company !== undefined ? payload.company : current.company ?? null;
+  const nextCompany = nextCompanyRaw ? nextCompanyRaw.toString().trim() || null : null;
+
+  const requestedEmail = payload.email !== undefined ? payload.email.toString().trim().toLowerCase() : current.email;
+  if (!requestedEmail) {
+    throw new Error('Email is required.');
+  }
+  if (requestedEmail !== current.email) {
+    const check = await sql`
+      SELECT 1 FROM users WHERE LOWER(email) = ${requestedEmail.toLowerCase()} AND id <> ${userId} LIMIT 1;
+    `;
+    if (check.rows.length > 0) {
+      throw new Error('That email is already in use.');
+    }
+  }
+
+  const nextRole: UserRole = payload.role === 'admin' || payload.role === 'client' ? payload.role : current.role;
+
+  await sql`
+    UPDATE users
+    SET
+      name = ${nextName},
+      email = ${requestedEmail},
+      company = ${nextCompany ?? null},
+      role = ${nextRole}
+    WHERE id = ${userId};
+  `;
+
+  const updated = await getUserRowById(userId);
+  if (!updated) {
+    throw new Error('User not found.');
+  }
+  return mapRowToSafeUser(updated);
+}
+
+export async function adminDeleteUser(userId: string): Promise<void> {
+  await ensureDatabase();
+  await destroySessionForUser(userId);
+  await sql`DELETE FROM users WHERE id = ${userId};`;
 }
 
 export async function verifyUserCredentials(email: string, password: string): Promise<SafeUser | null> {

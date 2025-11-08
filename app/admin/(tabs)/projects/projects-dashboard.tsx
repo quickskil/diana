@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo } from 'react';
 import { PLAN_CATALOG } from '@/lib/plans';
 import type { OnboardingProject } from '@/lib/types/user';
@@ -68,7 +69,11 @@ export default function ProjectsDashboard() {
                   column.entries.map(entry => {
                     const plan = PLAN_CATALOG[entry.project.data.plan];
                     return (
-                      <div key={entry.project.id} className="rounded-xl border border-white/10 bg-black/20 p-4">
+                      <Link
+                        key={entry.project.id}
+                        href={`/admin/projects/${entry.project.id}`}
+                        className="block rounded-xl border border-white/10 bg-black/20 p-4 transition hover:border-sky-400/60 hover:bg-black/10"
+                      >
                         <p className="text-sm font-semibold text-white">{entry.clientName}</p>
                         <p className="text-xs text-white/60">{plan?.name ?? entry.project.data.plan}</p>
                         <p className="mt-2 text-xs text-white/50">Updated {formatDateTime(entry.project.statusUpdatedAt)}</p>
@@ -77,7 +82,7 @@ export default function ProjectsDashboard() {
                             {entry.project.statusNote}
                           </p>
                         )}
-                      </div>
+                      </Link>
                     );
                   })
                 )}
@@ -105,21 +110,23 @@ export default function ProjectsDashboard() {
               const plan = PLAN_CATALOG[entry.project.data.plan];
               return (
                 <li key={`${entry.project.id}-timeline`} className="rounded-2xl border border-white/10 bg-black/30 p-5">
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{entry.clientName}</p>
-                      <p className="text-xs text-white/60">{plan?.name ?? entry.project.data.plan}</p>
+                  <Link href={`/admin/projects/${entry.project.id}`} className="block">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{entry.clientName}</p>
+                        <p className="text-xs text-white/60">{plan?.name ?? entry.project.data.plan}</p>
+                      </div>
+                      <span className="rounded-full border border-white/15 px-3 py-1 text-xs uppercase tracking-wide text-white/60">
+                        {entry.project.status}
+                      </span>
                     </div>
-                    <span className="rounded-full border border-white/15 px-3 py-1 text-xs uppercase tracking-wide text-white/60">
-                      {entry.project.status}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-xs text-white/50">{formatDateTime(entry.project.statusUpdatedAt)}</p>
-                  {entry.project.statusNote && (
-                    <p className="mt-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white/70">
-                      {entry.project.statusNote}
-                    </p>
-                  )}
+                    <p className="mt-3 text-xs text-white/50">{formatDateTime(entry.project.statusUpdatedAt)}</p>
+                    {entry.project.statusNote && (
+                      <p className="mt-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white/70">
+                        {entry.project.statusNote}
+                      </p>
+                    )}
+                  </Link>
                 </li>
               );
             })}

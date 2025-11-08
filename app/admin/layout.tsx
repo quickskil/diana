@@ -51,7 +51,7 @@ function AdminNavigation() {
   return (
     <nav className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
       {navItems.map(item => {
-        const active = pathname === item.href;
+        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link key={item.href} href={item.href} className={getLinkClasses(active)}>
             <div className="flex items-center justify-between">
