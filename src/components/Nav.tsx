@@ -223,14 +223,13 @@ export default function Nav() {
                 initial={false}
                 animate={{ opacity: svcOpen ? 1 : 0, y: svcOpen ? 0 : -6, pointerEvents: svcOpen ? 'auto' : 'none' }}
                 transition={reduce ? { duration: 0 } : { duration: 0.16, ease: 'easeOut' }}
-                className="absolute right-0 top-full mt-2 w-[min(92vw,760px)] p-[1px] rounded-2xl shadow-2xl"
-                style={{ background: ring }}
+                className="absolute right-0 top-full mt-3 w-[min(90vw,640px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur"
                 // overlap the trigger a bit to remove any “hover gap”
                 onMouseEnter={() => scheduleOpen(0)}
                 onMouseLeave={() => scheduleClose(140)}
                 onMouseDownCapture={(e) => e.stopPropagation()}
               >
-                <div className="rounded-2xl bg-black/88 border border-white/10 p-5 backdrop-blur">
+                <div className="p-5">
                   <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-[12px] uppercase tracking-[0.24em] text-white/50">What we do</div>
@@ -248,12 +247,12 @@ export default function Nav() {
                     </div>
                   </header>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {SERVICES.map((s) => (
                       <Link
                         key={s.title}
                         href={s.href}
-                        className="group relative flex h-full flex-col gap-4 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 via-white/10 to-transparent p-4 shadow-[0_15px_35px_-20px_rgba(15,23,42,0.8)] transition hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_45px_-18px_rgba(56,189,248,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
+                        className="group relative flex h-full flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_15px_35px_-20px_rgba(15,23,42,0.8)] transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 hover:shadow-[0_20px_45px_-18px_rgba(56,189,248,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
                         onClick={() => setSvcOpen(false)}
                       >
                         <div className="flex items-start gap-3">
