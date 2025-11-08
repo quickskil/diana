@@ -3,7 +3,7 @@ import { getSafeUserById, requireAdminUser } from '@/lib/server/auth';
 import { getPaymentRequestById, updatePaymentRequest } from '@/lib/server/payment-requests';
 import { sendTransactionalEmail } from '@/lib/server/email';
 
-type Params = { params: { requestId: string } };
+type RouteContext = { params: Promise<{ requestId: string }> };
 
 const toHtml = (message: string) =>
   message
@@ -11,7 +11,7 @@ const toHtml = (message: string) =>
     .map(line => (line.trim() ? line.trim() : '<br />'))
     .join('<br />');
 
-export async function POST(request: NextRequest, { params }: Params) {
+export async function POST(request: NextRequest, context: RouteContext) {
   try {
     await requireAdminUser();
     const body = await request.json().catch(() => ({}));
@@ -24,7 +24,9 @@ export async function POST(request: NextRequest, { params }: Params) {
       return NextResponse.json({ ok: false, message: 'Subject and message are required.' }, { status: 400 });
     }
 
-    const paymentRequest = await getPaymentRequestById(params.requestId);
+    const { requestId } = await context.params;
+
+    const paymentRequest = await getPaymentRequestById(requestId);
     if (!paymentRequest) {
       return NextResponse.json({ ok: false, message: 'Payment request not found.' }, { status: 404 });
     }

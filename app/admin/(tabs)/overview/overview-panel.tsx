@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { PLAN_CATALOG } from '@/lib/plans';
+import { PLAN_CATALOG, type PlanKey } from '@/lib/plans';
 import type { OnboardingProject } from '@/lib/types/user';
 import type { PaymentRecord } from '@/lib/types/payments';
 import { formatDateTime, useAdmin } from '../../admin-context';
@@ -94,14 +94,14 @@ export default function OverviewPanel() {
   }, [payments]);
 
   const planMix = useMemo(() => {
-    const totals: Record<string, number> = {};
+    const totals: Partial<Record<PlanKey, number>> = {};
     onboardedClients.forEach(client => {
       client.onboardingProjects.forEach(project => {
-        const key = project.data.plan ?? 'launch';
+        const key = (project.data?.plan ?? 'launch') as PlanKey;
         totals[key] = (totals[key] ?? 0) + 1;
       });
     });
-    return Object.entries(totals)
+    return (Object.entries(totals) as [PlanKey, number][])
       .map(([plan, count]) => ({
         plan,
         count,

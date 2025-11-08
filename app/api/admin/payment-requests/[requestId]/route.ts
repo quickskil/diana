@@ -7,12 +7,14 @@ import {
   updatePaymentRequest
 } from '@/lib/server/payment-requests';
 
-type Params = { params: { requestId: string } };
+type RouteContext = { params: Promise<{ requestId: string }> };
 
-export async function PATCH(request: NextRequest, { params }: Params) {
+export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     await requireAdminUser();
     const body = await request.json().catch(() => ({}));
+
+    const { requestId } = await context.params;
 
     const updates: Parameters<typeof updatePaymentRequest>[1] = {};
 
@@ -52,7 +54,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       updates.amountCents = Math.round(body?.amountCents ? numericAmount : numericAmount * 100);
     }
 
-    const updated = await updatePaymentRequest(params.requestId, updates);
+    const updated = await updatePaymentRequest(requestId, updates);
     const requests = await listPaymentRequests();
     return NextResponse.json({ ok: true, request: updated, requests, message: 'Payment request updated.' });
   } catch (error) {
@@ -77,14 +79,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: Params) {
+export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     await requireAdminUser();
-    const existing = await getPaymentRequestById(params.requestId);
+    const { requestId } = await context.params;
+
+    const existing = await getPaymentRequestById(requestId);
     if (!existing) {
       return NextResponse.json({ ok: false, message: 'Payment request not found.' }, { status: 404 });
     }
-    await deletePaymentRequest(params.requestId);
+    await deletePaymentRequest(requestId);
     const requests = await listPaymentRequests();
     return NextResponse.json({ ok: true, requests, message: 'Payment request deleted.' });
   } catch (error) {
