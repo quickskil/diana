@@ -122,21 +122,12 @@ export default function Nav() {
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); };
   }, []);
 
-  // ---- Mega hover intent (forgiving) ----
-  const openTimer = useRef<number | null>(null);
-  const closeTimer = useRef<number | null>(null);
+  // ---- Mega menu refs ----
   const megaWrapRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const accountWrapRef = useRef<HTMLDivElement | null>(null);
   const accountTriggerRef = useRef<HTMLButtonElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
-
-  const clearTimers = () => {
-    if (openTimer.current) { window.clearTimeout(openTimer.current); openTimer.current = null; }
-    if (closeTimer.current) { window.clearTimeout(closeTimer.current); closeTimer.current = null; }
-  };
-  const scheduleOpen = (delay = 40) => { clearTimers(); openTimer.current = window.setTimeout(() => setSvcOpen(true), delay); };
-  const scheduleClose = (delay = 140) => { clearTimers(); closeTimer.current = window.setTimeout(() => setSvcOpen(false), delay); };
 
   // outside click
   useEffect(() => {
@@ -200,8 +191,6 @@ export default function Nav() {
             <div
               className="relative z-[60]" // higher than nav
               ref={megaWrapRef}
-              onMouseEnter={() => scheduleOpen(40)}
-              onMouseLeave={() => scheduleClose(140)}
             >
               <button
                 ref={triggerRef}
@@ -211,7 +200,6 @@ export default function Nav() {
                 aria-expanded={svcOpen}
                 aria-controls="services-mega"
                 onClick={() => setSvcOpen(v => !v)}
-                onFocus={() => setSvcOpen(true)}
               >
                 Services <ChevronDown className="size-4 opacity-80 transition" style={{ transform: svcOpen ? 'rotate(180deg)' : 'none' }} />
               </button>
@@ -225,12 +213,10 @@ export default function Nav() {
                 transition={reduce ? { duration: 0 } : { duration: 0.16, ease: 'easeOut' }}
                 className="absolute right-0 top-full mt-3 w-[min(90vw,640px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur"
                 // overlap the trigger a bit to remove any “hover gap”
-                onMouseEnter={() => scheduleOpen(0)}
-                onMouseLeave={() => scheduleClose(140)}
                 onMouseDownCapture={(e) => e.stopPropagation()}
               >
-                <div className="p-5">
-                  <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="p-4">
+                  <header className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
                     <div>
                       <div className="text-[12px] uppercase tracking-[0.24em] text-white/50">What we do</div>
                       <div className="text-white/95 text-lg font-semibold">Growth systems that book more conversations</div>
@@ -247,16 +233,16 @@ export default function Nav() {
                     </div>
                   </header>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     {SERVICES.map((s) => (
                       <Link
                         key={s.title}
                         href={s.href}
-                        className="group relative flex h-full flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_15px_35px_-20px_rgba(15,23,42,0.8)] transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 hover:shadow-[0_20px_45px_-18px_rgba(56,189,248,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
+                        className="group relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-3.5 shadow-[0_15px_35px_-20px_rgba(15,23,42,0.8)] transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 hover:shadow-[0_20px_45px_-18px_rgba(56,189,248,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
                         onClick={() => setSvcOpen(false)}
                       >
                         <div className="flex items-start gap-3">
-                          <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sky-100 ring-1 ring-white/15">
+                          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sky-100 ring-1 ring-white/15">
                             <s.icon className="size-5" aria-hidden />
                           </span>
                           <div>
@@ -267,7 +253,7 @@ export default function Nav() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between text-[12px] text-white/65">
-                          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-medium tracking-wide">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 font-medium tracking-wide">
                             {s.chip}
                           </span>
                           <span className="inline-flex items-center gap-2 font-medium text-sky-200 opacity-0 transition-opacity group-hover:opacity-100">
