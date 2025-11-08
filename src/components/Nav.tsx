@@ -329,8 +329,6 @@ export default function Nav() {
             <div
               className="relative ml-6 flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-1.5 py-1"
               ref={accountWrapRef}
-              onMouseEnter={() => setAccountOpen(true)}
-              onMouseLeave={() => setAccountOpen(false)}
               onBlur={(event) => {
                 const next = event.relatedTarget as Node | null;
                 if (next && accountWrapRef.current?.contains(next)) return;
