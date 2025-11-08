@@ -71,6 +71,22 @@ async function createSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );`;
 
+  await sql`CREATE TABLE IF NOT EXISTS payment_requests (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    project_id UUID REFERENCES onboardings(id) ON DELETE SET NULL,
+    amount_cents INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'usd',
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'draft',
+    checkout_url TEXT,
+    email_subject TEXT,
+    email_message TEXT,
+    email_sent BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );`;
+
   await sql`ALTER TABLE onboardings DROP CONSTRAINT IF EXISTS onboardings_pkey;`;
   await sql`ALTER TABLE onboardings ADD COLUMN IF NOT EXISTS id UUID;`;
   await sql`UPDATE onboardings SET id = md5(random()::text || clock_timestamp()::text)::uuid WHERE id IS NULL;`;
@@ -91,6 +107,8 @@ async function createSchema() {
   await sql`ALTER TABLE onboardings ALTER COLUMN user_id SET NOT NULL;`;
 
   await sql`CREATE INDEX IF NOT EXISTS idx_onboardings_user_id ON onboardings(user_id);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_payment_requests_user_id ON payment_requests(user_id);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_payment_requests_project_id ON payment_requests(project_id);`;
 
   const admin = await sql`SELECT id FROM users WHERE email = ${ADMIN_EMAIL} LIMIT 1;`;
   if (admin.rows.length === 0) {

@@ -28,3 +28,21 @@ export interface DepositSummary {
   lastPaymentAt: string | null;
   receiptUrl: string | null;
 }
+
+export type PaymentRequestStatus = 'draft' | 'scheduled' | 'sent' | 'paid' | 'cancelled';
+
+export interface PaymentRequest {
+  id: string;
+  userId: string;
+  projectId: string | null;
+  amountCents: number;
+  currency: string;
+  description: string | null;
+  status: PaymentRequestStatus;
+  checkoutUrl: string | null;
+  emailSubject: string | null;
+  emailMessage: string | null;
+  emailSent: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
