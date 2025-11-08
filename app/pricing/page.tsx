@@ -1,33 +1,24 @@
 // app/pricing/page.tsx
-import MiniChart from "@/components/MiniChart";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowRight, CalendarCheck, PhoneCall, Rocket, Search } from "lucide-react";
+import PricingContent, { PricingTier } from "./PricingContent";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description: "Simple plans for an automated funnel — start lean, add pieces as you grow.",
 };
 
-type Tier = {
-  name: string;
-  headline: string;
-  price: string;
-  caption: string;
-  balance: string;
-  bullets: string[];
-  cta: string;
-  trend: number[];
-  color: "violet" | "sky" | "emerald";
-};
-
-const tiers: Tier[] = [
+const tiers: PricingTier[] = [
   {
     name: "Launch",
     headline: "Conversion website",
-    price: "$99 kickoff deposit",
-    caption: "Balance $400 once you approve launch",
-    balance: "$25/mo hosting & care",
+    summary: "Conversion website built to capture and schedule leads from day one.",
+    deposit: "Only $99 to start",
+    depositNote: "Reserves your build slot and gets copy + design rolling.",
+    balance: "$400 balance after approval",
+    balanceNote: "Invoiced only when you sign off on the launch.",
+    ongoing: "$25/mo hosting & care",
+    ongoingNote: "Keeps speed, security, and updates handled for you.",
+    total: "$499 total build investment",
     bullets: [
       "One-page funnel with booking",
       "Story, proof, and offer aligned",
@@ -36,13 +27,19 @@ const tiers: Tier[] = [
     cta: "Start with the site",
     trend: [4, 6, 9, 12, 16, 19, 21, 24],
     color: "violet",
+    proof: "Ideal when you need to prove a new service or offer quickly.",
   },
   {
     name: "Launch + Traffic",
     headline: "Site + ads",
-    price: "$99 kickoff deposit",
-    caption: "$1,401 balance once launch is signed off",
-    balance: "Management 10% of ad spend (no retainer)",
+    summary: "Pair your high-converting site with aligned search and social campaigns.",
+    deposit: "Only $99 to start",
+    depositNote: "Lock in your spot and we begin audience + keyword research.",
+    balance: "$1,401 balance after approval",
+    balanceNote: "Covers build + campaign setup once you give the go-ahead.",
+    ongoing: "10% of ad spend management",
+    ongoingNote: "No retainers — scaled and paused with your budget.",
+    total: "$1,500 total launch investment",
     bullets: [
       "Search + social campaigns",
       "Message match from ad to page",
@@ -51,13 +48,19 @@ const tiers: Tier[] = [
     cta: "Add traffic",
     trend: [28, 32, 36, 41, 47, 53, 58, 64],
     color: "sky",
+    proof: "Great for service brands ready to control demand with paid traffic.",
   },
   {
     name: "Full Funnel Automation",
     headline: "Site + ads + voice",
-    price: "$99 kickoff deposit",
-    caption: "$2,801 balance after your approval",
-    balance: "Voice from $99/mo",
+    summary: "Layer in AI reception so every lead is answered and routed instantly.",
+    deposit: "Only $99 to start",
+    depositNote: "Hold your slot while we map scripts and call flows.",
+    balance: "$2,801 balance after approval",
+    balanceNote: "Covers launch of the full funnel once you are thrilled with it.",
+    ongoing: "Voice reception from $99/mo",
+    ongoingNote: "Usage-based AI + human handoff that scales with call volume.",
+    total: "$2,900 total launch investment",
     bullets: [
       "Everything in Launch + Traffic",
       "AI receptionist answers instantly",
@@ -66,153 +69,10 @@ const tiers: Tier[] = [
     cta: "Go fully automated",
     trend: [35, 42, 51, 60, 68, 75, 82, 90],
     color: "emerald",
+    proof: "Built for teams that want ads, site, and conversations managed end-to-end.",
   },
 ];
 
 export default function Page() {
-  return (
-    <main className="section relative overflow-hidden" aria-labelledby="pricing-title">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(1200px 600px at 0% 0%, rgba(124,58,237,.18), transparent 60%)," +
-            "radial-gradient(1000px 500px at 100% 10%, rgba(96,165,250,.16), transparent 60%)," +
-            "radial-gradient(800px 400px at 10% 95%, rgba(52,211,153,.14), transparent 60%)",
-          WebkitMaskImage: "radial-gradient(140% 100% at 50% 0%, #000 40%, transparent 85%)",
-          maskImage: "radial-gradient(140% 100% at 50% 0%, #000 40%, transparent 85%)",
-        }}
-      />
-
-      <div className="container space-y-10">
-        <header className="text-center space-y-4 max-w-3xl mx-auto">
-          <h1 id="pricing-title">Pick the plan that fits today — upgrade when you’re ready</h1>
-          <p className="text-white/70">
-            Start lean to prove ROI, then add ads and AI follow-up once the page is converting. We keep everything in sync so you
-            only talk to one friendly team.
-          </p>
-          <div className="flex items-center justify-center gap-2 flex-wrap text-sm text-white/80">
-            <span className="pill"><Rocket className="size-4" aria-hidden /> Launch fast</span>
-            <span className="pill"><Search className="size-4" aria-hidden /> Spend with intent</span>
-            <span className="pill"><PhoneCall className="size-4" aria-hidden /> Answer every lead</span>
-          </div>
-        </header>
-
-        <section className="grid md:grid-cols-3 gap-4" aria-label="Pricing tiers">
-          {tiers.map((tier) => (
-            <div key={tier.name} className="radiant-card">
-              <div className="card h-full p-6 space-y-4">
-                <div className="flex items-center justify-between text-sm text-white/60">
-                  <span>{tier.name}</span>
-                  <span className="badge">Done for you</span>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold text-white/90">{tier.headline}</div>
-                  <div className="text-3xl font-extrabold text-white/95">{tier.price}</div>
-                  <div className="text-xs text-white/55">{tier.caption}</div>
-                  <div className="mt-1 text-[11px] uppercase tracking-wide text-emerald-300">Balance due only after launch approval</div>
-                  <div className="text-[11px] text-white/45">{tier.balance}</div>
-                </div>
-                <p className="text-xs text-white/60 leading-relaxed">
-                  We’ll map the rollout for {tier.name.toLowerCase()} on a quick call so you know exactly what to expect.
-                </p>
-                <ul className="text-sm text-white/75 space-y-2">
-                  {tier.bullets.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
-                  ))}
-                </ul>
-                <Link href="/contact" className="btn inline-flex items-center gap-2">
-                  {tier.cta}
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <section className="radiant-card">
-          <div className="card grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_minmax(220px,260px)] md:items-center">
-            <div className="space-y-3 text-center md:text-left">
-              <h2 className="text-xl font-semibold text-white/95">What every plan includes</h2>
-              <p className="text-sm text-white/70">
-                Conversion copy, speed optimizations, analytics setup, and weekly insight on what is booking calls. No surprise
-                fees, no long-term commitments.
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center text-sm text-white/80 md:justify-start">
-                <span className="pill">Calendar + form integration</span>
-                <span className="pill">Transparent reporting</span>
-                <span className="pill">Friendly support</span>
-              </div>
-            </div>
-            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
-              <div className="flex items-center justify-between text-white/60">
-                <span>Onboarding timeline</span>
-                <span className="badge">2 weeks</span>
-              </div>
-              <ol className="space-y-2 text-xs text-white/60">
-                <li><strong className="text-white/80">Days 1-3:</strong> Kickoff, asset review, and copy outline.</li>
-                <li><strong className="text-white/80">Days 4-7:</strong> Design & build the conversion flow.</li>
-                <li><strong className="text-white/80">Days 8-14:</strong> Launch, QA, and campaign alignment.</li>
-              </ol>
-              <p className="text-xs text-white/55">We handle the heavy lifting — you just review and approve.</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="radiant-card">
-          <div className="card p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-white/95">Two-step payment flow</h2>
-            <p className="text-sm text-white/70 max-w-3xl">
-              We only collect a $99 kickoff deposit to reserve your build slot. The remaining balance is invoiced once you’ve approved the launch and are thrilled with the results.
-            </p>
-            <ol className="grid gap-3 md:grid-cols-3 text-sm text-white/75">
-              <li className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4">
-                <div className="text-xs uppercase tracking-wide text-emerald-200">Step 1</div>
-                <div className="mt-1 font-semibold text-white">Kickoff deposit</div>
-                <p className="mt-1 text-emerald-100/80">Secure your slot with $99 and complete onboarding so we can start copy, design, and automations immediately.</p>
-              </li>
-              <li className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-4">
-                <div className="text-xs uppercase tracking-wide text-sky-200">Step 2</div>
-                <div className="mt-1 font-semibold text-white">Build & review</div>
-                <p className="mt-1 text-sky-100/80">We share progress, implement feedback, and align everything from ads to AI receptionists.</p>
-              </li>
-              <li className="rounded-2xl border border-indigo-400/40 bg-indigo-500/10 p-4">
-                <div className="text-xs uppercase tracking-wide text-indigo-200">Step 3</div>
-                <div className="mt-1 font-semibold text-white">Approve & pay balance</div>
-                <p className="mt-1 text-indigo-100/80">Once you sign off on the launch, we issue the final invoice and push everything live.</p>
-              </li>
-            </ol>
-          </div>
-        </section>
-
-        <section className="radiant-card">
-          <div className="card p-6 space-y-4 text-center">
-            <h2 className="text-xl font-semibold text-white/95">Need a tailored quote?</h2>
-            <p className="text-sm text-white/70 max-w-2xl mx-auto">
-              We scope to your sales cycle, creative needs, and call volume. You’ll leave with a clear roadmap and the exact
-              investment to make it happen.
-            </p>
-            
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              <Link href="/contact" className="btn inline-flex items-center gap-2">
-                <PhoneCall className="size-4" aria-hidden />
-                Talk with us
-              </Link>
-              <Link href="/contact" className="btn-ghost inline-flex items-center gap-2">
-                <CalendarCheck className="size-4" aria-hidden />
-                Book a time
-              </Link>
-            </div>
-            <p className="text-xs text-white/55">No pressure — just a clear plan to automate your funnel.</p>
-          </div>
-        </section>
-
-        <div className="text-[11px] text-white/45 text-center">
-          Setup fees cover strategy, copy, design, and launch. Monthly amounts flex with volume — we size them with you before
-          work starts.
-        </div>
-      </div>
-    </main>
-  );
+  return <PricingContent tiers={tiers} />;
 }
