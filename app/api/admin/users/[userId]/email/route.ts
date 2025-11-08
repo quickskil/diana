@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSafeUserById, requireAdminUser } from '@/lib/server/auth';
 import { sendTransactionalEmail } from '@/lib/server/email';
 
-type Params = { params: { userId: string } };
+type RouteContext = { params: Promise<{ userId: string }> };
 
 const formatHtml = (message: string) =>
   message
@@ -10,7 +10,7 @@ const formatHtml = (message: string) =>
     .map(line => line.trim() || '<br />')
     .join('<br />');
 
-export async function POST(request: NextRequest, { params }: Params) {
+export async function POST(request: NextRequest, context: RouteContext) {
   try {
     await requireAdminUser();
     const body = await request.json().catch(() => ({}));
@@ -24,7 +24,9 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    const user = await getSafeUserById(params.userId);
+    const { userId } = await context.params;
+
+    const user = await getSafeUserById(userId);
     if (!user) {
       return NextResponse.json({ ok: false, message: 'User not found.' }, { status: 404 });
     }

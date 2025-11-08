@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDeleteUser, adminUpdateUser, listSafeUsers, requireAdminUser } from '@/lib/server/auth';
 
-type Params = { params: { userId: string } };
+type RouteContext = { params: Promise<{ userId: string }> };
 
-export async function PATCH(request: NextRequest, { params }: Params) {
+export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     await requireAdminUser();
     const body = await request.json().catch(() => ({}));
-    const user = await adminUpdateUser(params.userId, {
+    const { userId } = await context.params;
+
+    const user = await adminUpdateUser(userId, {
       name: typeof body?.name === 'string' ? body.name : undefined,
       email: typeof body?.email === 'string' ? body.email : undefined,
       company: typeof body?.company === 'string' ? body.company : undefined,
@@ -40,10 +42,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: Params) {
+export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     await requireAdminUser();
-    await adminDeleteUser(params.userId);
+    const { userId } = await context.params;
+
+    await adminDeleteUser(userId);
     const users = await listSafeUsers();
     return NextResponse.json({ ok: true, users, message: 'User deleted.' });
   } catch (error) {
