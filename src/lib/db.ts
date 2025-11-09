@@ -71,11 +71,26 @@ async function createSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );`;
 
-  await sql`ALTER TABLE onboardings DROP CONSTRAINT IF EXISTS onboardings_pkey;`;
   await sql`ALTER TABLE onboardings ADD COLUMN IF NOT EXISTS id UUID;`;
   await sql`UPDATE onboardings SET id = md5(random()::text || clock_timestamp()::text)::uuid WHERE id IS NULL;`;
   await sql`ALTER TABLE onboardings ALTER COLUMN id SET NOT NULL;`;
-  await sql`ALTER TABLE onboardings ADD CONSTRAINT onboardings_pkey PRIMARY KEY (id);`;
+  await sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_index i
+        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY (i.indkey)
+        WHERE i.indrelid = 'onboardings'::regclass
+          AND i.indisprimary
+          AND a.attname = 'id'
+      ) THEN
+        EXECUTE 'ALTER TABLE onboardings DROP CONSTRAINT IF EXISTS onboardings_pkey';
+        EXECUTE 'ALTER TABLE onboardings ADD CONSTRAINT onboardings_pkey PRIMARY KEY (id)';
+      END IF;
+    END;
+    $$;
+  `;
 
   await sql`ALTER TABLE onboardings ADD COLUMN IF NOT EXISTS label TEXT;`;
   await sql`UPDATE onboardings SET label = COALESCE(NULLIF(label, ''), 'Project') WHERE label IS NULL OR label = '';`;
