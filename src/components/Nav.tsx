@@ -12,13 +12,20 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
+import { caseStudies } from '@/data/caseStudies';
 
 const LINKS = [
   { href: '/services', label: 'Services' },
   { href: '/pricing', label: 'Pricing' },
-  { href: '/case-studies', label: 'Case Studies' },
   { href: '/about', label: 'About' },
 ];
+
+const CASE_STUDIES = caseStudies.map(({ nicheKey, slug, title, whyThisNiche }) => ({
+  key: nicheKey,
+  href: slug,
+  title,
+  summary: whyThisNiche,
+}));
 
 const SERVICES = [
   {
@@ -72,6 +79,7 @@ export default function Nav() {
   const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);      // mobile drawer
   const [svcOpen, setSvcOpen] = useState(false);// desktop mega
+  const [csOpen, setCsOpen] = useState(false);  // case studies menu
   const [accountOpen, setAccountOpen] = useState(false);
   const lastY = useRef(0);
 
@@ -81,13 +89,13 @@ export default function Nav() {
       const y = window.scrollY || 0;
       setAtTop(y < 8);
       const goingDown = y > lastY.current && y > 56;
-      setHidden(goingDown && !open && !svcOpen);
+      setHidden(goingDown && !open && !svcOpen && !csOpen);
       lastY.current = y;
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [open, svcOpen]);
+  }, [open, svcOpen, csOpen]);
 
   // disable body scroll when drawer open
   useEffect(() => {
@@ -103,6 +111,7 @@ export default function Nav() {
       if (e.key !== 'Escape') return;
       setOpen(false);
       setSvcOpen(false);
+      setCsOpen(false);
       setAccountOpen(false);
     };
     window.addEventListener('keydown', onKey);
@@ -125,6 +134,8 @@ export default function Nav() {
   // ---- Mega menu refs ----
   const megaWrapRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const csWrapRef = useRef<HTMLDivElement | null>(null);
+  const csTriggerRef = useRef<HTMLButtonElement | null>(null);
   const accountWrapRef = useRef<HTMLDivElement | null>(null);
   const accountTriggerRef = useRef<HTMLButtonElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -140,6 +151,17 @@ export default function Nav() {
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, [svcOpen]);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (!csOpen) return;
+      const t = e.target as Node;
+      if (csWrapRef.current?.contains(t) || csTriggerRef.current?.contains(t)) return;
+      setCsOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [csOpen]);
 
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
@@ -199,7 +221,10 @@ export default function Nav() {
                 aria-haspopup="true"
                 aria-expanded={svcOpen}
                 aria-controls="services-mega"
-                onClick={() => setSvcOpen(v => !v)}
+                onClick={() => {
+                  setSvcOpen(v => !v);
+                  setCsOpen(false);
+                }}
               >
                 Services <ChevronDown className="size-4 opacity-80 transition" style={{ transform: svcOpen ? 'rotate(180deg)' : 'none' }} />
               </button>
@@ -283,6 +308,78 @@ export default function Nav() {
                   </div>
 
                   <p className="mt-3 text-[12px] text-white/65">Friendly chat. Clear plan. Launch together when it feels right.</p>
+                </div>
+              </motion.div>
+            </div>
+            <div
+              className="relative z-[60]"
+              ref={csWrapRef}
+            >
+              <button
+                ref={csTriggerRef}
+                type="button"
+                className={`btn-ghost inline-flex h-8 items-center gap-1 px-3 text-[13px] ${pathname?.startsWith('/case-study') || pathname === '/case-studies' ? 'ring-1 ring-white/30' : ''}`}
+                aria-haspopup="true"
+                aria-expanded={csOpen}
+                aria-controls="case-studies-menu"
+                onClick={() => {
+                  setCsOpen(v => !v);
+                  setSvcOpen(false);
+                }}
+              >
+                Case Studies <ChevronDown className="size-4 opacity-80 transition" style={{ transform: csOpen ? 'rotate(180deg)' : 'none' }} />
+              </button>
+
+              <motion.div
+                id="case-studies-menu"
+                role="menu"
+                initial={false}
+                animate={{ opacity: csOpen ? 1 : 0, y: csOpen ? 0 : -6, pointerEvents: csOpen ? 'auto' : 'none' }}
+                transition={reduce ? { duration: 0 } : { duration: 0.16, ease: 'easeOut' }}
+                className="absolute right-0 top-full mt-3 w-[min(90vw,540px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur"
+                onMouseDownCapture={(e) => e.stopPropagation()}
+              >
+                <div className="p-4 space-y-4">
+                  <header className="space-y-1">
+                    <div className="text-[12px] uppercase tracking-[0.24em] text-white/50">Industry playbooks</div>
+                    <div className="text-white/95 text-lg font-semibold">Voice-first funnels that keep local teams booked</div>
+                  </header>
+                  <div className="grid gap-2.5 md:grid-cols-2">
+                    {CASE_STUDIES.map((cs) => (
+                      <Link
+                        key={cs.key}
+                        href={cs.href}
+                        className="group flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3.5 transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
+                        onClick={() => setCsOpen(false)}
+                      >
+                        <div className="text-xs uppercase tracking-[0.26em] text-white/55">Case Study</div>
+                        <div className="font-semibold text-white group-hover:text-sky-100 group-hover:underline group-hover:decoration-sky-300/80 group-hover:underline-offset-4">
+                          {cs.title}
+                        </div>
+                        <p className="text-xs leading-relaxed text-white/65">{cs.summary}</p>
+                        <span className="inline-flex items-center gap-2 text-xs font-semibold text-sky-200 opacity-0 transition group-hover:opacity-100">
+                          View playbook
+                          <ArrowRight className="size-3" aria-hidden />
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                    <Link
+                      href="/case-studies"
+                      className="btn-ghost h-9 gap-2"
+                      onClick={() => setCsOpen(false)}
+                    >
+                      Explore all case studies
+                    </Link>
+                    <Link
+                      href="/onboarding?source=niche_menu"
+                      className="btn h-9 gap-2 ml-auto"
+                      onClick={() => setCsOpen(false)}
+                    >
+                      Start for $99
+                    </Link>
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -457,6 +554,36 @@ export default function Nav() {
                     <a href="/voice-demo" className="mt-1 inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/10" onClick={() => setOpen(false)}>
                       <Headphones className="size-4" /> Try the Live Voice Demo
                     </a>
+                  </div>
+                </details>
+              </li>
+
+              <li>
+                <details className="group rounded-lg">
+                  <summary className="flex w-full items-center justify-between rounded-lg px-3 py-2 hover:bg-white/10 cursor-pointer">
+                    <span>Case Studies</span>
+                    <ChevronDown className="size-4 group-open:rotate-180 transition" />
+                  </summary>
+                  <div className="mt-1 grid grid-cols-1 gap-1">
+                    {CASE_STUDIES.map((cs) => (
+                      <Link
+                        key={cs.key}
+                        href={cs.href}
+                        className="block rounded-lg px-3 py-2 hover:bg-white/10"
+                        onClick={() => setOpen(false)}
+                      >
+                        <div className="text-sm font-medium text-white">{cs.title}</div>
+                        <div className="text-xs text-white/65">{cs.summary}</div>
+                      </Link>
+                    ))}
+                    <Link
+                      href="/case-studies"
+                      className="mt-1 inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white/10"
+                      onClick={() => setOpen(false)}
+                    >
+                      Explore all case studies
+                      <ArrowRight className="size-3" aria-hidden />
+                    </Link>
                   </div>
                 </details>
               </li>
