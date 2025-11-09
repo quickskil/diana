@@ -240,7 +240,7 @@ export default function Nav() {
                 // overlap the trigger a bit to remove any “hover gap”
                 onMouseDownCapture={(e) => e.stopPropagation()}
               >
-                <div className="p-4">
+                <div className="max-h-[min(80svh,32rem)] overflow-y-auto overscroll-contain p-4">
                   <header className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
                     <div>
                       <div className="text-[12px] uppercase tracking-[0.24em] text-white/50">What we do</div>
@@ -339,7 +339,7 @@ export default function Nav() {
                 className="absolute right-0 top-full mt-3 w-[min(90vw,540px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur"
                 onMouseDownCapture={(e) => e.stopPropagation()}
               >
-                <div className="p-4 space-y-4">
+                <div className="max-h-[min(80svh,30rem)] overflow-y-auto overscroll-contain p-4 space-y-4">
                   <header className="space-y-1">
                     <div className="text-[12px] uppercase tracking-[0.24em] text-white/50">Industry playbooks</div>
                     <div className="text-white/95 text-lg font-semibold">Voice-first funnels that keep local teams booked</div>
