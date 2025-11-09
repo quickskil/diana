@@ -1,54 +1,45 @@
 // app/case-studies/page.tsx
-import type { Metadata } from "next";
-import Link from "next/link";
+import type { Metadata } from 'next';
+import Link from 'next/link';
+
+import { caseStudies } from '@/data/caseStudies';
 
 export const metadata: Metadata = {
-  title: "Case Studies",
+  title: 'Case Studies',
   description:
-    "See how the automated funnel performs across industries — from local services to SaaS and eCommerce.",
+    'See how local service brands pair conversion-first websites, ads, and AI voice receptionists to capture every call and launch with a $99 kickoff.',
 };
-
-type Study = {
-  title: string;
-  metric: string;
-  context: string;
-  outcome: string;
-};
-
-const studies: Study[] = [
-  {
-    title: "Local Services",
-    metric: "Booked jobs 2.1×",
-    context: "HVAC & roofing teams",
-    outcome: "Neighborhood landing page + AI voice to handle overflow and after-hours calls added steady appointments each week.",
-  },
-  {
-    title: "B2B SaaS",
-    metric: "Demo requests +88%",
-    context: "Growth-stage platform",
-    outcome: "Role-based messaging, synchronized ads, and instant voice follow-up meant more pipeline without adding SDR headcount.",
-  },
-  {
-    title: "DTC & eCom",
-    metric: "ROAS 3.5 → 5.1",
-    context: "Skincare & supplements",
-    outcome:
-      "Faster product experiences and creatives that mirrored the landing page increased conversion and let spend scale profitably.",
-  },
-];
 
 const proofPoints = [
   {
-    title: "One system",
-    copy: "Website, ads, and voice follow-up are run together so learnings move fast and nothing falls through the cracks.",
+    title: 'Never miss a lead',
+    copy: 'Small businesses can miss up to 40% of inbound calls during peak windows — our AI agents answer instantly so every opportunity is captured and routed.',
   },
   {
-    title: "Real-time response",
-    copy: "AI calls, books, and summarizes in your tone. You start the morning with meetings on the calendar, not missed calls.",
+    title: 'Always-on coverage',
+    copy: 'Voice reception stays active 24/7, trimming 40-65% from traditional answering costs while delivering consistent caller experiences.',
   },
   {
-    title: "Continuous optimization",
-    copy: "Weekly reviews highlight the wins, the trims, and the next tests — always tied to revenue, not vanity metrics.",
+    title: 'Faster speed-to-lead',
+    copy: 'Leads that hear from you within the first hour are ~7× more likely to convert. Automated callbacks and booking flows make that the default.',
+  },
+];
+
+const rolloutSteps = [
+  {
+    step: '01',
+    title: 'Conversion-ready website refresh',
+    copy: 'We rebuild your key service pages around proof, trust signals, and calls-to-action that point straight to phone or booking flows.',
+  },
+  {
+    step: '02',
+    title: 'High-intent ads and tracking',
+    copy: 'Search, Local Services, and paid social campaigns turn on together with call tracking so you see which channels drive booked work.',
+  },
+  {
+    step: '03',
+    title: 'AI voice agent + warm transfers',
+    copy: 'Our branded agent answers, qualifies, schedules, and hands off urgent cases to your team — with summaries waiting in your inbox.',
   },
 ];
 
@@ -60,42 +51,47 @@ export default function Page() {
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(1200px 600px at 0% 0%, rgba(124,58,237,.18), transparent 60%)," +
-            "radial-gradient(1000px 500px at 100% 10%, rgba(96,165,250,.16), transparent 60%)," +
-            "radial-gradient(800px 400px at 10% 95%, rgba(52,211,153,.14), transparent 60%)",
-          WebkitMaskImage: "radial-gradient(140% 100% at 50% 0%, #000 40%, transparent 85%)",
-          maskImage: "radial-gradient(140% 100% at 50% 0%, #000 40%, transparent 85%)",
+            'radial-gradient(1200px 600px at 0% 0%, rgba(124,58,237,.18), transparent 60%),' +
+            'radial-gradient(1000px 500px at 100% 10%, rgba(96,165,250,.16), transparent 60%),' +
+            'radial-gradient(800px 400px at 10% 95%, rgba(52,211,153,.14), transparent 60%)',
+          WebkitMaskImage: 'radial-gradient(140% 100% at 50% 0%, #000 40%, transparent 85%)',
+          maskImage: 'radial-gradient(140% 100% at 50% 0%, #000 40%, transparent 85%)',
         }}
       />
 
-      <div className="container space-y-10">
+      <div className="container space-y-12">
         <header className="text-center space-y-4 max-w-3xl mx-auto">
-          <h1 id="cs-title">Proof the automated funnel works</h1>
+          <h1 id="cs-title">Local case studies powered by AI voice reception</h1>
           <p className="text-white/70">
-            A few snapshots from the industries we serve most. Each win combines a conversion-first page, intent-led traffic,
-            and voice follow-up that never sleeps.
+            Explore how nine service niches blend a conversion-focused website, paid traffic, and an always-on voice agent to
+            catch every call. Each playbook starts with a $99 kickoff and ends with a funnel you can scale confidently.
           </p>
         </header>
 
-        <section className="grid md:grid-cols-3 gap-4" aria-label="Highlights by industry">
-          {studies.map((study) => (
-            <div key={study.title} className="radiant-card">
-              <div className="card h-full p-5 space-y-3">
-                <div className="flex items-center justify-between text-sm text-white/60">
-                  <span>{study.context}</span>
-                  <span className="badge">{study.metric}</span>
+        <section className="grid gap-4 md:grid-cols-3" aria-label="Case studies by niche">
+          {caseStudies.map((study) => (
+            <Link
+              key={study.nicheKey}
+              href={study.slug}
+              className="radiant-card transition hover:-translate-y-1"
+            >
+              <div className="card h-full space-y-3 p-5">
+                <div className="flex items-center justify-between text-xs text-white/60">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1">
+                    <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />
+                    Voice + funnel bundle
+                  </span>
+                  <span className="font-semibold text-white/75">$99 kickoff</span>
                 </div>
                 <h2 className="text-lg font-semibold text-white/95">{study.title}</h2>
-                <p className="text-sm text-white/70">{study.outcome}</p>
-                <Link href="/contact" className="text-xs font-semibold text-white/80 underline decoration-white/30 underline-offset-4 hover:decoration-white">
-                  Ask for the full playbook
-                </Link>
+                <p className="text-sm text-white/70">{study.overview}</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/50">View case study →</p>
               </div>
-            </div>
+            </Link>
           ))}
         </section>
 
-        <section className="grid md:grid-cols-3 gap-4" aria-label="Why results stick">
+        <section className="grid md:grid-cols-3 gap-4" aria-label="Why it works">
           {proofPoints.map((point) => (
             <div key={point.title} className="radiant-card">
               <div className="card h-full p-5 space-y-2">
@@ -107,70 +103,41 @@ export default function Page() {
         </section>
 
         <section className="radiant-card">
-          <div className="card p-6 space-y-4 text-center">
-            <h2 className="text-xl font-semibold text-white/95">Want the numbers for your niche?</h2>
-            <p className="text-sm text-white/70 max-w-2xl mx-auto">
-              We’ll share a tailored forecast, sample creative, and how we’d roll out the automated funnel step by step.
-            </p>
-            <div className="grid gap-4 md:grid-cols-3 text-left">
-              <div className="rounded-lg border border-white/10 p-4">
-                <h3 className="font-semibold text-white/90">15-minute discovery call</h3>
-                <p className="text-sm text-white/70">
-                  Align on your revenue goals, current funnel gaps, and what an automated follow-up engine could unlock.
-                </p>
-              </div>
-              <div className="rounded-lg border border-white/10 p-4">
-                <h3 className="font-semibold text-white/90">Custom performance forecast</h3>
-                <p className="text-sm text-white/70">
-                  Receive a projected pipeline model, channel mix, and sample creatives tailored to your vertical.
-                </p>
-              </div>
-              <div className="rounded-lg border border-white/10 p-4">
-                <h3 className="font-semibold text-white/90">Roadmap & next steps</h3>
-                <p className="text-sm text-white/70">
-                  Get a clear rollout plan, ownership expectations, and the KPIs we’ll monitor in the first 30 days.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              <Link href="/contact" className="btn">
-                Book a call
-              </Link>
-              <Link href="/contact" className="btn-ghost">
-                Schedule a walkthrough
-              </Link>
+          <div className="card p-6 md:p-10 space-y-6">
+            <header className="space-y-3 text-center md:text-left">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Our rollout in every niche</p>
+              <h2 className="text-2xl font-semibold text-white/95">One playbook, customized by industry</h2>
+              <p className="text-sm text-white/70 max-w-3xl">
+                The sequence stays consistent: conversion-first site, coordinated traffic, and an AI receptionist who handles call
+                answer, transfers, and scheduling without fail. Then we iterate weekly on real call summaries and campaign data.
+              </p>
+            </header>
+            <div className="grid gap-4 md:grid-cols-3">
+              {rolloutSteps.map((step) => (
+                <div key={step.step} className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">{step.step}</span>
+                  <h3 className="text-lg font-semibold text-white/90">{step.title}</h3>
+                  <p className="text-sm text-white/70">{step.copy}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         <section className="radiant-card">
-          <div className="card p-6 md:p-10 grid gap-8 md:grid-cols-[1.2fr_1fr] items-center">
-            <div className="space-y-4">
-              <h2 className="text-2xl font-semibold text-white/95">Book your discovery call</h2>
-              <p className="text-sm text-white/70">
-                Spend 15 minutes exploring how the automated funnel would plug into your stack. We’ll review quick wins, traffic
-                priorities, and what it takes to launch without disrupting current campaigns.
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-sm text-white/70">
-                <li>Audit your existing demand engine and identify the biggest conversion leaks.</li>
-                <li>Outline how voice follow-up, nurture, and reporting adapt to your buyer journey.</li>
-                <li>End with a documented next step so your team knows exactly how to move forward.</li>
-              </ul>
-            </div>
-            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
-              <p className="text-sm text-white/70">Ready for next steps?</p>
-              <h3 className="text-xl font-semibold text-white/95">Lock in your discovery call</h3>
-              <p className="text-sm text-white/70">
-                Pick a time that works for you or ring us now — we’ll confirm details and send prep notes right away.
-              </p>
-              <div className="flex flex-col gap-2">
-                <Link href="/contact" className="btn">
-                  Schedule your call
-                </Link>
-                <Link href="tel:+12136810660" className="btn-ghost">
-                  Call (213) 681 0660
-                </Link>
-              </div>
+          <div className="card p-6 space-y-5 text-center md:text-left md:p-8">
+            <h2 className="text-2xl font-semibold text-white/95">Ready to see your own projections?</h2>
+            <p className="text-sm text-white/70 max-w-2xl">
+              Reserve your kickoff for $99 and we will map call volumes, expected booked appointments, and the ad + website launch
+              plan for your niche. You approve the strategy before any larger investment goes live.
+            </p>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <Link href="/contact" className="btn">
+                Book a discovery call
+              </Link>
+              <Link href="/voice-demo" className="btn-ghost">
+                Hear the live voice agent
+              </Link>
             </div>
           </div>
         </section>
