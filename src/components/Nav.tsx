@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import {
   Menu, X, ChevronDown,
@@ -134,11 +134,14 @@ export default function Nav() {
   // ---- Mega menu refs ----
   const megaWrapRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const megaPanelRef = useRef<HTMLDivElement | null>(null);
   const csWrapRef = useRef<HTMLDivElement | null>(null);
   const csTriggerRef = useRef<HTMLButtonElement | null>(null);
   const accountWrapRef = useRef<HTMLDivElement | null>(null);
   const accountTriggerRef = useRef<HTMLButtonElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const [megaShift, setMegaShift] = useState(0);
 
   // outside click
   useEffect(() => {
@@ -150,6 +153,35 @@ export default function Nav() {
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
+  }, [svcOpen]);
+
+  useEffect(() => {
+    if (!svcOpen) {
+      setMegaShift(0);
+      return;
+    }
+
+    const panel = megaPanelRef.current;
+    if (!panel) return;
+
+    const update = () => {
+      const rect = panel.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const gutter = 16;
+
+      let shift = 0;
+      if (rect.left < gutter) {
+        shift = gutter - rect.left;
+      } else if (rect.right > viewportWidth - gutter) {
+        shift = (viewportWidth - gutter) - rect.right;
+      }
+
+      setMegaShift(shift);
+    };
+
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
   }, [svcOpen]);
 
   useEffect(() => {
@@ -236,7 +268,9 @@ export default function Nav() {
                 initial={false}
                 animate={{ opacity: svcOpen ? 1 : 0, y: svcOpen ? 0 : -6, pointerEvents: svcOpen ? 'auto' : 'none' }}
                 transition={reduce ? { duration: 0 } : { duration: 0.16, ease: 'easeOut' }}
-                className="absolute right-0 top-full mt-3 w-[min(90vw,640px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur"
+                ref={megaPanelRef}
+                className="absolute left-1/2 top-full mt-3 w-[min(92vw,640px)] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur"
+                style={{ '--tw-translate-x': `calc(-50% + ${megaShift}px)` } as CSSProperties }
                 // overlap the trigger a bit to remove any “hover gap”
                 onMouseDownCapture={(e) => e.stopPropagation()}
               >
