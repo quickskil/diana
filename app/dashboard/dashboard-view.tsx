@@ -73,6 +73,8 @@ export default function DashboardView() {
   const [accountFeedback, setAccountFeedback] = useState<string | null>(null);
   const [accountSaving, setAccountSaving] = useState(false);
   const initialStepRender = useRef(true);
+  const stepListRef = useRef<HTMLDivElement | null>(null);
+  const stepContentRef = useRef<HTMLDivElement | null>(null);
   const [depositSummary, setDepositSummary] = useState<DepositSummary | null>(null);
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositError, setDepositError] = useState<string | null>(null);
@@ -299,8 +301,23 @@ export default function DashboardView() {
       return;
     }
     setOnboardingFeedback(null);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window === 'undefined') return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+    if (!isDesktop && stepContentRef.current) {
+      stepContentRef.current.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'start'
+      });
+    }
+
+    if (isDesktop && stepListRef.current) {
+      const currentStepButton = stepListRef.current.querySelector<HTMLButtonElement>(
+        `[data-step-index="${stepIndex}"]`
+      );
+      currentStepButton?.scrollIntoView({ block: 'nearest' });
     }
   }, [stepIndex]);
 
@@ -322,7 +339,7 @@ export default function DashboardView() {
         <div className="space-y-6">
           <section>
             <p className="text-sm text-white/70">Pick the package that fits your current goals. You can upgrade at any time.</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-4 flex gap-4 overflow-x-auto pb-2 xl:overflow-visible xl:[mask-image:none] [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]">
               {PLAN_LIST.map(plan => {
                 const active = form.plan === plan.key;
                 return (
@@ -330,7 +347,7 @@ export default function DashboardView() {
                     key={plan.key}
                     type="button"
                     onClick={() => setForm(prev => ({ ...prev, plan: plan.key }))}
-                    className={`group flex h-full flex-col justify-between rounded-2xl border px-4 py-4 text-left transition ${active ? 'border-sky-400/80 bg-sky-500/20 shadow-[0_0_25px_rgba(56,189,248,0.35)]' : 'border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10'}`}
+                    className={`group flex min-w-[240px] max-w-xs flex-1 flex-col justify-between rounded-2xl border px-5 py-5 text-left transition ${active ? 'border-sky-400/80 bg-gradient-to-br from-sky-500/30 via-cyan-500/10 to-transparent shadow-[0_0_30px_rgba(56,189,248,0.35)]' : 'border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10'}`}
                     aria-pressed={active}
                   >
                     <div>
@@ -345,11 +362,15 @@ export default function DashboardView() {
                           </span>
                         )}
                       </div>
-                      <p className="mt-3 text-sm text-white/65">{plan.price}</p>
+                      <p className="mt-3 text-sm text-white/80">{plan.price}</p>
                     </div>
-                    <span className="mt-4 inline-flex items-center text-xs font-semibold text-sky-200 group-hover:text-sky-100">
-                      Tap to choose
-                    </span>
+                    <div className="mt-4 flex items-center justify-between text-[11px] font-semibold text-sky-100/80">
+                      <span className="inline-flex items-center gap-1 text-sky-100 group-hover:text-sky-50">
+                        <span className="size-1.5 rounded-full bg-sky-300" />
+                        Tap to select
+                      </span>
+                      <span className="text-white/70">See deliverables →</span>
+                    </div>
                   </button>
                 );
               })}
@@ -677,7 +698,39 @@ export default function DashboardView() {
   const totalSteps = steps.length;
   const isLastStep = totalSteps > 0 ? stepIndex >= totalSteps - 1 : true;
   const progressPct = totalSteps > 1 ? (stepIndex / (totalSteps - 1)) * 100 : totalSteps === 1 ? 100 : 0;
+  const roundedProgress = Number.isFinite(progressPct) ? Math.round(progressPct) : 0;
   const currentStep = steps[stepIndex] ?? steps[0];
+  const nextStep = !isLastStep ? steps[stepIndex + 1] : null;
+
+  const answeredStats = useMemo(() => {
+    const entries = Object.entries(form).filter(([key]) => key !== 'plan');
+    const answered = entries.reduce((total, [, value]) => {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return total + 1;
+      }
+      return total;
+    }, 0);
+    const total = entries.length;
+    const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+    return { answered, total, pct } as const;
+  }, [form]);
+
+  const nextStepLabel = useMemo(() => {
+    if (isLastStep) {
+      return 'Submit onboarding & schedule kickoff';
+    }
+    return nextStep?.title ?? 'Review & submit';
+  }, [isLastStep, nextStep?.title]);
+
+  const lastUpdatedLabel = useMemo(() => {
+    if (selectedProject?.updatedAt) {
+      return formatDate(selectedProject.updatedAt);
+    }
+    if (selectedProject?.createdAt) {
+      return formatDate(selectedProject.createdAt);
+    }
+    return 'Not saved yet';
+  }, [selectedProject?.createdAt, selectedProject?.updatedAt]);
 
   const goToStep = useCallback(
     (index: number) => {
@@ -776,33 +829,69 @@ export default function DashboardView() {
     <main id="main" className="container py-12 md:py-20">
       <div className="mx-auto max-w-6xl space-y-10">
         <header className="rounded-3xl border border-white/10 bg-gradient-to-br from-black/60 via-black/40 to-purple-900/20 p-10 text-white shadow-lg">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+          <div className="space-y-6">
+            <div className="flex flex-col gap-3">
               <p className="text-sm uppercase tracking-[0.3em] text-white/55">Client Portal</p>
-              <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Welcome back, {allowedUser.name || 'there'}!</h1>
-              <p className="mt-3 max-w-2xl text-white/75">
+              <h1 className="text-3xl font-semibold md:text-4xl">Welcome back, {allowedUser.name || 'there'}!</h1>
+              <p className="max-w-3xl text-white/75">
                 Complete your onboarding so we can align the launch plan, campaigns, and AI receptionist. Your answers feed directly into the kickoff roadmap and booking automations.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/15 bg-black/30 px-5 py-4 text-sm text-white/75">
-              <div className="text-xs uppercase tracking-wide text-white/60">Active plan</div>
-              <div className="mt-1 text-lg font-semibold">{planDetails.name}</div>
-              <div className="text-white/60">{planDetails.tagline}</div>
-              {selectedProject?.completedAt ? (
-                <div className="mt-3 text-xs text-emerald-300">
-                  Last updated {formatDate(selectedProject.completedAt)}
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-white/80 shadow-inner shadow-white/5">
+                <p className="text-xs uppercase tracking-wide text-white/60">Onboarding progress</p>
+                <div className="mt-3 flex items-end justify-between">
+                  <span className="text-3xl font-semibold text-white">{roundedProgress}%</span>
+                  <span className="text-xs text-white/60">Step {stepIndex + 1} of {totalSteps}</span>
                 </div>
-              ) : (
-                <div className="mt-3 text-xs text-white/50">No onboarding submitted yet.</div>
-              )}
-              {selectedProject?.status && (
-                <div className="mt-2 text-xs text-white/60">
-                  Status: {statusLabels[selectedProject.status] ?? selectedProject.status}
-                  {selectedProject.statusNote && (
-                    <span className="block text-[0.7rem] text-white/50">{selectedProject.statusNote}</span>
-                  )}
+                <div className="mt-3 h-2 w-full rounded-full bg-white/10">
+                  <div className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500" style={{ width: `${progressPct}%` }} />
                 </div>
-              )}
+                <p className="mt-3 text-xs text-white/65">Up next: {nextStepLabel}</p>
+              </div>
+
+              <div className="rounded-2xl border border-sky-400/30 bg-sky-500/10 p-5 text-sm text-white shadow-lg shadow-sky-500/20">
+                <p className="text-xs uppercase tracking-wide text-sky-200/80">Data coverage</p>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold text-white">{answeredStats.answered}</span>
+                  <span className="text-sm text-white/70">of {answeredStats.total} prompts</span>
+                </div>
+                <p className="mt-2 text-xs text-white/80">
+                  {answeredStats.pct >= 85
+                    ? 'Launch-ready detail — nothing critical missing.'
+                    : answeredStats.pct >= 60
+                      ? 'Great start. Fill in the remaining prompts to unlock deeper automation.'
+                      : 'Share more context so the build squad can personalise copy, ads, and scripts.'}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-fuchsia-400/30 bg-gradient-to-br from-fuchsia-500/20 via-purple-500/10 to-transparent p-5 text-sm text-white shadow-lg shadow-fuchsia-500/20">
+                <p className="text-xs uppercase tracking-wide text-white/70">Next milestone</p>
+                <p className="mt-3 text-lg font-semibold text-white">{nextStepLabel}</p>
+                <p className="mt-2 text-xs text-white/75">
+                  {isLastStep
+                    ? 'Give everything a final review and hit submit so we can lock in your launch schedule.'
+                    : `We’ll guide you through ${currentStep?.title?.toLowerCase() || 'this step'} and prep for what’s next.`}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/15 bg-black/30 p-5 text-sm text-white/80 shadow-lg">
+                <div className="text-xs uppercase tracking-wide text-white/60">Active plan</div>
+                <div className="mt-1 text-lg font-semibold text-white">{planDetails.name}</div>
+                <div className="text-white/70">{planDetails.tagline}</div>
+                <div className="mt-3 text-xs text-white/60">Last activity {lastUpdatedLabel}</div>
+                {selectedProject?.status ? (
+                  <div className="mt-2 text-xs text-white/65">
+                    Status: {statusLabels[selectedProject.status] ?? selectedProject.status}
+                    {selectedProject.statusNote && (
+                      <span className="block text-[0.7rem] text-white/50">{selectedProject.statusNote}</span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-2 text-xs text-white/55">We’ll update your status as soon as onboarding is submitted.</div>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -828,150 +917,209 @@ export default function DashboardView() {
         {activeSection === 'projects' && (
           <>
             <div className="grid gap-8 lg:grid-cols-[1.65fr,1fr]">
-              <form onSubmit={onSubmit} className="space-y-6 rounded-3xl border border-white/10 bg-black/40 p-8 shadow-xl backdrop-blur">
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {allowedUser.onboardingProjects?.map(project => {
-                        const active = project.id === selectedProject?.id;
-                        return (
-                          <button
-                            key={project.id}
-                            type="button"
-                            onClick={() => setSelectedProjectId(project.id)}
-                            className={`rounded-full px-3 py-1 text-xs transition ${active ? 'border border-sky-400 bg-sky-500/20 text-white' : 'border border-white/20 text-white/70 hover:border-white/40 hover:text-white'}`}
-                          >
-                            {project.label || 'Project'}
-                          </button>
-                        );
-                      })}
-                      {!selectedProject && (
-                        <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-                          Draft project
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleStartNewProject()}
-                      disabled={creatingProject}
-                      className="inline-flex items-center gap-1 rounded-full border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <Plus className="size-4" />
-                      {creatingProject ? 'Creating…' : 'Start new project'}
-                    </button>
-                  </div>
-
-                  <div>
-                    <label htmlFor="projectLabel" className="block text-sm font-medium text-white/80">Project name</label>
-                    <input
-                      id="projectLabel"
-                      type="text"
-                      value={projectLabel}
-                      onChange={(event) => setProjectLabel(event.target.value)}
-                      className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                      placeholder="e.g. Q2 funnel refresh"
-                    />
-                    <p className="mt-1 text-xs text-white/50">Name each onboarding so you can track multiple launches at once.</p>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-                    <div className="flex flex-wrap gap-3">
-                      {steps.map((step, index) => {
-                        const status = index < stepIndex ? 'complete' : index === stepIndex ? 'current' : 'upcoming';
-                        return (
-                          <button
-                            key={step.id}
-                            type="button"
-                            onClick={() => goToStep(index)}
-                            className={`group flex flex-1 min-w-[220px] items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${status === 'current' ? 'border-sky-400/70 bg-sky-500/15' : status === 'complete' ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-100' : 'border-white/10 bg-white/5 hover:border-white/25'}`}
-                          >
-                            <span
-                              className={`flex size-8 items-center justify-center rounded-full text-sm font-semibold ${status === 'complete' ? 'bg-emerald-500/80 text-white' : status === 'current' ? 'bg-sky-500 text-white' : 'bg-white/10 text-white/70 group-hover:text-white'}`}
+              <form onSubmit={onSubmit} className="rounded-3xl border border-white/10 bg-black/40 p-8 shadow-xl backdrop-blur">
+                <div className="flex flex-col gap-8">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {allowedUser.onboardingProjects?.map(project => {
+                          const active = project.id === selectedProject?.id;
+                          return (
+                            <button
+                              key={project.id}
+                              type="button"
+                              onClick={() => setSelectedProjectId(project.id)}
+                              className={`rounded-full px-3 py-1 text-xs transition ${active ? 'border border-sky-400 bg-sky-500/20 text-white shadow-sm shadow-sky-500/30' : 'border border-white/20 text-white/70 hover:border-white/40 hover:text-white'}`}
                             >
-                              {index + 1}
-                            </span>
-                            <span>
-                              <span className="block text-sm font-semibold text-white">{step.title}</span>
-                              <span className="text-xs text-white/60">{step.subtitle}</span>
-                            </span>
-                          </button>
-                        );
-                      })}
+                              {project.label || 'Project'}
+                            </button>
+                          );
+                        })}
+                        {!selectedProject && (
+                          <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+                            Draft project
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleStartNewProject()}
+                        disabled={creatingProject}
+                        className="inline-flex items-center gap-1 rounded-full border border-white/20 px-3 py-1.5 text-xs font-medium text-white transition hover:border-white/40 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Plus className="size-4" />
+                        {creatingProject ? 'Creating…' : 'Start new project'}
+                      </button>
                     </div>
-                    <div className="mt-4 h-1.5 w-full rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
-                        style={{ width: `${progressPct}%` }}
+
+                    <div>
+                      <label htmlFor="projectLabel" className="block text-sm font-medium text-white/80">Project name</label>
+                      <input
+                        id="projectLabel"
+                        type="text"
+                        value={projectLabel}
+                        onChange={(event) => setProjectLabel(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                        placeholder="e.g. Q2 funnel refresh"
                       />
+                      <p className="mt-1 text-xs text-white/50">Rename projects so you can track concurrent launches at a glance.</p>
                     </div>
                   </div>
 
-                  <section className="space-y-4">
-                    <header className="space-y-1">
-                      <h2 className="text-xl font-semibold text-white">{stepIndex + 1}. {currentStep.title}</h2>
-                      <p className="text-sm text-white/70">{currentStep.subtitle}</p>
-                    </header>
-                    {currentStep.render()}
-                  </section>
-                </div>
+                  <div className="space-y-6">
+                    <div
+                      ref={stepListRef}
+                      className="rounded-2xl border border-white/10 bg-black/45 p-6 shadow-inner shadow-black/20"
+                    >
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-[0.65rem] uppercase tracking-[0.25em] text-white/50">Onboarding progress</p>
+                          <div className="mt-3 flex items-baseline gap-3">
+                            <span className="text-3xl font-semibold text-white">{roundedProgress}%</span>
+                            <span className="text-xs text-white/60">Step {stepIndex + 1} of {totalSteps}</span>
+                          </div>
+                          <div className="mt-3 h-2 w-full rounded-full bg-white/10">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                            <span className="size-1.5 rounded-full bg-emerald-400" />
+                            {answeredStats.pct}% data coverage
+                          </span>
+                          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                            <span className="size-1.5 rounded-full bg-sky-400" />
+                            {answeredStats.answered} of {answeredStats.total} prompts
+                          </span>
+                        </div>
+                      </div>
 
-                {onboardingFeedback && (
-                  <p className={`rounded-xl px-4 py-3 text-sm ${onboardingFeedback.includes('not') || onboardingFeedback.includes('Unable') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
-                    {onboardingFeedback}
-                  </p>
-                )}
+                      <nav className="mt-6 flex gap-3 overflow-x-auto pb-1" aria-label="Onboarding steps">
+                        {steps.map((step, index) => {
+                          const status = index < stepIndex ? 'complete' : index === stepIndex ? 'current' : 'upcoming';
+                          return (
+                            <button
+                              key={step.id}
+                              type="button"
+                              data-step-index={index}
+                              onClick={() => goToStep(index)}
+                              aria-current={status === 'current' ? 'step' : undefined}
+                              className={`group flex min-w-[220px] flex-1 items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                                status === 'current'
+                                  ? 'border-sky-400/70 bg-sky-500/15 shadow-lg shadow-sky-500/20'
+                                  : status === 'complete'
+                                    ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-100 shadow-inner shadow-emerald-500/20'
+                                    : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                              }`}
+                            >
+                              <span
+                                className={`mt-0.5 flex size-8 items-center justify-center rounded-full text-sm font-semibold ${
+                                  status === 'complete'
+                                    ? 'bg-emerald-500/80 text-white'
+                                    : status === 'current'
+                                      ? 'bg-sky-500 text-white'
+                                      : 'bg-white/10 text-white/70 group-hover:text-white'
+                                }`}
+                              >
+                                {index + 1}
+                              </span>
+                              <span className="space-y-1">
+                                <span className="block text-sm font-semibold text-white">{step.title}</span>
+                                <span className="block text-xs leading-relaxed text-white/60">{step.subtitle}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </nav>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  {stepIndex > 0 && (
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => goToStep(stepIndex - 1)}
+                      <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4 text-xs text-white/70">
+                        <p className="font-semibold text-white/80">Pro tip</p>
+                        <p className="mt-1 leading-relaxed">
+                          Your answers autosave when you move between steps. Leave sections blank if they don’t apply—we’ll prompt during kickoff.
+                        </p>
+                      </div>
+                    </div>
+
+                    <section
+                      ref={stepContentRef}
+                      className="space-y-6 rounded-2xl border border-white/10 bg-black/50 p-6 shadow-lg shadow-black/20"
                     >
-                      Previous step
-                    </button>
-                  )}
-                  <div className="ml-auto flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => void onSaveDraft()}
-                      disabled={stepSaving || saving}
-                    >
-                      {stepSaving ? 'Saving…' : 'Save progress'}
-                    </button>
-                    <button
-                      type={isLastStep ? 'submit' : 'button'}
-                      className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-3 font-semibold text-white shadow-lg shadow-sky-500/20 transition disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={!isLastStep ? () => goToStep(stepIndex + 1) : undefined}
-                      disabled={isLastStep ? saving : false}
-                    >
-                      {isLastStep ? (saving ? 'Submitting…' : 'Submit onboarding') : 'Next step'}
-                    </button>
+                      <header className="space-y-3">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/50 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-100">
+                          Step {stepIndex + 1} of {totalSteps}
+                        </span>
+                        <h2 className="text-2xl font-semibold text-white">{currentStep.title}</h2>
+                        <p className="text-sm text-white/70">{currentStep.subtitle}</p>
+                      </header>
+                      <div className="space-y-6">{currentStep.render()}</div>
+                    </section>
                   </div>
+
+                  {onboardingFeedback && (
+                    <p className={`rounded-xl px-4 py-3 text-sm ${onboardingFeedback.includes('not') || onboardingFeedback.includes('Unable') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                      {onboardingFeedback}
+                    </p>
+                  )}
+
+                  <div className="flex flex-col gap-3 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-3">
+                      {stepIndex > 0 && (
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          onClick={() => goToStep(stepIndex - 1)}
+                        >
+                          Previous step
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        onClick={() => void onSaveDraft()}
+                        disabled={stepSaving || saving}
+                      >
+                        {stepSaving ? 'Saving…' : 'Save progress'}
+                      </button>
+                    </div>
+                    <div>
+                      <button
+                        type={isLastStep ? 'submit' : 'button'}
+                        className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                        onClick={!isLastStep ? () => goToStep(stepIndex + 1) : undefined}
+                        disabled={isLastStep ? saving : false}
+                      >
+                        {isLastStep ? (saving ? 'Submitting…' : 'Submit onboarding') : 'Next step'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-white/60">We’ll email a copy of these notes to your strategist before kickoff.</p>
                 </div>
-                <p className="text-sm text-white/60">We’ll email a copy of these notes to your strategist before kickoff.</p>
               </form>
 
               <aside className="space-y-6 rounded-3xl border border-white/10 bg-black/30 p-6 text-white shadow-lg">
                 <section>
                   <h3 className="text-lg font-semibold">Your rollout blueprint</h3>
                   <p className="mt-1 text-sm text-white/70">Here’s what we execute once onboarding is complete.</p>
-                  <ul className="mt-4 space-y-3 text-sm text-white/75">
-                    <li>
-                      <span className="font-semibold text-white">Week 0:</span> Strategy call to align on metrics, message, and required assets.
+                  <ul className="mt-4 grid gap-3 text-sm text-white/75 sm:grid-cols-2">
+                    <li className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <span className="font-semibold text-white">Week 0:</span>
+                      <p className="mt-1 text-xs text-white/65">Strategy call to align on metrics, message, and required assets.</p>
                     </li>
-                    <li>
-                      <span className="font-semibold text-white">Weeks 1-2:</span> Build the conversion flow, draft ads, and script the AI receptionist.
+                    <li className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <span className="font-semibold text-white">Weeks 1-2:</span>
+                      <p className="mt-1 text-xs text-white/65">Build the conversion flow, draft ads, and script the AI receptionist.</p>
                     </li>
-                    <li>
-                      <span className="font-semibold text-white">Week 3:</span> Launch, QA across devices, and plug insights into your reporting hub.
+                    <li className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <span className="font-semibold text-white">Week 3:</span>
+                      <p className="mt-1 text-xs text-white/65">Launch, QA across devices, and plug insights into your reporting hub.</p>
                     </li>
-                    <li>
-                      <span className="font-semibold text-white">Week 4:</span> Optimisation sprint with scorecards on booked calls and answered leads.
+                    <li className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <span className="font-semibold text-white">Week 4:</span>
+                      <p className="mt-1 text-xs text-white/65">Optimisation sprint with scorecards on booked calls and answered leads.</p>
                     </li>
                   </ul>
                 </section>
