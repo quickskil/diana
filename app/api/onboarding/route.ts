@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSessionUser, saveOnboardingForUser } from '@/lib/server/auth';
-import { PLAN_LIST } from '@/lib/plans';
+import { DEFAULT_SERVICE_SELECTION, normaliseServiceSelection } from '@/lib/plans';
 import { defaultOnboarding, type OnboardingForm } from '@/lib/types/user';
-import type { PlanKey } from '@/lib/plans';
-
-/** Precompute valid plan keys for O(1) checks */
-const VALID_PLAN_KEYS: Set<PlanKey> = new Set(PLAN_LIST.map(p => p.key));
-
-function isPlanKey(value: string): value is PlanKey {
-  return VALID_PLAN_KEYS.has(value as PlanKey);
-}
 
 /** Narrow payload to only the fields we expect from OnboardingForm */
 type PartialOnboardingUnknown = Partial<Record<keyof OnboardingForm, unknown>>;
@@ -23,12 +15,17 @@ function toCleanString(v: unknown): string {
 /** Normalize user-sent payload into a safe, strongly-typed OnboardingForm */
 function normaliseForm(payload: Partial<OnboardingForm> | null | undefined): OnboardingForm {
   // Start from defaults to ensure all properties exist
-  const base: OnboardingForm = { ...defaultOnboarding };
+  const base: OnboardingForm = {
+    ...defaultOnboarding,
+    services: { ...DEFAULT_SERVICE_SELECTION }
+  };
 
   if (!payload) return base;
 
   // Treat payload as unknowns so Object.entries is well-typed and never 'never'
   const input = payload as PartialOnboardingUnknown;
+  const payloadRecord = payload as Record<string, unknown>;
+  const legacyPlan = typeof payloadRecord?.plan === 'string' ? String(payloadRecord.plan).trim() : null;
 
   // Only accept keys that already exist on defaultOnboarding (prevent pollution/typos)
   const allowedKeys = Object.keys(defaultOnboarding) as Array<keyof OnboardingForm>;
@@ -42,11 +39,8 @@ function normaliseForm(payload: Partial<OnboardingForm> | null | undefined): Onb
 
     const incoming = input[k];
 
-    if (k === 'plan') {
-      const candidate = typeof incoming === 'string' ? incoming.trim() : toCleanString(incoming);
-      if (candidate && isPlanKey(candidate)) {
-        merged.plan = candidate;
-      }
+    if (k === 'services') {
+      merged.services = normaliseServiceSelection(incoming ?? legacyPlan);
       continue;
     }
 
@@ -54,10 +48,7 @@ function normaliseForm(payload: Partial<OnboardingForm> | null | undefined): Onb
     merged[k] = typeof incoming === 'string' ? incoming.trim() : toCleanString(incoming);
   }
 
-  // Validate and correct plan
-  if (!VALID_PLAN_KEYS.has(merged.plan)) {
-    merged.plan = defaultOnboarding.plan;
-  }
+  merged.services = normaliseServiceSelection(merged.services ?? legacyPlan);
 
   return merged;
 }

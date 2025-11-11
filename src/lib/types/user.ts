@@ -1,11 +1,11 @@
-import type { PlanKey } from '@/lib/plans';
+import type { ServiceKey, ServiceSelectionState } from '@/lib/plans';
 
 export type UserRole = 'admin' | 'client';
 
 export type OnboardingStatus = 'not-started' | 'submitted' | 'in-progress' | 'launch-ready';
 
 export interface OnboardingForm {
-  plan: PlanKey;
+  services: ServiceSelectionState;
   billingContactName: string;
   billingContactEmail: string;
   billingNotes: string;
@@ -32,6 +32,15 @@ export interface OnboardingForm {
   integrations: string;
 }
 
+export interface UserServiceStatus {
+  key: ServiceKey;
+  active: boolean;
+  priceCents: number | null;
+  ongoingNote: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
 export interface OnboardingProject {
   id: string;
   label: string;
@@ -53,10 +62,15 @@ export interface SafeUser {
   createdAt: string;
   onboarding?: OnboardingProject | null;
   onboardingProjects: OnboardingProject[];
+  services: UserServiceStatus[];
 }
 
 export const defaultOnboarding: OnboardingForm = {
-  plan: 'launch',
+  services: {
+    website: true,
+    ads: false,
+    voice: false
+  },
   billingContactName: '',
   billingContactEmail: '',
   billingNotes: '',

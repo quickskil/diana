@@ -184,7 +184,7 @@ export default function PricingContent({ tiers }: PricingContentProps) {
         <section className="radiant-card">
           <div className="card grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_minmax(220px,260px)] md:items-center">
             <div className="space-y-3 text-center md:text-left">
-              <h2 className="text-xl font-semibold text-white/95">What every plan includes</h2>
+              <h2 className="text-xl font-semibold text-white/95">What every engagement includes</h2>
               <p className="text-sm text-white/70">
                 Conversion copy, speed optimizations, analytics setup, and weekly insight on what is booking calls. No
                 surprise fees, no long-term commitments.
@@ -267,7 +267,7 @@ export default function PricingContent({ tiers }: PricingContentProps) {
                 Book a time
               </Link>
             </div>
-            <p className="text-xs text-white/55">No pressure — just a clear plan to automate your funnel.</p>
+            <p className="text-xs text-white/55">No pressure — just a clear roadmap to automate your funnel.</p>
           </div>
         </section>
 

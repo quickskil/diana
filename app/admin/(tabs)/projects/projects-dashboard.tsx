@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { PLAN_CATALOG } from '@/lib/plans';
+import { describeSelection, normaliseServiceSelection } from '@/lib/plans';
 import type { OnboardingProject } from '@/lib/types/user';
 import { formatDateTime, useAdmin } from '../../admin-context';
 
@@ -67,7 +67,11 @@ export default function ProjectsDashboard() {
                   </p>
                 ) : (
                   column.entries.map(entry => {
-                    const plan = PLAN_CATALOG[entry.project.data.plan];
+                    const summary = describeSelection(
+                      normaliseServiceSelection(
+                        entry.project.data?.services ?? (entry.project.data as unknown as { plan?: string })?.plan ?? null
+                      )
+                    );
                     return (
                       <Link
                         key={entry.project.id}
@@ -75,7 +79,7 @@ export default function ProjectsDashboard() {
                         className="block rounded-xl border border-white/10 bg-black/20 p-4 transition hover:border-sky-400/60 hover:bg-black/10"
                       >
                         <p className="text-sm font-semibold text-white">{entry.clientName}</p>
-                        <p className="text-xs text-white/60">{plan?.name ?? entry.project.data.plan}</p>
+                        <p className="text-xs text-white/60">{summary.label}</p>
                         <p className="mt-2 text-xs text-white/50">Updated {formatDateTime(entry.project.statusUpdatedAt)}</p>
                         {entry.project.statusNote && (
                           <p className="mt-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/65">
@@ -107,14 +111,18 @@ export default function ProjectsDashboard() {
         ) : (
           <ul className="mt-6 space-y-4">
             {timeline.map(entry => {
-              const plan = PLAN_CATALOG[entry.project.data.plan];
+              const summary = describeSelection(
+                normaliseServiceSelection(
+                  entry.project.data?.services ?? (entry.project.data as unknown as { plan?: string })?.plan ?? null
+                )
+              );
               return (
                 <li key={`${entry.project.id}-timeline`} className="rounded-2xl border border-white/10 bg-black/30 p-5">
                   <Link href={`/admin/projects/${entry.project.id}`} className="block">
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                       <div>
                         <p className="text-sm font-semibold text-white">{entry.clientName}</p>
-                        <p className="text-xs text-white/60">{plan?.name ?? entry.project.data.plan}</p>
+                        <p className="text-xs text-white/60">{summary.label}</p>
                       </div>
                       <span className="rounded-full border border-white/15 px-3 py-1 text-xs uppercase tracking-wide text-white/60">
                         {entry.project.status}

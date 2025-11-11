@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useCallback, useMemo, useState } from 'react';
-import { PLAN_CATALOG } from '@/lib/plans';
+import { describeSelection, normaliseServiceSelection } from '@/lib/plans';
 import type { OnboardingProject, OnboardingStatus } from '@/lib/types/user';
 import type { PaymentRequest } from '@/lib/types/payments';
 import { formatDateTime, useAdmin } from '../../../admin-context';
@@ -116,7 +116,9 @@ export default function ProjectDetail({ projectId }: ProjectDetailProps) {
   }
 
   const { client, project } = record;
-  const plan = PLAN_CATALOG[project.data.plan];
+  const summary = describeSelection(
+    normaliseServiceSelection(project.data?.services ?? (project.data as unknown as { plan?: string })?.plan ?? null)
+  );
 
   const relatedStripePayments = useMemo(
     () => payments.filter(payment => payment.metadata?.userId === client.id),
@@ -314,7 +316,7 @@ export default function ProjectDetail({ projectId }: ProjectDetailProps) {
             </Link>
             <h1 className="mt-3 text-3xl font-semibold text-white">{client.name || client.email}</h1>
             <p className="mt-1 text-sm text-white/70">
-              {plan?.name ?? project.data.plan} • Created {formatDateTime(project.createdAt)}
+              {summary.label} • Created {formatDateTime(project.createdAt)}
             </p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-black/30 px-4 py-3 text-right text-sm text-white/70">
