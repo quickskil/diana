@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, FolderKanban, Plus, Settings2 } from 'lucide-react';
+
 import { useAuth } from '@/context/AuthContext';
 import {
   DEFAULT_SERVICE_SELECTION,
@@ -51,23 +53,38 @@ const statusLabels: Record<OnboardingStatus, string> = {
   'launch-ready': 'Launch-ready'
 };
 
+const computeCoverage = (form: OnboardingForm) => {
+  const entries = Object.entries(form).filter(([key]) => key !== 'plan');
+  const answered = entries.reduce((total, [, value]) => {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return total + 1;
+    }
+    return total;
+  }, 0);
+  const total = entries.length;
+  const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+  return { answered, total, pct } as const;
+};
+
+const statusNextStep: Record<OnboardingStatus, string> = {
+  'not-started': 'Complete the onboarding prompts to unlock your kickoff roadmap.',
+  'submitted': 'We’re reviewing your answers and will follow up with launch timing.',
+  'in-progress': 'We’re building assets — keep an eye out for review notes.',
+  'launch-ready': 'We’re queued for launch — expect scheduling confirmation shortly.'
+};
+
 export default function DashboardView() {
   const router = useRouter();
   const { hydrated, currentUser, saveOnboarding, updateAccount } = useAuth();
   const [allowedUser, setAllowedUser] = useState<SafeUser | null>(null);
-  const [form, setForm] = useState<OnboardingForm>({ ...defaultOnboarding });
   const [activeSection, setActiveSection] = useState<'projects' | 'payments' | 'settings'>('projects');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [projectLabel, setProjectLabel] = useState('New onboarding');
   const [creatingProject, setCreatingProject] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [stepSaving, setStepSaving] = useState(false);
-  const [onboardingFeedback, setOnboardingFeedback] = useState<string | null>(null);
+  const [projectFeedback, setProjectFeedback] = useState<string | null>(null);
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [usingSampleData, setUsingSampleData] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
   const [accountForm, setAccountForm] = useState({
     name: '',
     email: '',
@@ -78,9 +95,6 @@ export default function DashboardView() {
   });
   const [accountFeedback, setAccountFeedback] = useState<string | null>(null);
   const [accountSaving, setAccountSaving] = useState(false);
-  const initialStepRender = useRef(true);
-  const stepListRef = useRef<HTMLDivElement | null>(null);
-  const stepContentRef = useRef<HTMLDivElement | null>(null);
   const [depositSummary, setDepositSummary] = useState<DepositSummary | null>(null);
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositError, setDepositError] = useState<string | null>(null);
@@ -125,31 +139,35 @@ export default function DashboardView() {
   }, [allowedUser]);
 
   useEffect(() => {
-    if (!allowedUser) return;
-    const projects = allowedUser.onboardingProjects ?? [];
-    const activeProject = selectedProjectId
-      ? projects.find(project => project.id === selectedProjectId) ?? null
-      : null;
-    if (activeProject) {
-      setForm({ ...defaultOnboarding, ...activeProject.data });
-      setProjectLabel(activeProject.label || 'Project');
-    } else {
-      setForm({ ...defaultOnboarding });
-      setProjectLabel(prev => {
-        if (prev && prev.trim()) {
-          return prev;
-        }
-        return allowedUser.company ? `${allowedUser.company} onboarding` : 'New onboarding';
-      });
+    if (!hydrated) return;
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('deposit') === 'success') {
+      setDepositFeedback('Thanks! Your kickoff deposit is confirmed.');
+      url.searchParams.delete('deposit');
+      const next = `${url.pathname}${url.searchParams.toString() ? `?${url.searchParams.toString()}` : ''}`;
+      router.replace(next || '/dashboard');
+      void refreshDeposit();
     }
-    setStepIndex(0);
-  }, [allowedUser, selectedProjectId]);
+  }, [hydrated, router]);
 
   useEffect(() => {
-    setDepositSummary(null);
-    setDepositFeedback(null);
-    depositPaidRef.current = false;
-  }, [allowedUser?.id]);
+    if (!depositSummary) {
+      if (!depositLoading) {
+        setDepositFeedback(null);
+      }
+      depositPaidRef.current = false;
+      return;
+    }
+    if (depositSummary.paid) {
+      if (!depositPaidRef.current) {
+        setDepositFeedback('Kickoff deposit received! We’ll reach out with next steps.');
+      }
+      depositPaidRef.current = true;
+    } else {
+      depositPaidRef.current = false;
+    }
+  }, [depositLoading, depositSummary]);
 
   const selectedProject = useMemo(() => {
     if (!allowedUser?.onboardingProjects) {
@@ -161,33 +179,44 @@ export default function DashboardView() {
     return allowedUser.onboardingProjects.find(project => project.id === selectedProjectId) ?? null;
   }, [allowedUser?.onboardingProjects, selectedProjectId]);
 
-  const tabs = useMemo(
-    () => [
-      { id: 'projects' as const, label: 'Projects', icon: FolderKanban },
-      { id: 'payments' as const, label: 'Payments', icon: CreditCard },
-      { id: 'settings' as const, label: 'Settings', icon: Settings2 }
-    ],
-    []
+  const planDetails = useMemo(
+    () => PLAN_CATALOG[selectedProject?.data.plan ?? 'launch'] ?? PLAN_CATALOG['launch'],
+    [selectedProject?.data.plan]
   );
+
+  const answeredStats = useMemo(() => computeCoverage(selectedProject?.data ?? defaultOnboarding), [selectedProject?.data]);
+
+  const lastUpdatedLabel = useMemo(() => {
+    if (selectedProject?.updatedAt) {
+      return formatDate(selectedProject.updatedAt);
+    }
+    if (selectedProject?.createdAt) {
+      return formatDate(selectedProject.createdAt);
+    }
+    return 'Not saved yet';
+  }, [selectedProject?.createdAt, selectedProject?.updatedAt]);
+
+  const currentStatusLabel = selectedProject ? statusLabels[selectedProject.status] : 'Not started';
+  const currentStatusHint = selectedProject ? statusNextStep[selectedProject.status] : statusNextStep['not-started'];
+
+  const sortedProjects = useMemo(() => {
+    if (!allowedUser?.onboardingProjects) return [] as OnboardingProject[];
+    return [...allowedUser.onboardingProjects].sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : a.updatedAt < b.updatedAt ? 1 : 0));
+  }, [allowedUser?.onboardingProjects]);
 
   const handleStartNewProject = useCallback(async () => {
     if (!allowedUser || creatingProject) return;
-    setActiveSection('projects');
+    setProjectFeedback(null);
     setCreatingProject(true);
-    setOnboardingFeedback(null);
     const labelBase = allowedUser.company ? `${allowedUser.company} project` : 'Project';
     const label = `${labelBase} ${(allowedUser.onboardingProjects?.length ?? 0) + 1}`;
-    setProjectLabel(label);
-    setSelectedProjectId(null);
-    setForm({ ...defaultOnboarding });
-    setStepIndex(0);
     const result = await saveOnboarding({
       form: { ...defaultOnboarding },
       label,
       createNew: true
     });
     if (!result.ok) {
-      setOnboardingFeedback(result.message ?? 'Unable to start a new project right now.');
+      setProjectFeedback(result.message ?? 'Unable to start a new project right now.');
       setCreatingProject(false);
       return;
     }
@@ -198,25 +227,35 @@ export default function DashboardView() {
       )[0];
       if (newest?.id) {
         setSelectedProjectId(newest.id);
+        router.push(`/dashboard/projects/${newest.id}`);
       }
     }
     setCreatingProject(false);
-  }, [allowedUser, creatingProject, saveOnboarding]);
+  }, [allowedUser, creatingProject, router, saveOnboarding]);
 
   const refreshEvents = useCallback(async () => {
     if (!allowedUser?.email) return;
     setEventsLoading(true);
     setEventsError(null);
     try {
-      const res = await fetch(`/api/cal-events?email=${encodeURIComponent(allowedUser.email)}`, { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || 'Unable to load events from Cal.com');
+      const res = await fetch('/api/cal/events');
+      if (!res.ok) {
+        throw new Error('Unable to load Cal.com events right now.');
       }
-      setEvents(Array.isArray(data.events) ? data.events : []);
-      setUsingSampleData(Boolean(data.sample));
+      const data = (await res.json()) as {
+        ok: boolean;
+        events?: CalEvent[];
+        usingSampleData?: boolean;
+        message?: string;
+      };
+      if (!data.ok) {
+        throw new Error(data.message || 'Unable to load Cal.com events right now.');
+      }
+      setUsingSampleData(Boolean(data.usingSampleData));
+      setEvents(data.events ?? []);
     } catch (error) {
       setEventsError((error as Error).message);
+      setEvents([]);
     } finally {
       setEventsLoading(false);
     }
@@ -226,19 +265,34 @@ export default function DashboardView() {
     setDepositLoading(true);
     setDepositError(null);
     try {
-      const res = await fetch('/api/payments/summary', { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok || data.ok === false) {
-        throw new Error(data.message || 'Unable to check payments.');
+      const res = await fetch('/api/payments/summary');
+      if (!res.ok) {
+        throw new Error('Unable to load deposit status right now.');
       }
-      setDepositSummary(data.deposit ?? null);
-      setDepositSample(Boolean(data.sample));
+      const data = (await res.json()) as {
+        ok: boolean;
+        summary?: DepositSummary;
+        usingSampleData?: boolean;
+        message?: string;
+      };
+      if (!data.ok) {
+        throw new Error(data.message || 'Unable to load deposit status right now.');
+      }
+      setDepositSummary(data.summary ?? null);
+      setDepositSample(Boolean(data.usingSampleData));
     } catch (error) {
       setDepositError((error as Error).message);
+      setDepositSummary(null);
     } finally {
       setDepositLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!allowedUser?.email) return;
+    void refreshEvents();
+    void refreshDeposit();
+  }, [allowedUser?.email, refreshDeposit, refreshEvents]);
 
   const handleDepositCheckout = useCallback(async () => {
     setDepositCheckoutLoading(true);
@@ -785,112 +839,25 @@ export default function DashboardView() {
       if (typeof value === 'string' && value.trim().length > 0) {
         return total + 1;
       }
-      return total;
-    }, 0);
-    const total = entries.length;
-    const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
-    return { answered, total, pct } as const;
-  }, [form]);
-
-  const nextStepLabel = useMemo(() => {
-    if (isLastStep) {
-      return 'Submit onboarding & schedule kickoff';
-    }
-    return nextStep?.title ?? 'Review & submit';
-  }, [isLastStep, nextStep?.title]);
-
-  const lastUpdatedLabel = useMemo(() => {
-    if (selectedProject?.updatedAt) {
-      return formatDate(selectedProject.updatedAt);
-    }
-    if (selectedProject?.createdAt) {
-      return formatDate(selectedProject.createdAt);
-    }
-    return 'Not saved yet';
-  }, [selectedProject?.createdAt, selectedProject?.updatedAt]);
-
-  const goToStep = useCallback(
-    (index: number) => {
-      if (totalSteps === 0) return;
-      const next = Math.max(0, Math.min(totalSteps - 1, index));
-      setStepIndex(next);
+      const payload = {
+        name: accountForm.name.trim(),
+        email: accountForm.email.trim(),
+        company: accountForm.company.trim(),
+        currentPassword: accountForm.currentPassword ? accountForm.currentPassword : undefined,
+        newPassword: accountForm.newPassword ? accountForm.newPassword : null
+      };
+      const result = await updateAccount(payload);
+      if (!result.ok) {
+        setAccountFeedback(result.message ?? 'Unable to update your account.');
+        setAccountSaving(false);
+        return;
+      }
+      setAccountFeedback(result.message ?? 'Account updated.');
+      setAccountSaving(false);
+      setAccountForm(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
     },
-    [totalSteps]
+    [accountForm, accountSaving, allowedUser, updateAccount]
   );
-
-  const persistOnboarding = useCallback(async () => {
-    if (!allowedUser) {
-      return { ok: false, message: 'You need to be logged in to save.' } as const;
-    }
-    const result = await saveOnboarding({
-      form,
-      projectId: selectedProject?.id ?? undefined,
-      label: projectLabel
-    });
-    return result;
-  }, [allowedUser, form, projectLabel, saveOnboarding, selectedProject?.id]);
-
-  const onSaveDraft = useCallback(async () => {
-    if (!allowedUser || stepSaving) return;
-    setStepSaving(true);
-    setOnboardingFeedback(null);
-    const result = await persistOnboarding();
-    if (!result.ok) {
-      setOnboardingFeedback(result.message ?? 'We could not save your onboarding details.');
-      setStepSaving(false);
-      return;
-    }
-    setOnboardingFeedback(result.message ?? 'Onboarding saved.');
-    setStepSaving(false);
-  }, [allowedUser, persistOnboarding, stepSaving]);
-
-  const onSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!allowedUser) return;
-    if (!isLastStep) {
-      goToStep(stepIndex + 1);
-      return;
-    }
-    if (saving) return;
-    setSaving(true);
-    setOnboardingFeedback(null);
-    const result = await persistOnboarding();
-    if (!result.ok) {
-      setOnboardingFeedback(result.message ?? 'We could not save your onboarding details.');
-      setSaving(false);
-      return;
-    }
-    setOnboardingFeedback(result.message ?? 'Onboarding saved.');
-    setSaving(false);
-  }, [allowedUser, goToStep, isLastStep, persistOnboarding, saving, stepIndex]);
-
-  const onAccountSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!allowedUser || accountSaving) return;
-    setAccountSaving(true);
-    setAccountFeedback(null);
-    if (accountForm.newPassword && accountForm.newPassword !== accountForm.confirmPassword) {
-      setAccountFeedback('New password and confirmation do not match.');
-      setAccountSaving(false);
-      return;
-    }
-    const payload = {
-      name: accountForm.name.trim(),
-      email: accountForm.email.trim(),
-      company: accountForm.company.trim(),
-      currentPassword: accountForm.currentPassword ? accountForm.currentPassword : undefined,
-      newPassword: accountForm.newPassword ? accountForm.newPassword : null
-    };
-    const result = await updateAccount(payload);
-    if (!result.ok) {
-      setAccountFeedback(result.message ?? 'Unable to update your account.');
-      setAccountSaving(false);
-      return;
-    }
-    setAccountFeedback(result.message ?? 'Account updated.');
-    setAccountSaving(false);
-    setAccountForm(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
-  }, [accountForm, accountSaving, allowedUser, updateAccount]);
 
   if (!allowedUser) {
     return (
@@ -902,6 +869,12 @@ export default function DashboardView() {
     );
   }
 
+  const tabs = [
+    { id: 'projects' as const, label: 'Projects', icon: FolderKanban },
+    { id: 'payments' as const, label: 'Payments', icon: CreditCard },
+    { id: 'settings' as const, label: 'Settings', icon: Settings2 }
+  ];
+
   return (
     <main id="main" className="container py-12 md:py-20">
       <div className="mx-auto max-w-6xl space-y-10">
@@ -911,46 +884,42 @@ export default function DashboardView() {
               <p className="text-sm uppercase tracking-[0.3em] text-white/55">Client Portal</p>
               <h1 className="text-3xl font-semibold md:text-4xl">Welcome back, {allowedUser.name || 'there'}!</h1>
               <p className="max-w-3xl text-white/75">
-                Complete your onboarding so we can align the launch plan, campaigns, and AI receptionist. Your answers feed directly into the kickoff roadmap and booking automations.
+                Track every onboarding project, download rollout guidance, and keep payments and account details in one place.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-white/80 shadow-inner shadow-white/5">
-                <p className="text-xs uppercase tracking-wide text-white/60">Onboarding progress</p>
+                <p className="text-xs uppercase tracking-wide text-white/60">Onboarding coverage</p>
                 <div className="mt-3 flex items-end justify-between">
-                  <span className="text-3xl font-semibold text-white">{roundedProgress}%</span>
-                  <span className="text-xs text-white/60">Step {stepIndex + 1} of {totalSteps}</span>
+                  <span className="text-3xl font-semibold text-white">{answeredStats.pct}%</span>
+                  <span className="text-xs text-white/60">
+                    {answeredStats.answered} of {answeredStats.total} prompts
+                  </span>
                 </div>
                 <div className="mt-3 h-2 w-full rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500" style={{ width: `${progressPct}%` }} />
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
+                    style={{ width: `${answeredStats.pct}%` }}
+                  />
                 </div>
-                <p className="mt-3 text-xs text-white/65">Up next: {nextStepLabel}</p>
+                <p className="mt-3 text-xs text-white/65">Current status: {currentStatusLabel}</p>
               </div>
 
               <div className="rounded-2xl border border-sky-400/30 bg-sky-500/10 p-5 text-sm text-white shadow-lg shadow-sky-500/20">
-                <p className="text-xs uppercase tracking-wide text-sky-200/80">Data coverage</p>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-semibold text-white">{answeredStats.answered}</span>
-                  <span className="text-sm text-white/70">of {answeredStats.total} prompts</span>
+                <p className="text-xs uppercase tracking-wide text-sky-200/80">Primary metric</p>
+                <div className="mt-3 text-lg font-semibold text-white">
+                  {selectedProject?.data.primaryMetric || 'Booked consultations'}
                 </div>
                 <p className="mt-2 text-xs text-white/80">
-                  {answeredStats.pct >= 85
-                    ? 'Launch-ready detail — nothing critical missing.'
-                    : answeredStats.pct >= 60
-                      ? 'Great start. Fill in the remaining prompts to unlock deeper automation.'
-                      : 'Share more context so the build squad can personalise copy, ads, and scripts.'}
+                  We optimise your funnels and receptionist scripts to drive this metric every week.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-fuchsia-400/30 bg-gradient-to-br from-fuchsia-500/20 via-purple-500/10 to-transparent p-5 text-sm text-white shadow-lg shadow-fuchsia-500/20">
                 <p className="text-xs uppercase tracking-wide text-white/70">Next milestone</p>
-                <p className="mt-3 text-lg font-semibold text-white">{nextStepLabel}</p>
-                <p className="mt-2 text-xs text-white/75">
-                  {isLastStep
-                    ? 'Give everything a final review and hit submit so we can lock in your launch schedule.'
-                    : `We’ll guide you through ${currentStep?.title?.toLowerCase() || 'this step'} and prep for what’s next.`}
-                </p>
+                <p className="mt-3 text-lg font-semibold text-white">{currentStatusLabel}</p>
+                <p className="mt-2 text-xs text-white/75">{currentStatusHint}</p>
               </div>
 
               <div className="rounded-2xl border border-white/15 bg-black/30 p-5 text-sm text-white/80 shadow-lg">
@@ -963,15 +932,16 @@ export default function DashboardView() {
                   <div className="mt-2 text-xs text-white/55">Select services above to tailor your rollout. Add all three for bundled savings.</div>
                 )}
                 <div className="mt-3 text-xs text-white/60">Last activity {lastUpdatedLabel}</div>
-                {selectedProject?.status ? (
+                {selectedProject?.statusNote ? (
                   <div className="mt-2 text-xs text-white/65">
-                    Status: {statusLabels[selectedProject.status] ?? selectedProject.status}
-                    {selectedProject.statusNote && (
-                      <span className="block text-[0.7rem] text-white/50">{selectedProject.statusNote}</span>
-                    )}
+                    {selectedProject.statusNote}
                   </div>
                 ) : (
-                  <div className="mt-2 text-xs text-white/55">We’ll update your status as soon as onboarding is submitted.</div>
+                  <div className="mt-2 text-xs text-white/55">
+                    {selectedProject
+                      ? 'We’ll update your status as soon as onboarding is submitted.'
+                      : 'Start a project to unlock launch tracking.'}
+                  </div>
                 )}
               </div>
             </div>
@@ -1027,7 +997,9 @@ export default function DashboardView() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveSection(tab.id)}
-                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition ${active ? 'bg-white text-black font-semibold shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition ${
+                  active ? 'bg-white text-black font-semibold shadow-sm' : 'text-white/70 hover:text-white hover:bg-white/10'
+                }`}
               >
                 <Icon className="size-4" />
                 {tab.label}
@@ -1038,189 +1010,114 @@ export default function DashboardView() {
 
         {activeSection === 'projects' && (
           <>
-            <div className="grid gap-8 lg:grid-cols-[1.65fr,1fr]">
-              <form onSubmit={onSubmit} className="rounded-3xl border border-white/10 bg-black/40 p-8 shadow-xl backdrop-blur">
-                <div className="flex flex-col gap-8">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {allowedUser.onboardingProjects?.map(project => {
-                          const active = project.id === selectedProject?.id;
-                          return (
-                            <button
-                              key={project.id}
-                              type="button"
-                              onClick={() => setSelectedProjectId(project.id)}
-                              className={`rounded-full px-3 py-1 text-xs transition ${active ? 'border border-sky-400 bg-sky-500/20 text-white shadow-sm shadow-sky-500/30' : 'border border-white/20 text-white/70 hover:border-white/40 hover:text-white'}`}
-                            >
-                              {project.label || 'Project'}
-                            </button>
-                          );
-                        })}
-                        {!selectedProject && (
-                          <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-                            Draft project
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void handleStartNewProject()}
-                        disabled={creatingProject}
-                        className="inline-flex items-center gap-1 rounded-full border border-white/20 px-3 py-1.5 text-xs font-medium text-white transition hover:border-white/40 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <Plus className="size-4" />
-                        {creatingProject ? 'Creating…' : 'Start new project'}
-                      </button>
-                    </div>
-
-                    <div>
-                      <label htmlFor="projectLabel" className="block text-sm font-medium text-white/80">Project name</label>
-                      <input
-                        id="projectLabel"
-                        type="text"
-                        value={projectLabel}
-                        onChange={(event) => setProjectLabel(event.target.value)}
-                        className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-                        placeholder="e.g. Q2 funnel refresh"
-                      />
-                      <p className="mt-1 text-xs text-white/50">Rename projects so you can track concurrent launches at a glance.</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div
-                      ref={stepListRef}
-                      className="rounded-2xl border border-white/10 bg-black/45 p-6 shadow-inner shadow-black/20"
-                    >
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div>
-                          <p className="text-[0.65rem] uppercase tracking-[0.25em] text-white/50">Onboarding progress</p>
-                          <div className="mt-3 flex items-baseline gap-3">
-                            <span className="text-3xl font-semibold text-white">{roundedProgress}%</span>
-                            <span className="text-xs text-white/60">Step {stepIndex + 1} of {totalSteps}</span>
-                          </div>
-                          <div className="mt-3 h-2 w-full rounded-full bg-white/10">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
-                              style={{ width: `${progressPct}%` }}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
-                          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                            <span className="size-1.5 rounded-full bg-emerald-400" />
-                            {answeredStats.pct}% data coverage
-                          </span>
-                          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                            <span className="size-1.5 rounded-full bg-sky-400" />
-                            {answeredStats.answered} of {answeredStats.total} prompts
-                          </span>
-                        </div>
-                      </div>
-
-                      <nav className="mt-6 flex gap-3 overflow-x-auto pb-1" aria-label="Onboarding steps">
-                        {steps.map((step, index) => {
-                          const status = index < stepIndex ? 'complete' : index === stepIndex ? 'current' : 'upcoming';
-                          return (
-                            <button
-                              key={step.id}
-                              type="button"
-                              data-step-index={index}
-                              onClick={() => goToStep(index)}
-                              aria-current={status === 'current' ? 'step' : undefined}
-                              className={`group flex min-w-[220px] flex-1 items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ${
-                                status === 'current'
-                                  ? 'border-sky-400/70 bg-sky-500/15 shadow-lg shadow-sky-500/20'
-                                  : status === 'complete'
-                                    ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-100 shadow-inner shadow-emerald-500/20'
-                                    : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                              }`}
-                            >
-                              <span
-                                className={`mt-0.5 flex size-8 items-center justify-center rounded-full text-sm font-semibold ${
-                                  status === 'complete'
-                                    ? 'bg-emerald-500/80 text-white'
-                                    : status === 'current'
-                                      ? 'bg-sky-500 text-white'
-                                      : 'bg-white/10 text-white/70 group-hover:text-white'
-                                }`}
-                              >
-                                {index + 1}
-                              </span>
-                              <span className="space-y-1">
-                                <span className="block text-sm font-semibold text-white">{step.title}</span>
-                                <span className="block text-xs leading-relaxed text-white/60">{step.subtitle}</span>
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </nav>
-
-                      <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4 text-xs text-white/70">
-                        <p className="font-semibold text-white/80">Pro tip</p>
-                        <p className="mt-1 leading-relaxed">
-                          Your answers autosave when you move between steps. Leave sections blank if they don’t apply—we’ll prompt during kickoff.
-                        </p>
-                      </div>
-                    </div>
-
-                    <section
-                      ref={stepContentRef}
-                      className="space-y-6 rounded-2xl border border-white/10 bg-black/50 p-6 shadow-lg shadow-black/20"
-                    >
-                      <header className="space-y-3">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/50 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-100">
-                          Step {stepIndex + 1} of {totalSteps}
-                        </span>
-                        <h2 className="text-2xl font-semibold text-white">{currentStep.title}</h2>
-                        <p className="text-sm text-white/70">{currentStep.subtitle}</p>
-                      </header>
-                      <div className="space-y-6">{currentStep.render()}</div>
-                    </section>
-                  </div>
-
-                  {onboardingFeedback && (
-                    <p className={`rounded-xl px-4 py-3 text-sm ${onboardingFeedback.includes('not') || onboardingFeedback.includes('Unable') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
-                      {onboardingFeedback}
-                    </p>
-                  )}
-
-                  <div className="flex flex-col gap-3 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-center gap-3">
-                      {stepIndex > 0 && (
-                        <button
-                          type="button"
-                          className="btn-ghost"
-                          onClick={() => goToStep(stepIndex - 1)}
-                        >
-                          Previous step
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="btn-ghost"
-                        onClick={() => void onSaveDraft()}
-                        disabled={stepSaving || saving}
-                      >
-                        {stepSaving ? 'Saving…' : 'Save progress'}
-                      </button>
-                    </div>
-                    <div>
-                      <button
-                        type={isLastStep ? 'submit' : 'button'}
-                        className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
-                        onClick={!isLastStep ? () => goToStep(stepIndex + 1) : undefined}
-                        disabled={isLastStep ? saving : false}
-                      >
-                        {isLastStep ? (saving ? 'Submitting…' : 'Submit onboarding') : 'Next step'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-white/60">We’ll email a copy of these notes to your strategist before kickoff.</p>
+            <section className="rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold">Projects overview</h2>
+                  <p className="text-sm text-white/70">
+                    Compare every launch at a glance and open the dedicated workspace to edit details.
+                  </p>
                 </div>
-              </form>
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedProjectId && (
+                    <Link
+                      href={`/dashboard/projects/${selectedProjectId}`}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white transition hover:border-white/60 hover:bg-white/10"
+                    >
+                      <FolderKanban className="size-4" />
+                      Open project workspace
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void handleStartNewProject()}
+                    disabled={creatingProject}
+                    className="inline-flex items-center gap-2 rounded-full border border-sky-400/40 bg-sky-500/15 px-4 py-2 text-sm font-medium text-white transition hover:border-sky-300/60 hover:bg-sky-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Plus className="size-4" />
+                    {creatingProject ? 'Creating…' : 'Start new project'}
+                  </button>
+                </div>
+              </div>
+              {projectFeedback && (
+                <p
+                  className={`mt-4 rounded-xl px-4 py-3 text-sm ${
+                    projectFeedback.toLowerCase().includes('unable') || projectFeedback.toLowerCase().includes('error')
+                      ? 'bg-red-500/15 text-red-200'
+                      : 'bg-emerald-500/15 text-emerald-200'
+                  }`}
+                >
+                  {projectFeedback}
+                </p>
+              )}
+              <div className="mt-6 overflow-x-auto">
+                <table className="min-w-full divide-y divide-white/10 text-left text-sm">
+                  <thead className="text-xs uppercase tracking-wide text-white/60">
+                    <tr>
+                      <th className="px-4 py-3">Project</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Coverage</th>
+                      <th className="px-4 py-3">Updated</th>
+                      <th className="px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {sortedProjects.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-white/60">
+                          No onboarding projects yet. Start one to craft your rollout blueprint.
+                        </td>
+                      </tr>
+                    ) : (
+                      sortedProjects.map(project => {
+                        const coverage = computeCoverage(project.data);
+                        const active = project.id === selectedProjectId;
+                        return (
+                          <tr
+                            key={project.id}
+                            className={`transition hover:bg-white/5 ${active ? 'bg-white/10' : ''}`}
+                            onClick={() => setSelectedProjectId(project.id)}
+                          >
+                            <td className="px-4 py-4 text-white">
+                              <div className="font-semibold">{project.label || 'Project'}</div>
+                              <div className="text-xs text-white/60">Created {formatDate(project.createdAt)}</div>
+                            </td>
+                            <td className="px-4 py-4 text-white/75">
+                              <span className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80">
+                                {statusLabels[project.status]}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 text-white/75">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm font-semibold text-white">{coverage.pct}%</span>
+                                <div className="h-2 w-24 rounded-full bg-white/10">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
+                                    style={{ width: `${coverage.pct}%` }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="text-xs text-white/60">
+                                {coverage.answered} of {coverage.total} prompts
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 text-white/70">{formatDate(project.updatedAt)}</td>
+                            <td className="px-4 py-4">
+                              <Link
+                                href={`/dashboard/projects/${project.id}`}
+                                className="inline-flex items-center justify-center rounded-full border border-white/30 px-3 py-1.5 text-xs font-semibold text-white transition hover:border-white/60 hover:bg-white/10"
+                              >
+                                Open
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
 
               <aside className="space-y-6 rounded-3xl border border-white/10 bg-black/30 p-6 text-white shadow-lg">
                 <section>
@@ -1260,10 +1157,45 @@ export default function DashboardView() {
                     If your scope spans multiple brands or requires deeper integrations, drop us a line at{' '}
                     <a className="text-sky-300 underline-offset-4 hover:underline" href="mailto:hello@businessbooster.ai">hello@businessbooster.ai</a>.
                   </p>
-                  <p className="mt-2 text-xs text-white/60">We’ll reply within one business day with next steps.</p>
-                </section>
-              </aside>
+                </li>
+                <li className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <span className="font-semibold text-white">Week 3:</span>
+                  <p className="mt-1 text-xs text-white/65">
+                    Launch, QA across devices, and plug insights into your reporting hub.
+                  </p>
+                </li>
+                <li className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <span className="font-semibold text-white">Week 4:</span>
+                  <p className="mt-1 text-xs text-white/65">
+                    Optimisation sprint with scorecards on booked calls and answered leads.
+                  </p>
+                </li>
+              </ul>
+            </section>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <section className="rounded-3xl border border-white/10 bg-black/30 p-6 text-white shadow-lg">
+                <h3 className="text-lg font-semibold">Plan highlights</h3>
+                <p className="mt-1 text-sm text-white/70">{planDetails.description}</p>
+                <ul className="mt-3 space-y-2 text-sm text-white/75">
+                  {planDetails.bullets.map(point => (
+                    <li key={point}>• {point}</li>
+                  ))}
+                </ul>
+              </section>
+              <section className="rounded-3xl border border-white/10 bg-black/30 p-6 text-sm text-white/80 shadow-lg">
+                <h4 className="text-lg font-semibold text-white">Need a tailored quote?</h4>
+                <p className="mt-1 text-sm">
+                  If your scope spans multiple brands or requires deeper integrations, drop us a line at{' '}
+                  <a className="text-sky-300 underline-offset-4 hover:underline" href="mailto:hello@businessbooster.ai">
+                    hello@businessbooster.ai
+                  </a>
+                  .
+                </p>
+                <p className="mt-2 text-xs text-white/60">We’ll reply within one business day with next steps.</p>
+              </section>
             </div>
+
             <section className="rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -1314,11 +1246,11 @@ export default function DashboardView() {
                         <tr key={event.id}>
                           <td className="px-4 py-4 text-white/80">
                             <div className="font-semibold text-white">{event.title || 'Cal.com booking'}</div>
-                            {event.description && (
-                              <div className="text-xs text-white/55">{event.description}</div>
-                            )}
+                            {event.description && <div className="text-xs text-white/55">{event.description}</div>}
                           </td>
-                          <td className="px-4 py-4 text-white/75">{formatDate(event.startTime)} → {formatDate(event.endTime)}</td>
+                          <td className="px-4 py-4 text-white/75">
+                            {formatDate(event.startTime)} → {formatDate(event.endTime)}
+                          </td>
                           <td className="px-4 py-4 text-white/75">{event.status || 'Scheduled'}</td>
                           <td className="px-4 py-4 text-white/75">
                             {event.attendees && event.attendees.length > 0
@@ -1391,7 +1323,9 @@ export default function DashboardView() {
                 <>
                   <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${depositSummary.paid ? 'bg-emerald-500/15 text-emerald-200' : 'bg-amber-500/15 text-amber-200'}`}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        depositSummary.paid ? 'bg-emerald-500/15 text-emerald-200' : 'bg-amber-500/15 text-amber-200'
+                      }`}
                     >
                       {depositSummary.paid ? 'Paid' : 'Awaiting deposit'}
                     </span>
@@ -1440,91 +1374,110 @@ export default function DashboardView() {
         )}
 
         {activeSection === 'settings' && (
-          <section className="rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">Account & access</h2>
-              <span className="rounded-full border border-sky-400/50 bg-sky-500/10 px-3 py-1 text-xs text-sky-200">Client portal</span>
-            </div>
-            <p className="mt-2 text-sm text-white/70">Update your login details or billing contact. Email changes require your current password.</p>
-            <form onSubmit={onAccountSubmit} className="mt-6 space-y-4">
-              <div className="grid gap-4">
-                <div>
-                  <label htmlFor="accountName" className="block text-xs font-medium uppercase tracking-wide text-white/60">Full name</label>
-                  <input
-                    id="accountName"
-                    type="text"
-                    value={accountForm.name}
-                    onChange={(e) => setAccountForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="accountEmail" className="block text-xs font-medium uppercase tracking-wide text-white/60">Email</label>
-                  <input
-                    id="accountEmail"
-                    type="email"
-                    value={accountForm.email}
-                    onChange={(e) => setAccountForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="accountCompany" className="block text-xs font-medium uppercase tracking-wide text-white/60">Company (optional)</label>
-                  <input
-                    id="accountCompany"
-                    type="text"
-                    value={accountForm.company}
-                    onChange={(e) => setAccountForm(prev => ({ ...prev, company: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
+          <section className="space-y-6 rounded-3xl border border-white/10 bg-black/40 p-8 text-white shadow-xl">
+            <header>
+              <h2 className="text-2xl font-semibold">Account settings</h2>
+              <p className="text-sm text-white/70">Update your contact information and password anytime.</p>
+            </header>
+
+            <form onSubmit={onAccountSubmit} className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="accountName" className="block text-sm font-medium text-white/80">
+                  Full name
+                </label>
+                <input
+                  id="accountName"
+                  type="text"
+                  value={accountForm.name}
+                  onChange={event => setAccountForm(prev => ({ ...prev, name: event.target.value }))}
+                  className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                />
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label htmlFor="currentPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">Current password</label>
-                  <input
-                    id="currentPassword"
-                    type="password"
-                    value={accountForm.currentPassword}
-                    onChange={(e) => setAccountForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="Required to change email or password"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="newPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">New password</label>
-                  <input
-                    id="newPassword"
-                    type="password"
-                    value={accountForm.newPassword}
-                    onChange={(e) => setAccountForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                    placeholder="Leave blank to keep current"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label htmlFor="confirmPassword" className="block text-xs font-medium uppercase tracking-wide text-white/60">Confirm new password</label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    value={accountForm.confirmPassword}
-                    onChange={(e) => setAccountForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-white/15 bg-black/60 px-4 py-2.5 text-sm text-white focus:border-sky-400 focus:outline-none"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label htmlFor="accountEmail" className="block text-sm font-medium text-white/80">
+                  Email address
+                </label>
+                <input
+                  id="accountEmail"
+                  type="email"
+                  value={accountForm.email}
+                  onChange={event => setAccountForm(prev => ({ ...prev, email: event.target.value }))}
+                  className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                />
               </div>
+              <div className="space-y-2">
+                <label htmlFor="accountCompany" className="block text-sm font-medium text-white/80">
+                  Company name
+                </label>
+                <input
+                  id="accountCompany"
+                  type="text"
+                  value={accountForm.company}
+                  onChange={event => setAccountForm(prev => ({ ...prev, company: event.target.value }))}
+                  className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+              <div />
+              <div className="space-y-2">
+                <label htmlFor="currentPassword" className="block text-sm font-medium text-white/80">
+                  Current password
+                </label>
+                <input
+                  id="currentPassword"
+                  type="password"
+                  value={accountForm.currentPassword}
+                  onChange={event => setAccountForm(prev => ({ ...prev, currentPassword: event.target.value }))}
+                  className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="newPassword" className="block text-sm font-medium text-white/80">
+                  New password
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={accountForm.newPassword}
+                  onChange={event => setAccountForm(prev => ({ ...prev, newPassword: event.target.value }))}
+                  className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-white/80">
+                  Confirm password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={accountForm.confirmPassword}
+                  onChange={event => setAccountForm(prev => ({ ...prev, confirmPassword: event.target.value }))}
+                  className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                />
+              </div>
+
               {accountFeedback && (
-                <p className={`rounded-xl px-4 py-2 text-xs ${accountFeedback.includes('not') || accountFeedback.includes('Unable') || accountFeedback.includes('match') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
-                  {accountFeedback}
-                </p>
+                <div className="md:col-span-2">
+                  <p
+                    className={`rounded-xl px-4 py-3 text-sm ${
+                      accountFeedback.toLowerCase().includes('unable')
+                        ? 'bg-red-500/15 text-red-200'
+                        : 'bg-emerald-500/15 text-emerald-200'
+                    }`}
+                  >
+                    {accountFeedback}
+                  </p>
+                </div>
               )}
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={accountSaving}
-              >
-                {accountSaving ? 'Updating account…' : 'Save account settings'}
-              </button>
+
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={accountSaving}
+                  className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {accountSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
             </form>
           </section>
         )}
