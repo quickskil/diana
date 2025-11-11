@@ -10,6 +10,7 @@ import {
   SERVICE_ORDER,
   type ServiceKey,
   type ServiceSelectionState,
+  normalisePlanKey,
   normaliseServiceSelection,
   selectionToServices
 } from '@/lib/plans';
@@ -74,9 +75,14 @@ function mergeOnboarding(data: unknown): OnboardingForm {
     if (value === undefined || value === null) {
       continue;
     }
+    if (key === 'plan') {
+      merged.plan = normalisePlanKey(value);
+      continue;
+    }
     merged[key] = typeof value === 'string' ? value : String(value ?? '');
   }
 
+  merged.plan = normalisePlanKey(merged.plan);
   return merged;
 }
 

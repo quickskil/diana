@@ -118,6 +118,18 @@ const LEGACY_PLAN_MAP: Record<string, ServiceKey[]> = {
   'full-funnel': ['website', 'ads', 'voice']
 };
 
+export const PLAN_KEYS: readonly PlanKey[] = ['launch', 'launch-traffic', 'full-funnel'] as const;
+
+export function normalisePlanKey(value: unknown, fallback: PlanKey = 'launch'): PlanKey {
+  if (typeof value === 'string') {
+    const trimmed = value.trim() as PlanKey;
+    if (PLAN_KEYS.includes(trimmed)) {
+      return trimmed;
+    }
+  }
+  return fallback;
+}
+
 function uniqueOngoingNotes(keys: ServiceKey[]): string[] {
   return keys
     .map(key => SERVICE_DEFINITIONS[key].ongoingNote)

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSessionUser, saveOnboardingForUser } from '@/lib/server/auth';
-import { DEFAULT_SERVICE_SELECTION, normaliseServiceSelection } from '@/lib/plans';
+import { DEFAULT_SERVICE_SELECTION, normalisePlanKey, normaliseServiceSelection } from '@/lib/plans';
 import { defaultOnboarding, type OnboardingForm } from '@/lib/types/user';
 
 /** Narrow payload to only the fields we expect from OnboardingForm */
@@ -44,11 +44,17 @@ function normaliseForm(payload: Partial<OnboardingForm> | null | undefined): Onb
       continue;
     }
 
+    if (k === 'plan') {
+      merged.plan = normalisePlanKey(incoming ?? legacyPlan);
+      continue;
+    }
+
     // Coerce non-string values to string; keep strings as-is but trimmed
     merged[k] = typeof incoming === 'string' ? incoming.trim() : toCleanString(incoming);
   }
 
   merged.services = normaliseServiceSelection(merged.services ?? legacyPlan);
+  merged.plan = normalisePlanKey(merged.plan ?? legacyPlan);
 
   return merged;
 }
