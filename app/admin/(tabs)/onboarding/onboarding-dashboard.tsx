@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { PLAN_CATALOG } from '@/lib/plans';
+import { describeSelection, normaliseServiceSelection } from '@/lib/plans';
 import type { OnboardingProject, OnboardingStatus } from '@/lib/types/user';
 import { formatDateTime, useAdmin } from '../../admin-context';
 
@@ -55,13 +55,15 @@ function IntakeField({ label, value }: { label: string; value?: string }) {
 }
 
 function ProjectSummary({ project }: { project: OnboardingProject }) {
-  const plan = PLAN_CATALOG[project.data.plan];
+  const plan = describeSelection(
+    normaliseServiceSelection(project.data?.services ?? (project.data as unknown as { plan?: string })?.plan ?? null)
+  );
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
         <p className="text-xs uppercase tracking-wide text-white/50">Plan selection</p>
-        <p className="mt-1 text-lg font-semibold text-white">{plan?.name ?? project.data.plan}</p>
-        <p className="text-sm text-white/70">{plan?.description ?? 'Custom onboarding experience'}</p>
+        <p className="mt-1 text-lg font-semibold text-white">{plan.label}</p>
+        <p className="text-sm text-white/70">{plan.description}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -209,7 +211,7 @@ export default function OnboardingDashboard() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-2xl font-semibold">Client onboarding overview</h2>
-            <p className="text-sm text-white/70">Track plan selections, goals, and launch timelines.</p>
+            <p className="text-sm text-white/70">Track service selections, goals, and launch timelines.</p>
           </div>
           <div className="text-sm text-white/60">
             {onboardedClients.length} onboarding submissions • {clients.length} total clients
@@ -240,7 +242,13 @@ export default function OnboardingDashboard() {
                 clients.map(client => {
                   const projects = client.onboardingProjects ?? [];
                   const primary = projects[0] ?? null;
-                  const planName = primary ? PLAN_CATALOG[primary.data.plan]?.name ?? primary.data.plan : '—';
+                  const planSummary = primary
+                    ? describeSelection(
+                        normaliseServiceSelection(
+                          primary.data?.services ?? (primary.data as unknown as { plan?: string })?.plan ?? null
+                        )
+                      )
+                    : null;
                   return (
                     <tr
                       key={client.id}
@@ -251,7 +259,7 @@ export default function OnboardingDashboard() {
                         <div className="text-xs text-white/60">{client.email}</div>
                         {client.company && <div className="text-xs text-white/55">{client.company}</div>}
                       </td>
-                      <td className="px-4 py-4 text-white/75">{planName}</td>
+                      <td className="px-4 py-4 text-white/75">{planSummary?.label ?? '—'}</td>
                       <td className="px-4 py-4 text-white/75">{primary?.data.primaryMetric ?? '—'}</td>
                       <td className="px-4 py-4 text-white/75">{primary?.data.launchTimeline || '—'}</td>
                       <td className="px-4 py-4 text-white/75">{primary ? statusLabelMap[primary.status] : 'Not started'}</td>
@@ -324,7 +332,7 @@ export default function OnboardingDashboard() {
               <p className="mt-2 text-sm text-white/65">We’re still waiting on their onboarding submission.</p>
             </div>
             <aside className="space-y-4 rounded-2xl border border-white/10 bg-black/30 p-6 text-sm text-white/70">
-              <p>Send a nudge so they can provide plan selection, creative inputs, and AI voice scripting requirements.</p>
+              <p>Send a nudge so they can provide service selections, creative inputs, and AI voice scripting requirements.</p>
             </aside>
           </div>
         ) : (

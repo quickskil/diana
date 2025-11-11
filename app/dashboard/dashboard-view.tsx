@@ -4,7 +4,13 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { useRouter } from 'next/navigation';
 import { CreditCard, FolderKanban, Plus, Settings2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { PLAN_CATALOG, PLAN_LIST } from '@/lib/plans';
+import {
+  DEFAULT_SERVICE_SELECTION,
+  SERVICE_LIST,
+  describeSelection,
+  formatCurrency as formatSelectionCurrency,
+  type ServiceKey
+} from '@/lib/plans';
 import { defaultOnboarding, type OnboardingForm, type OnboardingStatus, type SafeUser } from '@/lib/types/user';
 import type { DepositSummary } from '@/lib/types/payments';
 
@@ -321,7 +327,30 @@ export default function DashboardView() {
     }
   }, [stepIndex]);
 
-  const planDetails = useMemo(() => PLAN_CATALOG[form.plan] ?? PLAN_CATALOG['launch'], [form.plan]);
+  const serviceSummary = useMemo(() => {
+    const selection = form.services ?? DEFAULT_SERVICE_SELECTION;
+    return describeSelection(selection);
+  }, [form.services]);
+
+  const userServiceStatuses = allowedUser?.services ?? [];
+  const fullFunnelActive = userServiceStatuses.length > 0 && userServiceStatuses.every(entry => entry.active);
+
+  const handleToggleService = useCallback((key: ServiceKey) => {
+    setForm(prev => {
+      const current = prev.services ?? { ...DEFAULT_SERVICE_SELECTION };
+      return {
+        ...prev,
+        services: { ...current, [key]: !current[key] }
+      };
+    });
+  }, []);
+
+  const handleSelectAllServices = useCallback(() => {
+    setForm(prev => ({
+      ...prev,
+      services: { website: true, ads: true, voice: true }
+    }));
+  }, []);
 
   const formatCurrency = useCallback((amount: number, currency: string) => {
     try {
@@ -334,46 +363,94 @@ export default function DashboardView() {
     {
       id: 'kickoff',
       title: 'Kickoff & billing contact',
-      subtitle: 'Choose your rollout plan and who we coordinate payment with.',
+      subtitle: 'Choose your service mix and who we coordinate payment with.',
       render: () => (
         <div className="space-y-6">
           <section>
-            <p className="text-sm text-white/70">Pick the package that fits your current goals. You can upgrade at any time.</p>
-            <div className="mt-4 flex gap-4 overflow-x-auto pb-2 xl:overflow-visible xl:[mask-image:none] [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]">
-              {PLAN_LIST.map(plan => {
-                const active = form.plan === plan.key;
+            <p className="text-sm text-white/70">
+              Pick the services that fit your current goals. You can add or remove pieces whenever you need.
+            </p>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {SERVICE_LIST.map(service => {
+                const active = Boolean(form.services?.[service.key]);
                 return (
                   <button
-                    key={plan.key}
+                    key={service.key}
                     type="button"
-                    onClick={() => setForm(prev => ({ ...prev, plan: plan.key }))}
-                    className={`group flex min-w-[240px] max-w-xs flex-1 flex-col justify-between rounded-2xl border px-5 py-5 text-left transition ${active ? 'border-sky-400/80 bg-gradient-to-br from-sky-500/30 via-cyan-500/10 to-transparent shadow-[0_0_30px_rgba(56,189,248,0.35)]' : 'border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10'}`}
+                    onClick={() => handleToggleService(service.key)}
+                    className={`flex flex-col justify-between rounded-2xl border px-5 py-5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 ${
+                      active
+                        ? 'border-sky-400/80 bg-gradient-to-br from-sky-500/25 via-cyan-500/10 to-transparent shadow-[0_0_30px_rgba(56,189,248,0.35)]'
+                        : 'border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10'
+                    }`}
                     aria-pressed={active}
                   >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
-                          <p className="text-sm text-white/70">{plan.tagline}</p>
+                          <h3 className="text-lg font-semibold text-white">{service.name}</h3>
+                          <p className="text-sm text-white/70">{service.tagline}</p>
                         </div>
-                        {active && (
-                          <span className="rounded-full border border-emerald-400/70 bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-100">
-                            Selected
-                          </span>
-                        )}
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                            active
+                              ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-100'
+                              : 'border-white/20 bg-white/5 text-white/70'
+                          }`}
+                        >
+                          {active ? 'Selected' : 'Tap to add'}
+                        </span>
                       </div>
-                      <p className="mt-3 text-sm text-white/80">{plan.price}</p>
-                    </div>
-                    <div className="mt-4 flex items-center justify-between text-[11px] font-semibold text-sky-100/80">
-                      <span className="inline-flex items-center gap-1 text-sky-100 group-hover:text-sky-50">
-                        <span className="size-1.5 rounded-full bg-sky-300" />
-                        Tap to select
-                      </span>
-                      <span className="text-white/70">See deliverables →</span>
+                      <div className="space-y-1 text-sm text-white/80">
+                        <p>{formatSelectionCurrency(service.dueAtApprovalCents)} due at approval</p>
+                        <p className="text-xs text-white/55">{service.ongoingNote}</p>
+                      </div>
+                      <ul className="space-y-2 text-xs text-white/65">
+                        {service.bullets.map(point => (
+                          <li key={point} className="flex items-start gap-2">
+                            <span className="mt-1 size-1.5 rounded-full bg-sky-300/70" aria-hidden />
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </button>
                 );
               })}
+            </div>
+            <div className="mt-5 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+              <div className="flex flex-wrap items-center gap-4 text-white">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-white/60">Kickoff deposit</p>
+                  <p className="text-lg font-semibold">{formatSelectionCurrency(serviceSummary.depositCents)}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-white/60">Due at approval</p>
+                  <p className="text-lg font-semibold">{formatSelectionCurrency(serviceSummary.dueAtApprovalCents)}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-white/60">Total launch</p>
+                  <p className="text-lg font-semibold">{formatSelectionCurrency(serviceSummary.totalLaunchCents)}</p>
+                </div>
+              </div>
+              {serviceSummary.discountCents > 0 ? (
+                <p className="text-xs text-emerald-200">
+                  Bundle savings applied — {formatSelectionCurrency(serviceSummary.discountCents)} off the due-at-approval total for the Full Funnel package.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSelectAllServices}
+                  className="text-xs font-semibold text-sky-200 underline-offset-2 hover:underline"
+                >
+                  Activate the Full Funnel bundle for extra savings
+                </button>
+              )}
+              {serviceSummary.ongoingNotes.length > 0 && (
+                <p className="text-xs text-white/60">
+                  Ongoing: {serviceSummary.ongoingNotes.join(' • ')}
+                </p>
+              )}
             </div>
           </section>
 
@@ -703,7 +780,7 @@ export default function DashboardView() {
   const nextStep = !isLastStep ? steps[stepIndex + 1] : null;
 
   const answeredStats = useMemo(() => {
-    const entries = Object.entries(form).filter(([key]) => key !== 'plan');
+    const entries = Object.entries(form).filter(([key]) => key !== 'services');
     const answered = entries.reduce((total, [, value]) => {
       if (typeof value === 'string' && value.trim().length > 0) {
         return total + 1;
@@ -877,9 +954,14 @@ export default function DashboardView() {
               </div>
 
               <div className="rounded-2xl border border-white/15 bg-black/30 p-5 text-sm text-white/80 shadow-lg">
-                <div className="text-xs uppercase tracking-wide text-white/60">Active plan</div>
-                <div className="mt-1 text-lg font-semibold text-white">{planDetails.name}</div>
-                <div className="text-white/70">{planDetails.tagline}</div>
+                <div className="text-xs uppercase tracking-wide text-white/60">Active services</div>
+                <div className="mt-1 text-lg font-semibold text-white">{serviceSummary.label}</div>
+                <div className="text-white/70">{serviceSummary.tagline}</div>
+                {fullFunnelActive ? (
+                  <div className="mt-2 text-xs text-emerald-200">Full Funnel bundle activated — discounted launch pricing locked in.</div>
+                ) : (
+                  <div className="mt-2 text-xs text-white/55">Select services above to tailor your rollout. Add all three for bundled savings.</div>
+                )}
                 <div className="mt-3 text-xs text-white/60">Last activity {lastUpdatedLabel}</div>
                 {selectedProject?.status ? (
                   <div className="mt-2 text-xs text-white/65">
@@ -893,6 +975,46 @@ export default function DashboardView() {
                 )}
               </div>
             </div>
+            {userServiceStatuses.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {userServiceStatuses.map(status => {
+                  const definition = SERVICE_LIST.find(item => item.key === status.key);
+                  const active = Boolean(status.active);
+                  return (
+                    <div
+                      key={status.key}
+                      className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/80 shadow-inner"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-white">{definition?.name ?? status.key}</p>
+                          <p className="text-xs text-white/60">{definition?.tagline}</p>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                            active
+                              ? 'border border-emerald-400/70 bg-emerald-500/15 text-emerald-100'
+                              : 'border border-white/20 bg-white/5 text-white/60'
+                          }`}
+                        >
+                          {active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-xs text-white/60">{definition?.description}</p>
+                      <div className="mt-3 space-y-1 text-xs text-white/60">
+                        <p>Due at approval: {formatSelectionCurrency(definition?.dueAtApprovalCents ?? status.priceCents ?? 0)}</p>
+                        {definition?.ongoingNote && <p>Ongoing: {definition.ongoingNote}</p>}
+                      </div>
+                      <p className={`mt-3 text-xs ${active ? 'text-emerald-200' : 'text-white/55'}`}>
+                        {active
+                          ? 'We’ll surface performance metrics here after launch.'
+                          : 'Toggle this service in onboarding when you’re ready to activate it.'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </header>
 
@@ -1124,10 +1246,10 @@ export default function DashboardView() {
                   </ul>
                 </section>
                 <section>
-                  <h3 className="text-lg font-semibold">Plan highlights</h3>
-                  <p className="mt-1 text-sm text-white/70">{planDetails.description}</p>
+                  <h3 className="text-lg font-semibold">Service highlights</h3>
+                  <p className="mt-1 text-sm text-white/70">{serviceSummary.description}</p>
                   <ul className="mt-3 space-y-2 text-sm text-white/75">
-                    {planDetails.bullets.map(point => (
+                    {serviceSummary.bullets.map(point => (
                       <li key={point}>• {point}</li>
                     ))}
                   </ul>

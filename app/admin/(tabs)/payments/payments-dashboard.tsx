@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { PLAN_CATALOG } from '@/lib/plans';
+import { describeSelection, normaliseServiceSelection } from '@/lib/plans';
 import type { PaymentRecord, PaymentRequest } from '@/lib/types/payments';
 import type { SafeUser } from '@/lib/types/user';
 import { formatDateTime, useAdmin } from '../../admin-context';
@@ -10,12 +10,6 @@ const PAYMENT_TYPE_LABELS: Record<string, string> = {
   'kickoff-deposit': 'Kickoff deposit',
   'final-balance': 'Final balance',
   other: 'Other'
-};
-
-const FINAL_BALANCE_SUGGESTIONS: Record<string, number> = {
-  launch: 400,
-  'launch-traffic': 1401,
-  'full-funnel': 2801
 };
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -52,6 +46,13 @@ function getLatestDeposit(payments: PaymentRecord[]) {
 
 function getFinalPayments(payments: PaymentRecord[]) {
   return payments.filter(payment => payment.type === 'final-balance');
+}
+
+function getPrimaryProjectSummary(client: SafeUser | null) {
+  const project = client?.onboardingProjects?.[0] ?? null;
+  if (!project) return null;
+  const rawSelection = project.data?.services ?? (project.data as unknown as { plan?: string })?.plan ?? null;
+  return describeSelection(normaliseServiceSelection(rawSelection));
 }
 
 function PaymentStatusPill({ status }: { status: string }) {
@@ -183,10 +184,12 @@ export default function PaymentsDashboard() {
       setFinalRequestId(null);
       return;
     }
-    const planKey = selectedClient.onboardingProjects?.[0]?.data.plan;
-    if (planKey && FINAL_BALANCE_SUGGESTIONS[planKey] !== undefined) {
-      setFinalAmount(FINAL_BALANCE_SUGGESTIONS[planKey].toString());
-      setFinalDescription(`${PLAN_CATALOG[planKey]?.name ?? 'Website'} final balance`);
+    const summary = getPrimaryProjectSummary(selectedClient);
+    if (summary) {
+      const amountValue = summary.dueAtApprovalCents / 100;
+      const amountText = amountValue % 1 === 0 ? amountValue.toFixed(0) : amountValue.toFixed(2);
+      setFinalAmount(amountText);
+      setFinalDescription(`${summary.label} final balance`);
     } else {
       setFinalAmount('');
       setFinalDescription('Final website balance');
@@ -326,9 +329,12 @@ export default function PaymentsDashboard() {
       setRequestForm({
         userId: selectedClient?.id ?? '',
         projectId: selectedClient?.onboardingProjects?.[0]?.id ?? null,
-        amount: selectedClient && FINAL_BALANCE_SUGGESTIONS[selectedClient.onboardingProjects?.[0]?.data.plan ?? '']
-          ? FINAL_BALANCE_SUGGESTIONS[selectedClient.onboardingProjects?.[0]?.data.plan ?? ''].toString()
-          : '',
+        amount: (() => {
+          const summary = getPrimaryProjectSummary(selectedClient);
+          if (!summary) return '';
+          const amountValue = summary.dueAtApprovalCents / 100;
+          return amountValue % 1 === 0 ? amountValue.toFixed(0) : amountValue.toFixed(2);
+        })(),
         currency: 'usd',
         description: 'Custom payment',
         generateCheckout: true

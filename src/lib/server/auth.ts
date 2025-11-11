@@ -5,12 +5,22 @@ import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { ensureDatabase, sql } from '@/lib/db';
 import {
+  DEFAULT_SERVICE_SELECTION,
+  SERVICE_DEFINITIONS,
+  SERVICE_ORDER,
+  type ServiceKey,
+  type ServiceSelectionState,
+  normaliseServiceSelection,
+  selectionToServices
+} from '@/lib/plans';
+import {
   defaultOnboarding,
   type OnboardingForm,
   type OnboardingProject,
   type OnboardingStatus,
   type SafeUser,
-  type UserRole
+  type UserRole,
+  type UserServiceStatus
 } from '@/lib/types/user';
 
 const PROTECTED_STATUSES: OnboardingStatus[] = ['in-progress', 'launch-ready'];
@@ -33,10 +43,41 @@ function normaliseDate(value: unknown): string | null {
 }
 
 function mergeOnboarding(data: unknown): OnboardingForm {
+  const base: OnboardingForm = {
+    ...defaultOnboarding,
+    services: { ...DEFAULT_SERVICE_SELECTION }
+  };
+
   if (!data || typeof data !== 'object') {
-    return { ...defaultOnboarding };
+    return base;
   }
-  return { ...defaultOnboarding, ...(data as Partial<OnboardingForm>) };
+
+  const record = data as Record<string, unknown>;
+  const serviceInput =
+    record.services ??
+    record.selectedServices ??
+    record.serviceSelection ??
+    record.plan ??
+    record.planKey;
+
+  const merged: OnboardingForm = {
+    ...base,
+    services: normaliseServiceSelection(serviceInput)
+  };
+
+  const allowedKeys = Object.keys(defaultOnboarding) as Array<keyof OnboardingForm>;
+  for (const key of allowedKeys) {
+    if (key === 'services') {
+      continue;
+    }
+    const value = record[key as string];
+    if (value === undefined || value === null) {
+      continue;
+    }
+    merged[key] = typeof value === 'string' ? value : String(value ?? '');
+  }
+
+  return merged;
 }
 
 function parseProjects(value: unknown): OnboardingProject[] {
@@ -93,6 +134,101 @@ function parseProjects(value: unknown): OnboardingProject[] {
   return projects;
 }
 
+function parseUserServices(value: unknown): UserServiceStatus[] {
+  let records: unknown[] = [];
+  if (!value) {
+    records = [];
+  } else if (Array.isArray(value)) {
+    records = value;
+  } else if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        records = parsed;
+      }
+    } catch {
+      records = [];
+    }
+  }
+
+  const statuses = new Map<ServiceKey, UserServiceStatus>();
+
+  for (const record of records) {
+    if (!record || typeof record !== 'object') {
+      continue;
+    }
+    const raw = record as Record<string, any>;
+    const keyRaw = raw.service_key ?? raw.serviceKey ?? raw.key;
+    if (typeof keyRaw !== 'string') {
+      continue;
+    }
+    const key = keyRaw as ServiceKey;
+    if (!SERVICE_DEFINITIONS[key]) {
+      continue;
+    }
+
+    const active = Boolean(raw.active);
+    const priceCents = typeof raw.price_cents === 'number' ? raw.price_cents : typeof raw.priceCents === 'number' ? raw.priceCents : null;
+    const ongoingNote = typeof raw.ongoing_note === 'string' ? raw.ongoing_note : typeof raw.ongoingNote === 'string' ? raw.ongoingNote : null;
+    const createdAt = normaliseDate(raw.created_at ?? raw.createdAt) ?? new Date().toISOString();
+    const updatedAt = normaliseDate(raw.updated_at ?? raw.updatedAt) ?? createdAt;
+
+    statuses.set(key, {
+      key,
+      active,
+      priceCents,
+      ongoingNote,
+      createdAt,
+      updatedAt
+    });
+  }
+
+  for (const key of SERVICE_ORDER) {
+    if (!statuses.has(key)) {
+      const now = new Date().toISOString();
+      statuses.set(key, {
+        key,
+        active: false,
+        priceCents: SERVICE_DEFINITIONS[key].dueAtApprovalCents,
+        ongoingNote: SERVICE_DEFINITIONS[key].ongoingNote,
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+  }
+
+  return Array.from(statuses.values()).sort((a, b) => {
+    return SERVICE_ORDER.indexOf(a.key) - SERVICE_ORDER.indexOf(b.key);
+  });
+}
+
+async function ensureUserServiceRows(userId: string) {
+  await sql`
+    INSERT INTO user_services (user_id, service_key, active, price_cents, ongoing_note, created_at, updated_at)
+    SELECT ${userId}, s.key, FALSE, s.due_at_approval_cents, s.ongoing_note, NOW(), NOW()
+    FROM services s
+    ON CONFLICT (user_id, service_key) DO NOTHING;
+  `;
+}
+
+async function syncUserServices(userId: string, selection: ServiceSelectionState) {
+  await ensureUserServiceRows(userId);
+  const now = new Date().toISOString();
+  for (const key of SERVICE_ORDER) {
+    const active = Boolean(selection[key]);
+    const definition = SERVICE_DEFINITIONS[key];
+    await sql`
+      UPDATE user_services
+      SET
+        active = ${active},
+        price_cents = ${definition.dueAtApprovalCents},
+        ongoing_note = ${definition.ongoingNote},
+        updated_at = ${now}
+      WHERE user_id = ${userId} AND service_key = ${key};
+    `;
+  }
+}
+
 function mapRowToSafeUser(row: Record<string, any>): SafeUser {
   const onboardingProjects = parseProjects(row.onboarding_projects ?? row.onboarding_projects_json ?? []);
   const onboarding = onboardingProjects[0] ?? null;
@@ -105,7 +241,8 @@ function mapRowToSafeUser(row: Record<string, any>): SafeUser {
     company: row.company ?? null,
     createdAt: normaliseDate(row.created_at) ?? new Date().toISOString(),
     onboarding,
-    onboardingProjects
+    onboardingProjects,
+    services: parseUserServices(row.services ?? row.user_services ?? [])
   };
 }
 
@@ -119,6 +256,25 @@ async function getUserRowById(userId: string): Promise<Record<string, any> | nul
       u.role,
       u.company,
       u.created_at,
+      (
+        SELECT COALESCE(
+          json_agg(
+            json_build_object(
+              'service_key', us.service_key,
+              'active', us.active,
+              'price_cents', us.price_cents,
+              'ongoing_note', COALESCE(us.ongoing_note, s.ongoing_note),
+              'created_at', us.created_at,
+              'updated_at', us.updated_at
+            )
+            ORDER BY us.service_key
+          ),
+          '[]'::json
+        )
+        FROM user_services us
+        JOIN services s ON s.key = us.service_key
+        WHERE us.user_id = u.id
+      ) AS services,
       (
         SELECT COALESCE(
           json_agg(
@@ -161,6 +317,25 @@ async function getUserRowByEmail(email: string): Promise<Record<string, any> | n
       u.company,
       u.created_at,
       u.password_hash,
+      (
+        SELECT COALESCE(
+          json_agg(
+            json_build_object(
+              'service_key', us.service_key,
+              'active', us.active,
+              'price_cents', us.price_cents,
+              'ongoing_note', COALESCE(us.ongoing_note, s.ongoing_note),
+              'created_at', us.created_at,
+              'updated_at', us.updated_at
+            )
+            ORDER BY us.service_key
+          ),
+          '[]'::json
+        )
+        FROM user_services us
+        JOIN services s ON s.key = us.service_key
+        WHERE us.user_id = u.id
+      ) AS services,
       (
         SELECT COALESCE(
           json_agg(
@@ -292,6 +467,25 @@ export async function listSafeUsers(): Promise<SafeUser[]> {
         SELECT COALESCE(
           json_agg(
             json_build_object(
+              'service_key', us.service_key,
+              'active', us.active,
+              'price_cents', us.price_cents,
+              'ongoing_note', COALESCE(us.ongoing_note, s.ongoing_note),
+              'created_at', us.created_at,
+              'updated_at', us.updated_at
+            )
+            ORDER BY us.service_key
+          ),
+          '[]'::json
+        )
+        FROM user_services us
+        JOIN services s ON s.key = us.service_key
+        WHERE us.user_id = u.id
+      ) AS services,
+      (
+        SELECT COALESCE(
+          json_agg(
+            json_build_object(
               'id', o.id,
               'label', o.label,
               'data', o.data,
@@ -335,6 +529,7 @@ export async function createUser(payload: {
     INSERT INTO users (id, name, email, password_hash, role, company)
     VALUES (${id}, ${payload.name}, ${email}, ${passwordHash}, ${role}, ${payload.company ?? null});
   `;
+  await ensureUserServiceRows(id);
   const row = await getUserRowById(id);
   if (!row) {
     throw new Error('Failed to load new user');
@@ -509,7 +704,8 @@ export async function saveOnboardingForUser(
   await ensureDatabase();
 
   const now = new Date().toISOString();
-  const payloadJson = JSON.stringify(form);
+  const selection = normaliseServiceSelection(form.services);
+  const payloadJson = JSON.stringify({ ...form, services: selection });
   const desiredLabel = options?.label?.trim() ? options.label.trim() : null;
   let projectId = options?.projectId?.trim() || null;
 
@@ -558,6 +754,8 @@ export async function saveOnboardingForUser(
       VALUES (${projectId}, ${userId}, ${label}, ${payloadJson}::jsonb, ${persistStatus}, ${persistNote}, ${now}, ${now}, ${now});
     `;
   }
+
+  await syncUserServices(userId, selection);
 
   const row = await getUserRowById(userId);
   if (!row) {
