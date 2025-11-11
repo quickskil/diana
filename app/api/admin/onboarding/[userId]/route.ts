@@ -1,7 +1,7 @@
 // app/api/onboarding/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSessionUser, saveOnboardingForUser, updateOnboardingStatusForUser } from '@/lib/server/auth';
-import { DEFAULT_SERVICE_SELECTION, normaliseServiceSelection } from '@/lib/plans';
+import { DEFAULT_SERVICE_SELECTION, normalisePlanKey, normaliseServiceSelection } from '@/lib/plans';
 import { defaultOnboarding, type OnboardingForm, type OnboardingStatus } from '@/lib/types/user';
 
 /** Coerce any unknown value into a string (safe) */
@@ -36,6 +36,8 @@ function normaliseForm(
       const raw = input[key];
       if (key === 'services') {
         merged.services = normaliseServiceSelection(raw ?? legacyPlan);
+      } else if (key === 'plan') {
+        merged.plan = normalisePlanKey(raw ?? legacyPlan);
       } else {
         // Other fields: just convert to string
         merged[key] = typeof raw === 'string'
@@ -46,7 +48,8 @@ function normaliseForm(
   });
 
   const services = normaliseServiceSelection((merged as OnboardingForm).services ?? legacyPlan);
-  return { ...merged, services } as OnboardingForm;
+  const plan = normalisePlanKey((merged as OnboardingForm).plan ?? legacyPlan);
+  return { ...merged, services, plan } as OnboardingForm;
 }
 
 /** Safely parse JSON body (fallback to empty object) */

@@ -7,13 +7,19 @@ import { CreditCard, FolderKanban, Plus, Settings2 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
 import {
+  PLAN_CATALOG,
   DEFAULT_SERVICE_SELECTION,
   SERVICE_LIST,
   describeSelection,
-  formatCurrency as formatSelectionCurrency,
-  type ServiceKey
+  formatCurrency as formatSelectionCurrency
 } from '@/lib/plans';
-import { defaultOnboarding, type OnboardingForm, type OnboardingStatus, type SafeUser } from '@/lib/types/user';
+import {
+  defaultOnboarding,
+  type OnboardingForm,
+  type OnboardingProject,
+  type OnboardingStatus,
+  type SafeUser
+} from '@/lib/types/user';
 import type { DepositSummary } from '@/lib/types/payments';
 
 interface CalAttendee {
@@ -184,7 +190,10 @@ export default function DashboardView() {
     [selectedProject?.data.plan]
   );
 
-  const answeredStats = useMemo(() => computeCoverage(selectedProject?.data ?? defaultOnboarding), [selectedProject?.data]);
+  const projectCoverage = useMemo(
+    () => computeCoverage(selectedProject?.data ?? defaultOnboarding),
+    [selectedProject?.data]
+  );
 
   const lastUpdatedLabel = useMemo(() => {
     if (selectedProject?.updatedAt) {
@@ -355,56 +364,17 @@ export default function DashboardView() {
     }
   }, [depositLoading, depositSummary]);
 
-  useEffect(() => {
-    if (initialStepRender.current) {
-      initialStepRender.current = false;
-      return;
-    }
-    setOnboardingFeedback(null);
-    if (typeof window === 'undefined') return;
-
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
-
-    if (!isDesktop && stepContentRef.current) {
-      stepContentRef.current.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'start'
-      });
-    }
-
-    if (isDesktop && stepListRef.current) {
-      const currentStepButton = stepListRef.current.querySelector<HTMLButtonElement>(
-        `[data-step-index="${stepIndex}"]`
-      );
-      currentStepButton?.scrollIntoView({ block: 'nearest' });
-    }
-  }, [stepIndex]);
-
   const serviceSummary = useMemo(() => {
-    const selection = form.services ?? DEFAULT_SERVICE_SELECTION;
+    const selection = selectedProject?.data.services ?? DEFAULT_SERVICE_SELECTION;
     return describeSelection(selection);
-  }, [form.services]);
+  }, [
+    selectedProject?.data.services?.website,
+    selectedProject?.data.services?.ads,
+    selectedProject?.data.services?.voice
+  ]);
 
   const userServiceStatuses = allowedUser?.services ?? [];
   const fullFunnelActive = userServiceStatuses.length > 0 && userServiceStatuses.every(entry => entry.active);
-
-  const handleToggleService = useCallback((key: ServiceKey) => {
-    setForm(prev => {
-      const current = prev.services ?? { ...DEFAULT_SERVICE_SELECTION };
-      return {
-        ...prev,
-        services: { ...current, [key]: !current[key] }
-      };
-    });
-  }, []);
-
-  const handleSelectAllServices = useCallback(() => {
-    setForm(prev => ({
-      ...prev,
-      services: { website: true, ads: true, voice: true }
-    }));
-  }, []);
 
   const formatCurrency = useCallback((amount: number, currency: string) => {
     try {
@@ -413,450 +383,63 @@ export default function DashboardView() {
       return `${(currency || 'USD').toUpperCase()} ${amount.toFixed(2)}`;
     }
   }, []);
-  const steps = [
-    {
-      id: 'kickoff',
-      title: 'Kickoff & billing contact',
-      subtitle: 'Choose your service mix and who we coordinate payment with.',
-      render: () => (
-        <div className="space-y-6">
-          <section>
-            <p className="text-sm text-white/70">
-              Pick the services that fit your current goals. You can add or remove pieces whenever you need.
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
-              {SERVICE_LIST.map(service => {
-                const active = Boolean(form.services?.[service.key]);
-                return (
-                  <button
-                    key={service.key}
-                    type="button"
-                    onClick={() => handleToggleService(service.key)}
-                    className={`flex flex-col justify-between rounded-2xl border px-5 py-5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 ${
-                      active
-                        ? 'border-sky-400/80 bg-gradient-to-br from-sky-500/25 via-cyan-500/10 to-transparent shadow-[0_0_30px_rgba(56,189,248,0.35)]'
-                        : 'border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10'
-                    }`}
-                    aria-pressed={active}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">{service.name}</h3>
-                          <p className="text-sm text-white/70">{service.tagline}</p>
-                        </div>
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                            active
-                              ? 'border-emerald-400/70 bg-emerald-500/20 text-emerald-100'
-                              : 'border-white/20 bg-white/5 text-white/70'
-                          }`}
-                        >
-                          {active ? 'Selected' : 'Tap to add'}
-                        </span>
-                      </div>
-                      <div className="space-y-1 text-sm text-white/80">
-                        <p>{formatSelectionCurrency(service.dueAtApprovalCents)} due at approval</p>
-                        <p className="text-xs text-white/55">{service.ongoingNote}</p>
-                      </div>
-                      <ul className="space-y-2 text-xs text-white/65">
-                        {service.bullets.map(point => (
-                          <li key={point} className="flex items-start gap-2">
-                            <span className="mt-1 size-1.5 rounded-full bg-sky-300/70" aria-hidden />
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-5 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-              <div className="flex flex-wrap items-center gap-4 text-white">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-white/60">Kickoff deposit</p>
-                  <p className="text-lg font-semibold">{formatSelectionCurrency(serviceSummary.depositCents)}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-white/60">Due at approval</p>
-                  <p className="text-lg font-semibold">{formatSelectionCurrency(serviceSummary.dueAtApprovalCents)}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-white/60">Total launch</p>
-                  <p className="text-lg font-semibold">{formatSelectionCurrency(serviceSummary.totalLaunchCents)}</p>
-                </div>
-              </div>
-              {serviceSummary.discountCents > 0 ? (
-                <p className="text-xs text-emerald-200">
-                  Bundle savings applied — {formatSelectionCurrency(serviceSummary.discountCents)} off the due-at-approval total for the Full Funnel package.
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSelectAllServices}
-                  className="text-xs font-semibold text-sky-200 underline-offset-2 hover:underline"
-                >
-                  Activate the Full Funnel bundle for extra savings
-                </button>
-              )}
-              {serviceSummary.ongoingNotes.length > 0 && (
-                <p className="text-xs text-white/60">
-                  Ongoing: {serviceSummary.ongoingNotes.join(' • ')}
-                </p>
-              )}
-            </div>
-          </section>
-
-          <div className="grid gap-5 md:grid-cols-2">
-            <div>
-              <label htmlFor="billingContactName" className="block text-sm font-medium text-white/80">Billing contact name</label>
-              <input
-                id="billingContactName"
-                type="text"
-                value={form.billingContactName}
-                onChange={(e) => setForm(prev => ({ ...prev, billingContactName: e.target.value }))}
-                placeholder="Who should receive invoices?"
-                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label htmlFor="billingContactEmail" className="block text-sm font-medium text-white/80">Billing contact email</label>
-              <input
-                id="billingContactEmail"
-                type="email"
-                value={form.billingContactEmail}
-                onChange={(e) => setForm(prev => ({ ...prev, billingContactEmail: e.target.value }))}
-                placeholder="billing@company.com"
-                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="billingNotes" className="block text-sm font-medium text-white/80">Billing notes or PO requirements (optional)</label>
-            <textarea
-              id="billingNotes"
-              value={form.billingNotes}
-              onChange={(e) => setForm(prev => ({ ...prev, billingNotes: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="Share PO numbers, billing addresses, or anything else we should include."
-            />
-          </div>
-
-          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-            <p className="text-emerald-200 font-semibold">How payment works</p>
-            <ul className="mt-2 space-y-1 text-emerald-100/90">
-              <li>• Reserve your build slot with a $99 kickoff deposit.</li>
-              <li>• We sprint on copy, design, and automation as soon as the deposit clears.</li>
-              <li>• The remaining balance is invoiced only after you approve the launch.</li>
-            </ul>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'business',
-      title: 'Business basics',
-      subtitle: 'Tell us who you are and what success looks like.',
-      render: () => (
-        <div className="grid gap-5 md:grid-cols-2">
-          <div>
-            <label htmlFor="companyName" className="block text-sm font-medium text-white/80">Company name</label>
-            <input
-              id="companyName"
-              type="text"
-              value={form.companyName}
-              onChange={(e) => setForm(prev => ({ ...prev, companyName: e.target.value }))}
-              placeholder="Business Booster AI"
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label htmlFor="website" className="block text-sm font-medium text-white/80">Website or landing page</label>
-            <input
-              id="website"
-              type="url"
-              value={form.website}
-              onChange={(e) => setForm(prev => ({ ...prev, website: e.target.value }))}
-              placeholder="https://businessbooster.ai"
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label htmlFor="primaryMetric" className="block text-sm font-medium text-white/80">Primary success metric</label>
-            <input
-              id="primaryMetric"
-              type="text"
-              value={form.primaryMetric}
-              onChange={(e) => setForm(prev => ({ ...prev, primaryMetric: e.target.value }))}
-              placeholder="Booked consultations, demos, etc."
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label htmlFor="monthlyAdBudget" className="block text-sm font-medium text-white/80">Monthly ad budget (if any)</label>
-            <input
-              id="monthlyAdBudget"
-              type="text"
-              value={form.monthlyAdBudget}
-              onChange={(e) => setForm(prev => ({ ...prev, monthlyAdBudget: e.target.value }))}
-              placeholder="$3k/mo on Meta + Google"
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label htmlFor="salesCycle" className="block text-sm font-medium text-white/80">Average sales cycle</label>
-            <input
-              id="salesCycle"
-              type="text"
-              value={form.salesCycle}
-              onChange={(e) => setForm(prev => ({ ...prev, salesCycle: e.target.value }))}
-              placeholder="e.g. 2 calls across 14 days"
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label htmlFor="teamSize" className="block text-sm font-medium text-white/80">Team answering leads</label>
-            <input
-              id="teamSize"
-              type="text"
-              value={form.teamSize}
-              onChange={(e) => setForm(prev => ({ ...prev, teamSize: e.target.value }))}
-              placeholder="Sales pod of 3 reps"
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-            />
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'systems',
-      title: 'Systems & availability',
-      subtitle: 'Connect the dots so every lead is routed instantly.',
-      render: () => (
-        <div className="space-y-5">
-          <div className="grid gap-5 md:grid-cols-2">
-            <div>
-              <label htmlFor="crmTools" className="block text-sm font-medium text-white/80">CRM & routing tools</label>
-              <input
-                id="crmTools"
-                type="text"
-                value={form.crmTools}
-                onChange={(e) => setForm(prev => ({ ...prev, crmTools: e.target.value }))}
-                placeholder="HubSpot, Salesforce, etc."
-                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label htmlFor="voiceCoverage" className="block text-sm font-medium text-white/80">Voice coverage & hours</label>
-              <input
-                id="voiceCoverage"
-                type="text"
-                value={form.voiceCoverage}
-                onChange={(e) => setForm(prev => ({ ...prev, voiceCoverage: e.target.value }))}
-                placeholder="24/7 with warm transfer weekdays 9-5"
-                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label htmlFor="calLink" className="block text-sm font-medium text-white/80">Primary booking link</label>
-              <input
-                id="calLink"
-                type="url"
-                value={form.calLink}
-                onChange={(e) => setForm(prev => ({ ...prev, calLink: e.target.value }))}
-                placeholder="https://cal.com/yourteam"
-                className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'goals',
-      title: 'Goals & launch timeline',
-      subtitle: 'Share expectations so we can architect the rollout.',
-      render: () => (
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <label htmlFor="goals" className="block text-sm font-medium text-white/80">What does success look like?</label>
-            <textarea
-              id="goals"
-              value={form.goals}
-              onChange={(e) => setForm(prev => ({ ...prev, goals: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="E.g. 30 booked consultations per month within 60 days."
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label htmlFor="challenges" className="block text-sm font-medium text-white/80">Biggest challenges today</label>
-            <textarea
-              id="challenges"
-              value={form.challenges}
-              onChange={(e) => setForm(prev => ({ ...prev, challenges: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="Share any messaging gaps, follow-up issues, or technical blockers."
-            />
-          </div>
-          <div>
-            <label htmlFor="launchTimeline" className="block text-sm font-medium text-white/80">Preferred launch timeline</label>
-            <input
-              id="launchTimeline"
-              type="text"
-              value={form.launchTimeline}
-              onChange={(e) => setForm(prev => ({ ...prev, launchTimeline: e.target.value }))}
-              placeholder="Kickoff this month, go live within 21 days"
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-white/80">Any extra context?</label>
-            <textarea
-              id="notes"
-              value={form.notes}
-              onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="Share stakeholder names, compliance requirements, or creative assets."
-            />
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'voice',
-      title: 'Voice agent & creative playbook',
-      subtitle: 'Everything the AI receptionist and ad squads need to sound like you.',
-      render: () => (
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <label htmlFor="targetAudience" className="block text-sm font-medium text-white/80">Primary audience segments</label>
-            <textarea
-              id="targetAudience"
-              value={form.targetAudience}
-              onChange={(e) => setForm(prev => ({ ...prev, targetAudience: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="E.g. Operations leaders at B2B SaaS brands, Med spa owners in Austin, etc."
-            />
-          </div>
-          <div>
-            <label htmlFor="uniqueValueProp" className="block text-sm font-medium text-white/80">Core promise / proof</label>
-            <textarea
-              id="uniqueValueProp"
-              value={form.uniqueValueProp}
-              onChange={(e) => setForm(prev => ({ ...prev, uniqueValueProp: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="Share your positioning, differentiators, and testimonials to feature."
-            />
-          </div>
-          <div>
-            <label htmlFor="offerDetails" className="block text-sm font-medium text-white/80">Offer details</label>
-            <textarea
-              id="offerDetails"
-              value={form.offerDetails}
-              onChange={(e) => setForm(prev => ({ ...prev, offerDetails: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="Outline the packages, pricing ranges, and any promos we should highlight."
-            />
-          </div>
-          <div>
-            <label htmlFor="brandVoice" className="block text-sm font-medium text-white/80">Brand voice guidelines</label>
-            <textarea
-              id="brandVoice"
-              value={form.brandVoice}
-              onChange={(e) => setForm(prev => ({ ...prev, brandVoice: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="E.g. Confident, friendly, and data-backed. Words or phrases to embrace or avoid."
-            />
-          </div>
-          <div>
-            <label htmlFor="adChannels" className="block text-sm font-medium text-white/80">Active or desired ad channels</label>
-            <textarea
-              id="adChannels"
-              value={form.adChannels}
-              onChange={(e) => setForm(prev => ({ ...prev, adChannels: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="List search, social, retargeting, or offline channels we should prioritise."
-            />
-          </div>
-          <div>
-            <label htmlFor="followUpProcess" className="block text-sm font-medium text-white/80">Current follow-up process</label>
-            <textarea
-              id="followUpProcess"
-              value={form.followUpProcess}
-              onChange={(e) => setForm(prev => ({ ...prev, followUpProcess: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="Describe how leads are nurtured today, including SLAs and hand-offs."
-            />
-          </div>
-          <div>
-            <label htmlFor="receptionistInstructions" className="block text-sm font-medium text-white/80">Voice agent scripts & guardrails</label>
-            <textarea
-              id="receptionistInstructions"
-              value={form.receptionistInstructions}
-              onChange={(e) => setForm(prev => ({ ...prev, receptionistInstructions: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="Share greetings, qualification questions, hand-off triggers, and compliance language."
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label htmlFor="integrations" className="block text-sm font-medium text-white/80">Integrations & tools to connect</label>
-            <textarea
-              id="integrations"
-              value={form.integrations}
-              onChange={(e) => setForm(prev => ({ ...prev, integrations: e.target.value }))}
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
-              placeholder="E.g. HubSpot pipeline, Slack alerts, call tracking, or other systems we should sync."
-            />
-          </div>
-        </div>
-      )
-    }
-  ];
-  const totalSteps = steps.length;
-  const isLastStep = totalSteps > 0 ? stepIndex >= totalSteps - 1 : true;
-  const progressPct = totalSteps > 1 ? (stepIndex / (totalSteps - 1)) * 100 : totalSteps === 1 ? 100 : 0;
-  const roundedProgress = Number.isFinite(progressPct) ? Math.round(progressPct) : 0;
-  const currentStep = steps[stepIndex] ?? steps[0];
-  const nextStep = !isLastStep ? steps[stepIndex + 1] : null;
-
-  const answeredStats = useMemo(() => {
-    const entries = Object.entries(form).filter(([key]) => key !== 'services');
-    const answered = entries.reduce((total, [, value]) => {
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return total + 1;
+  const onAccountSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (accountSaving) {
+        return;
       }
+
+      setAccountFeedback(null);
+
+      const trimmedName = accountForm.name.trim();
+      const trimmedEmail = accountForm.email.trim();
+      const trimmedCompany = accountForm.company.trim();
+
+      if (!trimmedEmail) {
+        setAccountFeedback('Email is required.');
+        return;
+      }
+
+      if (accountForm.newPassword && accountForm.newPassword !== accountForm.confirmPassword) {
+        setAccountFeedback('New password and confirmation do not match.');
+        return;
+      }
+
+      if (accountForm.newPassword && accountForm.newPassword.length < 6) {
+        setAccountFeedback('New password must be at least 6 characters.');
+        return;
+      }
+
       const payload = {
-        name: accountForm.name.trim(),
-        email: accountForm.email.trim(),
-        company: accountForm.company.trim(),
+        name: trimmedName,
+        email: trimmedEmail,
+        company: trimmedCompany,
         currentPassword: accountForm.currentPassword ? accountForm.currentPassword : undefined,
         newPassword: accountForm.newPassword ? accountForm.newPassword : null
       };
+
+      setAccountSaving(true);
       const result = await updateAccount(payload);
+      setAccountSaving(false);
+
       if (!result.ok) {
         setAccountFeedback(result.message ?? 'Unable to update your account.');
-        setAccountSaving(false);
         return;
       }
+
       setAccountFeedback(result.message ?? 'Account updated.');
-      setAccountSaving(false);
-      setAccountForm(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
+      setAccountForm(prev => ({
+        ...prev,
+        name: trimmedName,
+        email: trimmedEmail,
+        company: trimmedCompany,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }));
     },
-    [accountForm, accountSaving, allowedUser, updateAccount]
+    [accountForm, accountSaving, updateAccount]
   );
 
   if (!allowedUser) {
@@ -892,15 +475,15 @@ export default function DashboardView() {
               <div className="rounded-2xl border border-white/15 bg-white/5 p-5 text-sm text-white/80 shadow-inner shadow-white/5">
                 <p className="text-xs uppercase tracking-wide text-white/60">Onboarding coverage</p>
                 <div className="mt-3 flex items-end justify-between">
-                  <span className="text-3xl font-semibold text-white">{answeredStats.pct}%</span>
+                  <span className="text-3xl font-semibold text-white">{projectCoverage.pct}%</span>
                   <span className="text-xs text-white/60">
-                    {answeredStats.answered} of {answeredStats.total} prompts
+                    {projectCoverage.answered} of {projectCoverage.total} prompts
                   </span>
                 </div>
                 <div className="mt-3 h-2 w-full rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500"
-                    style={{ width: `${answeredStats.pct}%` }}
+                    style={{ width: `${projectCoverage.pct}%` }}
                   />
                 </div>
                 <p className="mt-3 text-xs text-white/65">Current status: {currentStatusLabel}</p>
@@ -1155,23 +738,13 @@ export default function DashboardView() {
                   <h4 className="text-sm font-semibold text-white">Need a tailored quote?</h4>
                   <p className="mt-1 text-sm">
                     If your scope spans multiple brands or requires deeper integrations, drop us a line at{' '}
-                    <a className="text-sky-300 underline-offset-4 hover:underline" href="mailto:hello@businessbooster.ai">hello@businessbooster.ai</a>.
+                    <a className="text-sky-300 underline-offset-4 hover:underline" href="mailto:hello@businessbooster.ai">
+                      hello@businessbooster.ai
+                    </a>
+                    .
                   </p>
-                </li>
-                <li className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <span className="font-semibold text-white">Week 3:</span>
-                  <p className="mt-1 text-xs text-white/65">
-                    Launch, QA across devices, and plug insights into your reporting hub.
-                  </p>
-                </li>
-                <li className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <span className="font-semibold text-white">Week 4:</span>
-                  <p className="mt-1 text-xs text-white/65">
-                    Optimisation sprint with scorecards on booked calls and answered leads.
-                  </p>
-                </li>
-              </ul>
-            </section>
+                </section>
+              </aside>
 
             <div className="grid gap-6 lg:grid-cols-2">
               <section className="rounded-3xl border border-white/10 bg-black/30 p-6 text-white shadow-lg">
