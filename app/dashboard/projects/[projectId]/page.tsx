@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import ProjectEditorView from '../project-editor-view';
 
 interface ProjectWorkspacePageProps {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }
 
 export const metadata: Metadata = {
@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   description: 'Edit onboarding details for a specific launch project.'
 };
 
-export default function ProjectWorkspacePage({ params }: ProjectWorkspacePageProps) {
-  const projectId = params.projectId === 'new' ? null : params.projectId;
+export default async function ProjectWorkspacePage({ params }: ProjectWorkspacePageProps) {
+  const { projectId: rawProjectId } = await params;
+  const projectId = rawProjectId === 'new' ? null : rawProjectId;
   return <ProjectEditorView projectId={projectId} />;
 }
