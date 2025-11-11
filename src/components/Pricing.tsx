@@ -1,41 +1,34 @@
 'use client';
 import { motion } from 'motion/react';
 import { CalendarCheck } from 'lucide-react';
+import {
+  BASE_DEPOSIT_CENTS,
+  SERVICE_LIST,
+  describeSelection,
+  formatCurrency as formatSelectionCurrency
+} from '@/lib/plans';
+
+const fullFunnelSummary = describeSelection({ website: true, ads: true, voice: true });
 
 const tiers = [
+  ...SERVICE_LIST.map(service => ({
+    name: service.name,
+    price: `${formatSelectionCurrency(BASE_DEPOSIT_CENTS)} kickoff • ${formatSelectionCurrency(service.dueAtApprovalCents)} due at approval`,
+    sub: service.ongoingNote,
+    bullets: service.bullets,
+    cta: '#book'
+  })),
   {
-    name: 'Launch',
-    price: '$499 setup',
-    sub: 'Hosting & care $25/mo',
+    name: 'Full Funnel Bundle',
+    price: `${formatSelectionCurrency(BASE_DEPOSIT_CENTS)} kickoff • ${formatSelectionCurrency(fullFunnelSummary.dueAtApprovalCents)} due at approval`,
+    sub: `${fullFunnelSummary.ongoingNotes.join(' • ') || 'Flexible ongoing usage'}`,
     bullets: [
-      'Conversion-ready one-page site with booking',
-      'Copy, proof, and offer aligned to convert',
-      'Speed, analytics, and handoff handled for you',
+      'Website, ads, and AI voice agents launched together.',
+      `Bundle savings: ${formatSelectionCurrency(fullFunnelSummary.discountCents)} off when you activate all three.`,
+      'Unified reporting that ties spend to booked conversations.'
     ],
-    cta: '#book',
-  },
-  {
-    name: 'Launch + Traffic',
-    price: '$1,500 setup',
-    sub: 'Ongoing: 10% of ad spend (no retainer)',
-    bullets: [
-      'Google & Meta campaigns matched to the page',
-      'Weekly trims, insights, and budget protection',
-      'Transparent fees — every dollar accounted for',
-    ],
-    cta: '#book',
-  },
-  {
-    name: 'Full Funnel Automation',
-    price: '$2,900 setup',
-    sub: 'AI receptionist from $99/mo',
-    bullets: [
-      'Everything in Launch + Traffic',
-      '24/7 AI voice agent with warm transfers',
-      'Lead follow-up, summaries, and CRM sync',
-    ],
-    cta: '#book',
-  },
+    cta: '#book'
+  }
 ];
 
 export default function Pricing() {

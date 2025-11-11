@@ -7,6 +7,40 @@ import { Pool, type QueryResult, type QueryResultRow } from 'pg';
 const ADMIN_EMAIL = 'admin@businessbooster.ai';
 const ADMIN_PASSWORD = 'admin123';
 
+const DEFAULT_SERVICES: Array<{
+  key: string;
+  name: string;
+  tagline: string;
+  description: string;
+  dueAtApprovalCents: number;
+  ongoingNote: string;
+}> = [
+  {
+    key: 'website',
+    name: 'Website',
+    tagline: 'Done-for-you conversion site',
+    description: 'Launch a conversion-ready site synced to your calendar and optimized for booked calls.',
+    dueAtApprovalCents: 40000,
+    ongoingNote: '$25/mo hosting & care'
+  },
+  {
+    key: 'ads',
+    name: 'Ads',
+    tagline: 'Google & Meta ad campaigns',
+    description: 'Run aligned search and social campaigns with transparent reporting.',
+    dueAtApprovalCents: 100100,
+    ongoingNote: '10% of ad spend management'
+  },
+  {
+    key: 'voice',
+    name: 'AI Voice Agents',
+    tagline: 'AI voice agents for follow-up',
+    description: 'Answer every lead instantly with AI reception and warm transfers.',
+    dueAtApprovalCents: 140000,
+    ongoingNote: 'Voice agents from $99/mo'
+  }
+];
+
 let schemaInitialised: Promise<void> | null = null;
 let pool: Pool | null = null;
 
@@ -104,6 +138,72 @@ async function createSchema() {
 
   await sql`ALTER TABLE onboardings ALTER COLUMN updated_at SET DEFAULT NOW();`;
   await sql`ALTER TABLE onboardings ALTER COLUMN user_id SET NOT NULL;`;
+
+  await sql`CREATE TABLE IF NOT EXISTS services (
+    key TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    tagline TEXT,
+    description TEXT,
+    due_at_approval_cents INTEGER NOT NULL,
+    ongoing_note TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );`;
+
+  await sql`CREATE TABLE IF NOT EXISTS user_services (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    service_key TEXT NOT NULL REFERENCES services(key) ON DELETE CASCADE,
+    active BOOLEAN NOT NULL DEFAULT FALSE,
+    price_cents INTEGER,
+    ongoing_note TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, service_key)
+  );`;
+
+  for (const service of DEFAULT_SERVICES) {
+    await sql`
+      INSERT INTO services (key, name, tagline, description, due_at_approval_cents, ongoing_note)
+      VALUES (${service.key}, ${service.name}, ${service.tagline}, ${service.description}, ${service.dueAtApprovalCents}, ${service.ongoingNote})
+      ON CONFLICT (key) DO UPDATE
+      SET
+        name = EXCLUDED.name,
+        tagline = EXCLUDED.tagline,
+        description = EXCLUDED.description,
+        due_at_approval_cents = EXCLUDED.due_at_approval_cents,
+        ongoing_note = EXCLUDED.ongoing_note,
+        updated_at = NOW();
+    `;
+  }
+
+  await sql`
+    INSERT INTO user_services (user_id, service_key, active, price_cents, ongoing_note, created_at, updated_at)
+    SELECT u.id, s.key, FALSE, s.due_at_approval_cents, s.ongoing_note, NOW(), NOW()
+    FROM users u
+    CROSS JOIN services s
+    ON CONFLICT (user_id, service_key) DO NOTHING;
+  `;
+
+  await sql`
+    UPDATE user_services us
+    SET active = TRUE, updated_at = NOW()
+    FROM onboardings o
+    WHERE o.user_id = us.user_id AND (o.data->>'plan') = 'launch' AND us.service_key = 'website';
+  `;
+
+  await sql`
+    UPDATE user_services us
+    SET active = TRUE, updated_at = NOW()
+    FROM onboardings o
+    WHERE o.user_id = us.user_id AND (o.data->>'plan') = 'launch-traffic' AND us.service_key IN ('website', 'ads');
+  `;
+
+  await sql`
+    UPDATE user_services us
+    SET active = TRUE, updated_at = NOW()
+    FROM onboardings o
+    WHERE o.user_id = us.user_id AND (o.data->>'plan') = 'full-funnel' AND us.service_key IN ('website', 'ads', 'voice');
+  `;
 
   await sql`CREATE TABLE IF NOT EXISTS payment_requests (
     id UUID PRIMARY KEY,

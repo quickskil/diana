@@ -1,16 +1,8 @@
 // app/api/onboarding/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSessionUser, saveOnboardingForUser, updateOnboardingStatusForUser } from '@/lib/server/auth';
-import { PLAN_LIST } from '@/lib/plans';
+import { DEFAULT_SERVICE_SELECTION, normaliseServiceSelection } from '@/lib/plans';
 import { defaultOnboarding, type OnboardingForm, type OnboardingStatus } from '@/lib/types/user';
-
-// Define the literal union for the plan keys (update as needed)
-type PlanKey = 'launch' | 'launch-traffic' | 'full-funnel';
-
-// Build a set of valid plan keys so we can guard at runtime
-const VALID_PLAN_KEYS = new Set<PlanKey>(
-  PLAN_LIST.map(plan => plan.key as PlanKey)
-);
 
 /** Coerce any unknown value into a string (safe) */
 function toCleanString(v: unknown): string {
@@ -21,7 +13,10 @@ function toCleanString(v: unknown): string {
 function normaliseForm(
   payload: Partial<OnboardingForm> | null | undefined
 ): OnboardingForm {
-  const base: OnboardingForm = { ...defaultOnboarding };
+  const base: OnboardingForm = {
+    ...defaultOnboarding,
+    services: { ...DEFAULT_SERVICE_SELECTION }
+  };
 
   if (!payload) {
     return base;
@@ -29,6 +24,9 @@ function normaliseForm(
 
   // Cast to unknown map so TS doesn’t infer “never”
   const input = payload as Partial<Record<keyof OnboardingForm, unknown>>;
+  const legacyPlan = typeof (payload as Record<string, unknown>)?.plan === 'string'
+    ? String((payload as Record<string, unknown>).plan).trim()
+    : null;
 
   const merged: Partial<OnboardingForm> = { ...base };
 
@@ -36,14 +34,8 @@ function normaliseForm(
   (Object.keys(base) as Array<keyof OnboardingForm>).forEach((key) => {
     if (key in input) {
       const raw = input[key];
-      if (key === 'plan') {
-        // Special handling for plan
-        const s = typeof raw === 'string' ? raw.trim() : toCleanString(raw);
-        if (VALID_PLAN_KEYS.has(s as PlanKey)) {
-          merged.plan = s as PlanKey;
-        } else {
-          merged.plan = defaultOnboarding.plan as PlanKey;
-        }
+      if (key === 'services') {
+        merged.services = normaliseServiceSelection(raw ?? legacyPlan);
       } else {
         // Other fields: just convert to string
         merged[key] = typeof raw === 'string'
@@ -53,7 +45,8 @@ function normaliseForm(
     }
   });
 
-  return merged as OnboardingForm;
+  const services = normaliseServiceSelection((merged as OnboardingForm).services ?? legacyPlan);
+  return { ...merged, services } as OnboardingForm;
 }
 
 /** Safely parse JSON body (fallback to empty object) */

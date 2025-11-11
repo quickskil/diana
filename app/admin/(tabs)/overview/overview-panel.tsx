@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { PLAN_CATALOG, type PlanKey } from '@/lib/plans';
+import { DEFAULT_SERVICE_SELECTION, describeSelection, normaliseServiceSelection } from '@/lib/plans';
 import type { OnboardingProject } from '@/lib/types/user';
 import type { PaymentRecord } from '@/lib/types/payments';
 import { formatDateTime, useAdmin } from '../../admin-context';
@@ -58,6 +58,14 @@ function aggregateRevenue(payments: PaymentRecord[]) {
   );
 }
 
+function getProjectSummary(project: OnboardingProject | null) {
+  if (!project) {
+    return describeSelection(DEFAULT_SERVICE_SELECTION);
+  }
+  const rawSelection = project.data?.services ?? (project.data as unknown as { plan?: string })?.plan ?? null;
+  return describeSelection(normaliseServiceSelection(rawSelection));
+}
+
 function getLatestProjects(projects: OnboardingProject[] = []) {
   return [...projects]
     .sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : a.updatedAt < b.updatedAt ? 1 : 0))
@@ -94,19 +102,20 @@ export default function OverviewPanel() {
   }, [payments]);
 
   const planMix = useMemo(() => {
-    const totals: Partial<Record<PlanKey, number>> = {};
+    const totals = new Map<string, { count: number; label: string; isFullFunnel: boolean }>();
     onboardedClients.forEach(client => {
       client.onboardingProjects.forEach(project => {
-        const key = (project.data?.plan ?? 'launch') as PlanKey;
-        totals[key] = (totals[key] ?? 0) + 1;
+        const summary = getProjectSummary(project);
+        const key = summary.services.join('|') || 'none';
+        if (!totals.has(key)) {
+          totals.set(key, { count: 0, label: summary.label, isFullFunnel: summary.isFullFunnel });
+        }
+        const bucket = totals.get(key)!;
+        bucket.count += 1;
       });
     });
-    return (Object.entries(totals) as [PlanKey, number][])
-      .map(([plan, count]) => ({
-        plan,
-        count,
-        label: PLAN_CATALOG[plan]?.name ?? plan
-      }))
+    return Array.from(totals.entries())
+      .map(([key, value]) => ({ key, ...value }))
       .sort((a, b) => b.count - a.count);
   }, [onboardedClients]);
 
@@ -154,7 +163,7 @@ export default function OverviewPanel() {
               <thead className="text-xs uppercase tracking-wide text-white/60">
                 <tr>
                   <th className="px-4 py-3">Client</th>
-                  <th className="px-4 py-3">Plan</th>
+                  <th className="px-4 py-3">Services</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Updated</th>
                   <th className="px-4 py-3">Next milestone</th>
@@ -169,14 +178,14 @@ export default function OverviewPanel() {
                   </tr>
                 ) : (
                   activeProjects.map(({ client, project }) => {
-                    const planName = PLAN_CATALOG[project.data.plan]?.name ?? project.data.plan;
+                    const summary = getProjectSummary(project);
                     return (
                       <tr key={`${client.id}-${project.id}`} className="hover:bg-white/5">
                         <td className="px-4 py-4">
                           <div className="font-medium text-white">{client.name || client.email}</div>
                           <div className="text-xs text-white/60">{client.company ?? 'Independent'}</div>
                         </td>
-                        <td className="px-4 py-4 text-white/75">{planName}</td>
+                        <td className="px-4 py-4 text-white/75">{summary.label}</td>
                         <td className="px-4 py-4">
                           <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPalette[project.status] || 'bg-white/10 text-white/70'}`}>
                             {statusLabelMap[project.status] ?? project.status}
@@ -195,16 +204,16 @@ export default function OverviewPanel() {
 
         <aside className="space-y-6">
           <div className="rounded-3xl border border-white/10 bg-black/40 p-6 text-white shadow-xl">
-            <h3 className="text-lg font-semibold">Plan mix</h3>
+            <h3 className="text-lg font-semibold">Service mix</h3>
             {planMix.length === 0 ? (
               <p className="mt-3 text-sm text-white/70">No onboarding submissions yet. As clients register you will see the plan distribution here.</p>
             ) : (
               <ul className="mt-4 space-y-3">
                 {planMix.map(entry => (
-                  <li key={entry.plan} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+                  <li key={entry.key} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
                     <div>
                       <p className="text-sm font-semibold text-white">{entry.label}</p>
-                      <p className="text-xs text-white/60">{entry.plan}</p>
+                      <p className="text-xs text-white/60">{entry.isFullFunnel ? 'Full Funnel bundle' : 'Modular selection'}</p>
                     </div>
                     <span className="text-xl font-semibold text-white/80">{entry.count}</span>
                   </li>
