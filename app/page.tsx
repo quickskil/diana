@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Headphones,
 } from "lucide-react";
+import OfferPopup from "@/components/OfferPopup";
 
 const stats = [
   {
@@ -166,17 +167,20 @@ const faqs = [
 
 export default function Page() {
   return (
-    <main className="space-y-12 pb-16 md:space-y-16 md:pb-24">
-      <HeroSection />
-      <StatsSection />
-      <JourneySection />
-      <ServicesSection />
-      <ProofSection />
-      <CommitmentSection />
-      <EngagementTimeline />
-      <CallToActionSection />
-      <FaqSection />
-    </main>
+    <>
+      <main className="space-y-12 pb-16 md:space-y-16 md:pb-24">
+        <HeroSection />
+        <StatsSection />
+        <JourneySection />
+        <ServicesSection />
+        <ProofSection />
+        <CommitmentSection />
+        <EngagementTimeline />
+        <CallToActionSection />
+        <FaqSection />
+      </main>
+      <OfferPopup />
+    </>
   );
 }
 
