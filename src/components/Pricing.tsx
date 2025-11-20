@@ -8,7 +8,7 @@ import {
   formatCurrency as formatSelectionCurrency
 } from '@/lib/plans';
 
-const fullFunnelSummary = describeSelection({ website: true, ads: true, voice: true });
+const fullStackSummary = describeSelection({ website: true, ads: true, voice: true });
 
 const tiers = [
   ...SERVICE_LIST.map(service => ({
@@ -19,12 +19,12 @@ const tiers = [
     cta: '#book'
   })),
   {
-    name: 'Full Funnel Bundle',
-    price: `${formatSelectionCurrency(BASE_DEPOSIT_CENTS)} kickoff • ${formatSelectionCurrency(fullFunnelSummary.dueAtApprovalCents)} due at approval`,
-    sub: `${fullFunnelSummary.ongoingNotes.join(' • ') || 'Flexible ongoing usage'}`,
+    name: 'Full Stack Bundle',
+    price: `${formatSelectionCurrency(BASE_DEPOSIT_CENTS)} kickoff • ${formatSelectionCurrency(fullStackSummary.dueAtApprovalCents)} due at approval`,
+    sub: `${fullStackSummary.ongoingNotes.join(' • ') || 'Flexible ongoing usage'}`,
     bullets: [
       'Website, ads, and AI voice agents launched together.',
-      `Bundle savings: ${formatSelectionCurrency(fullFunnelSummary.discountCents)} off when you activate all three.`,
+      `Bundle savings: ${formatSelectionCurrency(fullStackSummary.discountCents)} off when you activate all three.`,
       'Unified reporting that ties spend to booked conversations.'
     ],
     cta: '#book'

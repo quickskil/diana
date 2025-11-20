@@ -45,29 +45,29 @@ const ITEMS: Item[] = [
   },
   {
     icon: Megaphone,
-    title: 'Meta & Google Ads',
-    desc: 'Full-funnel paid media with creative testing and ROAS tracking.',
+    title: 'Digital Ads & Campaigns',
+    desc: 'Google + Meta ads tuned for booked calls and store visits.',
     href: '/services/google-ads',
-    cta: 'See Ads Plans',
+    cta: 'See Ads Plan',
     bullets: [
-      'Search & PMAX mapped to landing relevance',
-      'Creative testing on Meta (short scene pacing)',
-      'Clear attribution & conversion hygiene'
+      'Search, PMAX, and paid social working together',
+      'Message match from ad to page to booking',
+      'Weekly tuning to lower CPL'
     ],
-    badges: ['PMAX', 'Creative Testing', 'ROAS']
+    badges: ['Google', 'Meta', 'CPL']
   },
   {
     icon: MousePointerClick,
-    title: 'Funnels & CRO',
-    desc: 'High-converting landing pages, A/B tests, heatmaps and UX fixes.',
-    href: '/services/funnels',
-    cta: 'See Funnel Plan',
+    title: 'CRM, Nurture & Automation',
+    desc: 'Lead routing, reminders, and follow-up automations you can edit yourself.',
+    href: '/services/crm-automation',
+    cta: 'See CRM Plan',
     bullets: [
-      'Uncluttered, goal-focused layouts',
-      'A/B tests & heatmaps',
-      'Lead magnets + instant scheduling'
+      'Pipeline setup with clear ownership',
+      'SMS/email reminders and no-show recovery',
+      'Dashboards for source and booking rates'
     ],
-    badges: ['LPs', 'A/B', 'Heatmaps']
+    badges: ['CRM', 'Automation', 'Reporting']
   },
   {
     icon: PhoneCall,

@@ -30,31 +30,31 @@ const CASE_STUDIES = caseStudies.map(({ nicheKey, slug, title, whyThisNiche }) =
 const SERVICES = [
   {
     icon: Rocket,
-    title: 'Websites that convert',
+    title: 'Conversion-Ready Websites',
     href: '/services/websites',
-    blurb: 'Fast, clean pages that guide visitors straight to booking.',
-    chip: 'Start at $499'
+    blurb: 'Fast, clean pages that turn visitors into booked calls.',
+    chip: 'Conversion-first'
   },
   {
     icon: Search,
-    title: 'Google Ads',
+    title: 'Digital Ads & Campaigns',
     href: '/services/google-ads',
-    blurb: 'Be found when intent is highest with hand-tuned campaigns.',
-    chip: 'Simple 10% mgmt'
+    blurb: 'Google + Meta campaigns built for calls and visits.',
+    chip: 'Starting $499'
   },
   {
     icon: Megaphone,
-    title: 'Meta Ads',
+    title: 'Social Ads & Creative',
     href: '/services/meta-ads',
-    blurb: 'Reach more of the right people with creative testing.',
+    blurb: 'Thumb-stopping creative with coordinated paid social.',
     chip: 'Creative help'
   },
   {
     icon: MousePointerClick,
-    title: 'Funnels & CRO',
-    href: '/services/funnels',
-    blurb: 'Clear steps that convert clicks into booked conversations.',
-    chip: 'A/B friendly'
+    title: 'CRM & Automations',
+    href: '/services/crm-automation',
+    blurb: 'Routing, reminders, and follow-up you can adjust yourself.',
+    chip: 'Automation'
   },
   {
     icon: PhoneCall,
@@ -376,7 +376,7 @@ export default function Nav() {
                 <div className="max-h-[min(80svh,30rem)] overflow-y-auto overscroll-contain p-4 space-y-4">
                   <header className="space-y-1">
                     <div className="text-[12px] uppercase tracking-[0.24em] text-white/50">Industry playbooks</div>
-                    <div className="text-white/95 text-lg font-semibold">Voice-first funnels that keep local teams booked</div>
+                    <div className="text-white/95 text-lg font-semibold">Voice-first booking systems that keep local teams booked</div>
                   </header>
                   <div className="grid gap-2.5 md:grid-cols-2">
                     {CASE_STUDIES.map((cs) => (

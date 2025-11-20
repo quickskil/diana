@@ -9,7 +9,7 @@ import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
   title: { template: '%s — Business Booster AI', default: 'Business Booster AI — Futuristic Growth Agency' },
-  description: 'Websites, Meta Ads, Google Ads, funnels, and AI voice receptionists.'
+  description: 'Conversion-ready websites, digital ads, social creative, CRM automation, and AI voice receptionists.'
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
