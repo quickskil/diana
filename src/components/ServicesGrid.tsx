@@ -7,11 +7,12 @@ import {
   PhoneCall,
   Rocket,
   Search,
-  MousePointerClick,
   ArrowRight,
   CalendarCheck,
   CheckCircle2,
   Sparkles,
+  Megaphone,
+  PlayCircle,
 } from "lucide-react";
 import { useCallback, useRef } from "react";
 
@@ -48,7 +49,7 @@ const services: Service[] = [
     title: "Digital Ads & Campaigns",
     href: "/services/google-ads",
     bullets: [
-      "Google + Meta campaigns aligned to your offers",
+      "Google + Meta working together for booked calls",
       "Message match from ad to page to booking",
       "Weekly tuning so spend stays on what books",
     ],
@@ -74,19 +75,19 @@ const services: Service[] = [
     statCaption: "No more missed calls",
   },
   {
-    icon: MousePointerClick,
-    title: "CRM & Automations",
-    href: "/services/crm-automation",
+    icon: Megaphone,
+    title: "Social Ads & Creative Studio",
+    href: "/services/meta-ads",
     bullets: [
-      "Lead routing with clear ownership",
-      "SMS/email reminders and recovery sequences",
-      "Dashboards for source-to-booking clarity",
+      "Hook-led creative that feels native to the feed",
+      "Prospecting + retargeting synced to Google",
+      "Refresh cycles to beat fatigue and keep CPL steady",
     ],
-    cta: "View CRM plan",
-    chip: "Always-on follow-up",
+    cta: "View social plan",
+    chip: "Creative lab",
     chipIcon: Sparkles,
-    stat: "+22% show rate",
-    statCaption: "Consistent reminders",
+    stat: "+18% more booked calls",
+    statCaption: "Angles tested weekly",
   },
 ];
 
@@ -203,21 +204,30 @@ function ServiceCard({
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Link
+              href="/contact"
+              className="btn inline-flex items-center gap-2"
+              aria-label={`Book a call about ${s.title}`}
+            >
+              <CalendarCheck className="size-4" aria-hidden />
+              Schedule a call
+            </Link>
+
+            <Link
+              href="/register"
+              className="btn-ghost inline-flex items-center gap-2"
+              aria-label={`Start onboarding for ${s.title}`}
+            >
+              <PlayCircle className="size-4" aria-hidden />
+              Start onboarding
+            </Link>
+
+            <Link
               href={s.href}
               className="btn-ghost inline-flex items-center gap-2"
               aria-label={`${s.cta}: ${s.title}`}
             >
               <ArrowRight className="size-4" aria-hidden />
               {s.cta}
-            </Link>
-
-            <Link
-              href="/contact"
-              className="btn inline-flex items-center gap-2"
-              aria-label={`Book a call about ${s.title}`}
-            >
-              <CalendarCheck className="size-4" aria-hidden />
-              Book a Call
             </Link>
           </div>
 
