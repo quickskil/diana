@@ -7,6 +7,7 @@ import {
   PhoneCall,
   Rocket,
   Search,
+  MousePointerClick,
   ArrowRight,
   CalendarCheck,
   CheckCircle2,
@@ -29,14 +30,14 @@ type Service = {
 const services: Service[] = [
   {
     icon: Rocket,
-    title: "Funnel Foundation",
+    title: "Conversion-Ready Websites",
     href: "/services/websites",
     bullets: [
-      "Next-gen site build that stays lightning fast",
-      "Proof, offer, CTA, and booking lined up above the fold",
-      "Simple CMS so you can ship updates in minutes",
+      "Lightning-fast pages with proof and clear CTAs",
+      "Localized copy for Dominican Republic buyers",
+      "Booking flows wired to your calendar and CRM",
     ],
-    cta: "View site approach",
+    cta: "View website plan",
     chip: "Launch fast",
     chipIcon: Sparkles,
     stat: "+37% more booked calls",
@@ -44,14 +45,14 @@ const services: Service[] = [
   },
   {
     icon: Search,
-    title: "Traffic Engine",
+    title: "Digital Ads & Campaigns",
     href: "/services/google-ads",
     bullets: [
-      "Google Ads + Meta Ads offered separately or bundled",
-      "Message match from keyword or creative to the page",
-      "Weekly tuning keeps budget on the clicks that book",
+      "Google + Meta campaigns aligned to your offers",
+      "Message match from ad to page to booking",
+      "Weekly tuning so spend stays on what books",
     ],
-    cta: "View traffic plan",
+    cta: "View ads plan",
     chip: "Always optimizing",
     chipIcon: CheckCircle2,
     stat: "-28% cost per lead",
@@ -59,7 +60,7 @@ const services: Service[] = [
   },
   {
     icon: PhoneCall,
-    title: "Lead Response",
+    title: "AI Voice Agent",
     href: "/services/voice-agents",
     bullets: [
       "AI voice receptionist answers in seconds",
@@ -71,6 +72,21 @@ const services: Service[] = [
     chipIcon: PhoneCall,
     stat: "93% answer rate",
     statCaption: "No more missed calls",
+  },
+  {
+    icon: MousePointerClick,
+    title: "CRM & Automations",
+    href: "/services/crm-automation",
+    bullets: [
+      "Lead routing with clear ownership",
+      "SMS/email reminders and recovery sequences",
+      "Dashboards for source-to-booking clarity",
+    ],
+    cta: "View CRM plan",
+    chip: "Always-on follow-up",
+    chipIcon: Sparkles,
+    stat: "+22% show rate",
+    statCaption: "Consistent reminders",
   },
 ];
 
