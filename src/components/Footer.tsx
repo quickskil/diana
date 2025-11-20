@@ -83,11 +83,10 @@ export default function Footer() {
         <nav aria-label="Services">
           <h3 className="text-sm font-semibold text-white/85">Services</h3>
           <ul className="mt-3 space-y-2 text-sm text-white/75">
-            {[
+            {[ 
               { href: "/services/websites", label: "Websites that Convert" },
               { href: "/services/google-ads", label: "Digital Ads" },
               { href: "/services/meta-ads", label: "Social Ads" },
-              { href: "/services/crm-automation", label: "CRM & Automations" },
               { href: "/services/voice-agents", label: "AI Voice Receptionists" },
             ].map((l) => (
               <li key={l.href}>

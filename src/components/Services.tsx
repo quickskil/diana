@@ -7,7 +7,6 @@ import Link from 'next/link';
 import {
   Rocket,
   Megaphone,
-  MousePointerClick,
   PhoneCall,
   ChevronDown,
   ShieldCheck,
@@ -17,6 +16,7 @@ import {
   Sparkles,
   BadgeDollarSign,
   Headphones,
+  PlayCircle,
 } from 'lucide-react';
 
 type Item = {
@@ -57,19 +57,6 @@ const ITEMS: Item[] = [
     badges: ['Google', 'Meta', 'CPL']
   },
   {
-    icon: MousePointerClick,
-    title: 'CRM, Nurture & Automation',
-    desc: 'Lead routing, reminders, and follow-up automations you can edit yourself.',
-    href: '/services/crm-automation',
-    cta: 'See CRM Plan',
-    bullets: [
-      'Pipeline setup with clear ownership',
-      'SMS/email reminders and no-show recovery',
-      'Dashboards for source and booking rates'
-    ],
-    badges: ['CRM', 'Automation', 'Reporting']
-  },
-  {
     icon: PhoneCall,
     title: 'AI Voice Receptionists',
     desc: '24/7 call answering, scheduling & warm-transfers powered by OpenAI.',
@@ -81,6 +68,19 @@ const ITEMS: Item[] = [
       'SIP/WebRTC + CRM integrations'
     ],
     badges: ['Realtime', 'Scheduling', 'Warm Transfer']
+  },
+  {
+    icon: Megaphone,
+    title: 'Social Ads & Creative Studio',
+    desc: 'Hook-led Meta and TikTok creative that feeds the pipeline.',
+    href: '/services/meta-ads',
+    cta: 'See Social Plan',
+    bullets: [
+      'Bilingual hooks, scripts, and subtitles',
+      'Prospecting + retargeting paired to Google',
+      'Rapid refresh cycles to beat fatigue'
+    ],
+    badges: ['Creative', 'CPL', 'Testing']
   }
 ];
 
@@ -96,7 +96,7 @@ export default function Services() {
           Websites, ads, and AI voice receptionists working together to capture demand and book calls.
         </p>
 
-        <div role="list" className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div role="list" className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {ITEMS.map((it, i) => (
             <ServiceCard
               key={it.title}
@@ -118,6 +118,10 @@ export default function Services() {
             <Headphones className="size-4" aria-hidden />
             Try Voice Demo
           </a>
+          <Link href="/register" className="btn inline-flex items-center gap-2">
+            <PlayCircle className="size-4" aria-hidden />
+            Start onboarding
+          </Link>
         </div>
       </div>
     </section>

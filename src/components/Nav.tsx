@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import {
   Menu, X, ChevronDown,
-  Rocket, Search, Megaphone, MousePointerClick, PhoneCall,
+  Rocket, Search, Megaphone, PhoneCall,
   Headphones, CalendarCheck, ArrowRight, LogIn, LogOut, LayoutDashboard
 } from 'lucide-react';
 import Image from 'next/image';
@@ -48,13 +48,6 @@ const SERVICES = [
     href: '/services/meta-ads',
     blurb: 'Thumb-stopping creative with coordinated paid social.',
     chip: 'Creative help'
-  },
-  {
-    icon: MousePointerClick,
-    title: 'CRM & Automations',
-    href: '/services/crm-automation',
-    blurb: 'Routing, reminders, and follow-up you can adjust yourself.',
-    chip: 'Automation'
   },
   {
     icon: PhoneCall,

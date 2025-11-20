@@ -1,4 +1,16 @@
 import type { Metadata } from "next";
+import {
+  Aperture,
+  Camera,
+  Clapperboard,
+  Cpu,
+  Folders,
+  LayoutGrid,
+  LineChart,
+  Palette,
+  Share2,
+  Shuffle,
+} from "lucide-react";
 import { ServicePageTemplate, type ServicePageContent } from "@/components/ServicePageTemplate";
 
 export const metadata: Metadata = {
@@ -32,6 +44,97 @@ const content: ServicePageContent = {
   pricing: "Custom packages based on creative volume",
   integrationNote:
     "Combine Social Ads with the rest of the stack: Ads bring attention, the Website converts, and the Voice Agent books and follows up — Ads + Voice Agent + Website working in sync.",
+  heroBadges: ["Creative + media in one room", "Hook testing weekly", "Playbooks for bilingual markets"],
+  stats: [
+    {
+      label: "Creative velocity",
+      value: "6-10/mo",
+      detail: "Fresh cuts and variants shipped every cycle to beat fatigue",
+      icon: Clapperboard,
+    },
+    {
+      label: "CPL stability",
+      value: "Within 10%",
+      detail: "Offer sequencing and retargeting guardrails keep lead costs predictable",
+      icon: LineChart,
+    },
+    {
+      label: "Approval speed",
+      value: "48 hrs",
+      detail: "Async briefs and annotated previews keep you in the loop without meetings",
+      icon: Folders,
+    },
+  ],
+  playbooks: [
+    {
+      title: "Creative engine",
+      description: "Angles that feel native to the feed",
+      items: [
+        "Hook library with bilingual scripts and captions",
+        "UGC-style filming guidance and editing templates",
+        "Motion, subtitles, and CTA overlays ready for Meta/TikTok",
+      ],
+      icon: Camera,
+    },
+    {
+      title: "Testing framework",
+      description: "Structured experiments across the funnel",
+      items: [
+        "Prospecting vs. retargeting mixes that mirror Google themes",
+        "Headline, thumb, and CTA testing with clear holdouts",
+        "Learning agendas and weekly scorecards",
+      ],
+      icon: Aperture,
+    },
+    {
+      title: "Operations & governance",
+      description: "Keep campaigns safe and on-brand",
+      items: [
+        "Brand kits, fonts, and color systems baked into templates",
+        "Comments and approvals inside the dashboard",
+        "Guardrails for compliance and local platform policies",
+      ],
+      icon: Palette,
+    },
+  ],
+  steps: [
+    {
+      title: "Angle mapping",
+      description: "Pick offers, proof, and hooks aligned to your best customers.",
+      duration: "Week 1",
+    },
+    {
+      title: "Produce & prep",
+      description: "Capture UGC, edit variants, and package assets for Meta/TikTok.",
+      duration: "Week 1-2",
+    },
+    {
+      title: "Launch & learn",
+      description: "Deploy campaigns with mirrored structures to Google for clean data.",
+      duration: "Week 2",
+    },
+    {
+      title: "Refresh & scale",
+      description: "Ship new angles weekly and rebalance budgets based on CPL and bookings.",
+      duration: "Ongoing",
+    },
+  ],
+  proofPoints: [
+    "Storyboards and subtitles for accessibility and compliance",
+    "Asset QA for ratio, pacing, and message match",
+    "Brand-safe blocklists and placement controls",
+    "Post-purchase and lead quality surveys to validate angles",
+  ],
+  toolkit: [
+    { name: "Meta & TikTok Ads", detail: "Prospecting + retargeting", icon: Share2 },
+    { name: "Creative templates", detail: "Hook, thumb, and CTA systems", icon: LayoutGrid },
+    { name: "UGC production", detail: "Guides and editing support", icon: Clapperboard },
+    { name: "Variant testing", detail: "Holdouts and refresh cadences", icon: Shuffle },
+    { name: "Brand kits", detail: "Fonts, colors, and safe words", icon: Palette },
+    { name: "Performance reporting", detail: "CPL, bookings, and retention", icon: Cpu },
+  ],
+  ctaNote:
+    "Approve hooks, upload footage, and see preview links before anything goes live. We keep creative and media in one dashboard so you always know what is running.",
 };
 
 export default function Page() {
