@@ -62,7 +62,9 @@ export default function Page() {
             We set up Google Ads so you <b>show up when people are searching</b>,
             send them to the right page, and turn clicks into{" "}
             <b>booked calls</b>. Search + PMAX find demand. YouTube builds
-            trust. Your website does the converting.
+            trust. Your website does the converting. Run Google-only or pair it
+            with our Meta Ads program — we package them separately but connect
+            the creative so both channels compound.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/pricing" className="btn inline-flex items-center gap-2">

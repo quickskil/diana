@@ -59,11 +59,12 @@ export default function Page() {
         <header className="space-y-4">
           <h1 id="svc-title">Websites that convert</h1>
           <p className="lead max-w-3xl">
-            We build clean, fast pages that make it easy to{" "}
-            <b>book a call</b>. Then we add traffic from{" "}
-            <b>Google</b> & <b>Meta</b> and connect an{" "}
-            <b>AI voice receptionist</b> — so you never miss a lead, day or
-            night.
+            We design brand-new sites on our fastest stack for silky user
+            interaction and <b>lead generation</b>. Visitors land on a page that
+            loads instantly, sees clear proof, and can <b>book a call</b> in a few
+            taps. Add <b>Google</b> or <b>Meta</b> ads (or both) and an
+            <b> AI voice receptionist</b> that answers and transfers calls so you
+            never miss a lead, day or night.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/pricing" className="btn inline-flex items-center gap-2">
