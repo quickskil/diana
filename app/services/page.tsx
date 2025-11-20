@@ -26,15 +26,16 @@ export default function Page() {
 
       <div className="container space-y-10">
         <header className="space-y-4 text-center max-w-3xl mx-auto">
-          <h1 id="services-title">Pick your starting point, or let us run it all</h1>
+          <h1 id="services-title">Every service is its own product — or bundle them all</h1>
           <p className="text-white/70">
-            Every service plugs into the same pipeline. Grab the piece you need or hand over the full funnel — we’ll keep the
-            tone friendly and the results easy to read.
+            Launch a lightning-fast website, pick Google or Meta ads (or both), and add an AI voice receptionist that answers
+            and transfers calls. Each offer is packaged for quick rollout, yet plugs into the same pipeline so you can mix and
+            match without losing momentum.
           </p>
           <div className="flex items-center justify-center gap-2 flex-wrap text-sm text-white/75">
-            <span className="pill">Launch fast</span>
-            <span className="pill">Plain-language reporting</span>
-            <span className="pill">24/7 follow-up</span>
+            <span className="pill">Fast site builds</span>
+            <span className="pill">Google & Meta — sold separately or together</span>
+            <span className="pill">AI receptionist with warm transfers</span>
           </div>
         </header>
 

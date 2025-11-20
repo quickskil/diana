@@ -59,7 +59,10 @@ export default function Page() {
           </h1>
           <p className="lead max-w-3xl">
             We don’t chase “likes.” We build a simple system that finds the right people,
-            earns their trust, and gets them to <b>book a call</b>.
+            earns their trust, and gets them to <b>book a call</b>. Choose Meta as a
+            standalone growth lane or bundle it with our Google Ads program — we
+            market them separately but sync the offer so both audiences move toward
+            booking.
           </p>
 
           <div className="flex flex-wrap gap-2">
