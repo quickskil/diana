@@ -17,7 +17,6 @@ import {
   ArrowRight,
   Headphones,
 } from "lucide-react";
-import OfferPopup from "@/components/OfferPopup";
 
 const stats = [
   {
@@ -179,7 +178,6 @@ export default function Page() {
         <CallToActionSection />
         <FaqSection />
       </main>
-      <OfferPopup />
     </>
   );
 }
