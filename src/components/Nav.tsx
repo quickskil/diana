@@ -6,8 +6,7 @@ import { useMemo } from 'react';
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/schedule', label: 'Schedule' },
-  { href: '/admin', label: 'Admin' }
+  { href: '/schedule', label: 'Schedule' }
 ];
 
 export const Nav = () => {
@@ -16,8 +15,8 @@ export const Nav = () => {
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-slate-800/70 bg-slate-950/70 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <Link href="/" className="font-semibold tracking-tight text-lg text-white">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+        <Link href="/" className="text-lg font-semibold tracking-tight text-white">
           Diana Tolu Tutoring
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium text-slate-200 md:flex">
@@ -35,12 +34,9 @@ export const Nav = () => {
           <Link className="button-secondary" href="/schedule">
             View availability
           </Link>
-          <a
-            className="button-primary"
-            href="#book"
-          >
+          <Link className="button-primary" href="/schedule">
             Book a session
-          </a>
+          </Link>
         </div>
       </div>
     </header>
