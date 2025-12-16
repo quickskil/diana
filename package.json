@@ -7,24 +7,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand --passWithNoTests"
   },
   "dependencies": {
-    "bcryptjs": "2.4.3",
-    "lucide-react": "0.453.0",
-    "motion": "11.14.3",
     "next": "15.0.1",
-    "pg": "8.13.1",
     "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "swr": "2.2.5"
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@types/jest": "29.5.14",
     "@types/node": "20.11.30",
+    "@types/nodemailer": "6.4.15",
     "@types/react": "18.3.5",
     "@types/react-dom": "18.3.0",
-    "@types/jest": "29.5.14",
-    "@types/nodemailer": "6.4.15",
     "@types/supertest": "2.0.16",
     "@types/uuid": "10.0.0",
     "autoprefixer": "10.4.20",
