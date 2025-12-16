@@ -5,14 +5,14 @@ export const Biography = () => (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
       <div className="space-y-5">
         <p className="label">Biography</p>
-        <h2 className="text-3xl font-bold text-[#1f274b] md:text-4xl">Mentorship shaped by medals and heart</h2>
-        <p className="text-base text-[#4b5070]">
+        <h2 className="text-3xl font-bold text-slate-900 md:text-4xl">Mentorship shaped by medals and heart</h2>
+        <p className="text-base text-slate-800">
           Diana Tolu is a Romanian mathematician studying Mathematics at UCLA. She represented Romania on the world stage, earning a Silver Medal at the International Mathematical Olympiad (IMO) and multiple medals— including Gold—at the European Girls’ Mathematical Olympiad (EGMO).
         </p>
-        <p className="text-base text-[#4b5070]">
+        <p className="text-base text-slate-800">
           At UCLA she balances rigorous coursework with mentoring peers, earning a Top 200 finish in the William Lowell Putnam Mathematical Competition. Students love how she translates contest intuition into step-by-step explanations that click for coursework in proofs, analysis, linear algebra, combinatorics, and geometry.
         </p>
-        <p className="text-base text-[#4b5070]">
+        <p className="text-base text-slate-800">
           Sessions feel like collaborative workshops: brainstorming first, then polished write-ups, then reflection on how to grow ten times faster next week. Expect positivity, accountability, and study plans tailored to your next big milestone.
         </p>
         <div className="grid gap-2 rounded-3xl border border-[#f3bfd8] bg-[#fff4fa]/70 p-5 text-sm text-[#4b5070] shadow-sm shadow-[#f7d7e8]/70">
