@@ -1,165 +1,46 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 :root {
-  --ring: 255 92% 60%;
-  --glow-violet: rgba(139, 92, 246, 0.85);
-  --glow-sky: rgba(56, 189, 248, 0.75);
-  --glow-emerald: rgba(52, 211, 153, 0.7);
+  color-scheme: dark;
 }
 
-html,
 body {
-  @apply bg-base text-white antialiased;
-  background-color: #0b1220;
-  background-image: none;
+  @apply antialiased min-h-screen bg-slate-950 text-slate-50;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.container {
-  @apply mx-auto max-w-7xl px-6;
+a {
+  @apply text-indigo-300 hover:text-indigo-200 transition;
 }
 
-.card {
-  position: relative;
-  border-radius: 1.5rem;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  box-shadow: none;
-  backdrop-filter: blur(6px);
+.button-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:bg-indigo-400;
 }
 
-.radiant-card {
-  position: relative;
-  border-radius: 1.75rem;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(10, 18, 35, 0.85);
-}
-
-.radiant-card > .card {
-  border-radius: inherit;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.btn {
-  @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 font-semibold text-white transition;
-  background: #2563eb;
-  box-shadow: none;
-}
-
-.btn:hover {
-  background: #1d4ed8;
-}
-
-.btn-ghost {
-  @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 font-semibold text-white/85 transition;
-  background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-}
-
-.btn-ghost:hover {
-  background: rgba(148, 163, 184, 0.08);
-}
-
-.input {
-  @apply w-full rounded-2xl border border-white/15 bg-black/50 px-4 py-2.5 text-sm text-white outline-none transition;
-  @apply focus:ring-2 focus:ring-brand;
-}
-
-.badge {
-  @apply inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80;
-}
-
-.pill {
-  @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium text-white/80;
-}
-
-.pill-grid {
-  @apply flex flex-wrap items-center gap-2;
+.button-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-indigo-500 hover:text-white;
 }
 
 .section {
-  @apply py-6 md:py-12;
+  @apply py-12 md:py-16;
 }
 
-h1 {
-  @apply text-4xl font-extrabold leading-tight tracking-tight md:text-6xl;
+.card-surface {
+  @apply rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/40;
 }
 
-h2 {
-  @apply text-3xl font-bold md:text-4xl;
+.grid-accent {
+  background-image: radial-gradient(circle at 10% 20%, rgba(129, 140, 248, 0.22), transparent 32%),
+    radial-gradient(circle at 90% 20%, rgba(56, 189, 248, 0.2), transparent 30%),
+    radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.18), transparent 38%);
 }
 
-p.lead {
-  @apply text-lg text-white/80 md:text-xl;
+.label {
+  @apply text-xs uppercase tracking-[0.25em] text-indigo-200/80;
 }
 
-.hero-grid {
-  position: relative;
-  background: radial-gradient(circle at 20% 20%, rgba(124, 58, 237, 0.18) 0, transparent 45%),
-    radial-gradient(circle at 80% 30%, rgba(56, 189, 248, 0.16) 0, transparent 45%),
-    radial-gradient(circle at 60% 80%, rgba(52, 211, 153, 0.12) 0, transparent 45%);
+.input {
+  @apply w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-sm text-white shadow-inner shadow-black/40 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400;
 }
-
-.hero-grid:after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse at center, #000 50%, transparent 82%);
-  pointer-events: none;
-}
-
-.accordion-item {
-  @apply border-b border-white/10;
-}
-
-.accordion-q {
-  @apply w-full text-left py-3;
-}
-
-.accordion-a {
-  @apply pb-4 text-white/70;
-}
-
-.sticky-cta {
-  @apply fixed bottom-6 right-6 z-40;
-}
-
-.progress-track {
-  position: relative;
-  height: 0.5rem;
-  width: 100%;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.progress-bar {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: #2563eb;
-  box-shadow: none;
-}
-
-.mini-chart {
-  position: relative;
-  display: grid;
-  place-items: center;
-  padding: 0.75rem;
-  border-radius: 1.25rem;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-}
-
-.mini-chart svg {
-  position: relative;
-  z-index: 1;
-}
-
-

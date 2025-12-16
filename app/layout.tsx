@@ -1,27 +1,40 @@
-
-import './globals.css';
 import type { Metadata } from 'next';
+import './globals.css';
 import { ReactNode } from 'react';
-import Nav from '@/components/Nav';
-import Footer from '@/components/Footer';
-import StickyBook from '@/components/StickyBook';
-import { AuthProvider } from '@/context/AuthContext';
+import { Nav } from '@/components/Nav';
+import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: { template: '%s — Business Booster AI', default: 'Business Booster AI — Futuristic Growth Agency' },
-  description: 'Conversion-ready websites, digital ads, social creative, CRM automation, and AI voice receptionists.'
+  metadataBase: new URL('https://diana-tolu.example.com'),
+  title: {
+    default: 'Diana Tolu — UCLA Mathematics Tutor',
+    template: '%s — Diana Tolu Tutoring'
+  },
+  description:
+    'Book one-on-one mathematics tutoring with Diana Tolu, UCLA mathematics student, IMO Silver Medalist, EGMO Gold Medalist, and Putnam Top 200 performer.',
+  openGraph: {
+    title: 'Diana Tolu — Personal Mathematics Tutor',
+    description:
+      'International medalist and UCLA mathematics student offering tailored tutoring sessions for Olympiad, university, and competition prep.',
+    url: 'https://diana-tolu.example.com',
+    siteName: 'Diana Tolu Tutoring',
+    locale: 'en_US',
+    type: 'website'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Diana Tolu — Personal Mathematics Tutor',
+    description: 'Book dedicated one-on-one math tutoring with an IMO and EGMO medalist.'
+  }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <AuthProvider>
-          <Nav />
-          {children}
-          <Footer />
-          <StickyBook />
-        </AuthProvider>
+      <body className="bg-slate-950 text-slate-50">
+        <Nav />
+        <main>{children}</main>
+        <Footer />
       </body>
     </html>
   );
