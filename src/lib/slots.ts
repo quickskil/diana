@@ -1,4 +1,4 @@
-import { addDays, set, startOfDay } from 'date-fns';
+import { addDays, setTimeParts, startOfDay } from './date-utils';
 import { prisma } from './prisma';
 
 export async function ensureBaseAvailability() {
@@ -9,8 +9,8 @@ export async function ensureBaseAvailability() {
   const creationPromises = Array.from({ length: 7 }).flatMap((_, index) => {
     const day = addDays(today, index + 1);
     const slots = [
-      set(day, { hours: 16, minutes: 0, seconds: 0, milliseconds: 0 }),
-      set(day, { hours: 18, minutes: 0, seconds: 0, milliseconds: 0 })
+      setTimeParts(day, { hours: 16, minutes: 0, seconds: 0, milliseconds: 0 }),
+      setTimeParts(day, { hours: 18, minutes: 0, seconds: 0, milliseconds: 0 })
     ];
 
     return slots.map((startTime) =>
