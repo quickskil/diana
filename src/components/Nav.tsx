@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
+import Image from 'next/image';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -14,15 +15,17 @@ export const Nav = () => {
   const active = useMemo(() => pathname || '/', [pathname]);
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-rose-100 bg-white/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 w-full border-b border-[#f3bfd8] bg-white/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-rose-300 to-rose-500 shadow-lg shadow-rose-200/70" />
+          <div className="relative h-12 w-12 overflow-hidden rounded-2xl bg-white shadow-md shadow-[#f6c9e0]/60">
+            <Image src="/logo.png" alt="Diana Tolu Tutoring logo" fill sizes="48px" className="object-contain p-1.5" />
+          </div>
           <div>
-            <Link href="/" className="text-lg font-semibold tracking-tight text-rose-700">
+            <Link href="/" className="text-lg font-semibold tracking-tight text-[#1f274b]">
               Diana Tolu Tutoring
             </Link>
-            <p className="text-xs text-slate-600">Competition-tested math guidance with tutor energy</p>
+            <p className="text-xs text-[#5b6185]">Warm, competition-tested math guidance</p>
           </div>
         </div>
         <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
@@ -30,7 +33,7 @@ export const Nav = () => {
             <Link
               key={link.href}
               href={link.href}
-              className={`transition hover:text-rose-700 ${active === link.href ? 'text-rose-500' : 'text-slate-500'}`}
+              className={`transition hover:text-[#e1498d] ${active === link.href ? 'text-[#e1498d]' : 'text-slate-500'}`}
             >
               {link.label}
             </Link>

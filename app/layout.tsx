@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="text-slate-800">
+      <body className="text-[#1f274b]">
         <Nav />
         <main>{children}</main>
         <Footer />

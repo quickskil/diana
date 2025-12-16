@@ -29,33 +29,33 @@ const offerings = [
 ];
 
 export const Offerings = () => (
-  <section className="section bg-rose-50/60">
+  <section className="section bg-[#fff2f8]/70">
     <div className="mx-auto max-w-6xl px-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="label">Sessions</p>
-          <h2 className="text-3xl font-bold text-slate-900 md:text-4xl">What to expect in your time with Diana</h2>
+          <h2 className="text-3xl font-bold text-[#1f274b] md:text-4xl">What to expect in your time with Diana</h2>
         </div>
         <span className="pill">More clarity. More calm. More math wins.</span>
       </div>
       <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
         {offerings.map((offering) => (
-          <div key={offering.title} className="card-surface space-y-4">
+          <div key={offering.title} className="card-surface space-y-4 bg-white/95">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-slate-900">{offering.title}</h3>
-              <span className="rounded-full bg-rose-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-700">
+              <h3 className="text-xl font-semibold text-[#1f274b]">{offering.title}</h3>
+              <span className="rounded-full bg-[#ffe1f1] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#e1498d]">
                 Tutoring ready
               </span>
             </div>
-            <ul className="space-y-2 text-sm text-slate-700">
+            <ul className="space-y-2 text-sm text-[#4b5070]">
               {offering.items.map((item) => (
                 <li key={item} className="flex gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-gradient-to-r from-rose-400 to-orange-300" />
+                  <span className="mt-1 h-2 w-2 rounded-full bg-gradient-to-r from-[#e1498d] to-[#f7a6d1]" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[#5b6185]">
               Each package starts with a short calibration chat so you know exactly how the next sessions will flow.
             </p>
           </div>
