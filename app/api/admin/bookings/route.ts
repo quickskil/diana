@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, Slot, Booking } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   const adminKey = request.headers.get('x-admin-key');
@@ -7,13 +7,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const bookings = await prisma.booking.findMany({
+  const bookings = (await prisma.booking.findMany({
     include: { slot: true },
     orderBy: { createdAt: 'desc' }
-  });
+  })) as (Booking & { slot: Slot })[];
+
+  type BookingWithSlot = Booking & { slot: Slot };
 
   return NextResponse.json({
-    bookings: bookings.map((booking) => ({
+    bookings: bookings.map((booking: BookingWithSlot) => ({
       id: booking.id,
       studentName: booking.studentName,
       studentEmail: booking.studentEmail,

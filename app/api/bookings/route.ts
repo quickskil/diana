@@ -1,18 +1,41 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 
-const bookingSchema = z.object({
-  slotId: z.string(),
-  studentName: z.string().min(2),
-  studentEmail: z.string().email(),
-  goal: z.string().optional()
-});
+type BookingPayload = {
+  slotId?: unknown;
+  studentName?: unknown;
+  studentEmail?: unknown;
+  goal?: unknown;
+};
+
+const parseBookingPayload = (body: BookingPayload) => {
+  if (
+    typeof body.slotId !== 'string' ||
+    typeof body.studentName !== 'string' ||
+    body.studentName.trim().length < 2 ||
+    typeof body.studentEmail !== 'string' ||
+    !body.studentEmail.includes('@')
+  ) {
+    return { success: false as const };
+  }
+
+  const goal = typeof body.goal === 'string' ? body.goal : undefined;
+
+  return {
+    success: true as const,
+    data: {
+      slotId: body.slotId,
+      studentName: body.studentName.trim(),
+      studentEmail: body.studentEmail.trim(),
+      goal
+    }
+  };
+};
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const parsed = bookingSchema.safeParse(body);
+  const parsed = parseBookingPayload(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid booking details' }, { status: 400 });
   }

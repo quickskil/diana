@@ -1,6 +1,6 @@
 'use client';
 
-import { format, parseISO } from 'date-fns';
+import { format, parseISO } from '@/lib/date-utils';
 import { Slot } from '@/types';
 
 type Props = {

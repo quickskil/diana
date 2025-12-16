@@ -2,7 +2,7 @@
 
 import useSWR from 'swr';
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format } from '@/lib/date-utils';
 
 type Booking = {
   id: string;

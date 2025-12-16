@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { isBefore } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { isBefore } from '@/lib/date-utils';
+import { prisma, Booking, Reminder, Slot } from '@/lib/prisma';
 import { reminderTemplate, sendEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
@@ -9,12 +9,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const pending = await prisma.reminder.findMany({
+  const pending = (await prisma.reminder.findMany({
     where: { sent: false },
     include: { booking: { include: { slot: true } } }
-  });
+  })) as (Reminder & { booking: Booking & { slot: Slot } })[];
 
-  const due = pending.filter((reminder) => isBefore(reminder.sendAt, new Date()));
+  type ReminderWithBooking = Reminder & { booking: Booking & { slot: Slot } };
+
+  const due = pending.filter((reminder: ReminderWithBooking) => isBefore(reminder.sendAt, new Date()));
   let sentCount = 0;
 
   for (const reminder of due) {

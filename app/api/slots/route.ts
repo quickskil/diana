@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureBaseAvailability } from '@/lib/slots';
-import { z } from 'zod';
 
-const slotSchema = z.object({ start: z.string(), end: z.string() });
+type SlotPayload = { start?: unknown; end?: unknown };
+
+const parseSlotPayload = (body: SlotPayload) => {
+  if (typeof body.start !== 'string' || typeof body.end !== 'string') {
+    return { success: false as const };
+  }
+
+  return { success: true as const, data: { start: body.start, end: body.end } };
+};
 
 export async function GET() {
   await ensureBaseAvailability();
@@ -18,7 +25,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const parsed = slotSchema.safeParse(body);
+  const parsed = parseSlotPayload(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }

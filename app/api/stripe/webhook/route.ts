@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { prisma } from '@/lib/prisma';
+import { prisma, Booking, Slot } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 import { bookingConfirmationTemplate, receiptTemplate, sendEmail } from '@/lib/email';
-import { subHours } from 'date-fns';
+import { subHours } from '@/lib/date-utils';
+
+type CheckoutSession = {
+  metadata?: Record<string, string>;
+  payment_intent?: string | null;
+};
+
+type PaymentIntent = {
+  metadata?: Record<string, string>;
+};
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -14,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Webhook not configured' }, { status: 400 });
   }
 
-  let event: Stripe.Event;
+  let event: { type: string; data: { object: unknown } };
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
@@ -22,20 +30,20 @@ export async function POST(request: Request) {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
+    const session = event.data.object as CheckoutSession;
     const bookingId = session.metadata?.bookingId;
     if (!bookingId) {
       return NextResponse.json({ received: true });
     }
 
-    const booking = await prisma.booking.update({
+    const booking = (await prisma.booking.update({
       where: { id: bookingId },
       data: {
         status: 'CONFIRMED',
         paymentIntentId: session.payment_intent?.toString() || null
       },
       include: { slot: true }
-    });
+    })) as Booking & { slot: Slot };
 
     await prisma.slot.update({ where: { id: booking.slotId }, data: { isBooked: true } });
 
@@ -45,7 +53,8 @@ export async function POST(request: Request) {
     await prisma.reminder.create({
       data: {
         bookingId: booking.id,
-        sendAt: subHours(booking.slot.start, 24)
+        sendAt: subHours(booking.slot.start, 24),
+        sent: false
       }
     });
 
@@ -67,7 +76,7 @@ export async function POST(request: Request) {
   }
 
   if (event.type === 'payment_intent.payment_failed') {
-    const intent = event.data.object as Stripe.PaymentIntent;
+    const intent = event.data.object as PaymentIntent;
     const bookingId = intent.metadata?.bookingId;
     if (bookingId) {
       await prisma.booking.update({ where: { id: bookingId }, data: { status: 'CANCELLED' } });
