@@ -1,26 +1,25 @@
 export const Biography = () => (
-  <section id="biography" className="section bg-slate-950">
+  <section id="biography" className="section bg-slate-950/80">
     <div className="mx-auto grid max-w-6xl gap-10 px-4 lg:grid-cols-2 lg:items-start">
-      <div className="space-y-4">
+      <div className="space-y-5">
         <p className="label">Biography</p>
-        <h2 className="text-3xl font-bold text-white md:text-4xl">Mentor with international credentials</h2>
+        <h2 className="text-3xl font-bold text-white md:text-4xl">Mentorship shaped by medals and heart</h2>
         <p className="text-base text-slate-200">
-          Diana Tolu is a Romanian mathematician studying Mathematics at the University of California, Los Angeles. She
-          represented Romania on the world stage, earning a Silver Medal at the International Mathematical Olympiad (IMO) and
-          multiple medals—including a Gold—at the European Girls’ Mathematical Olympiad (EGMO).
+          Diana Tolu is a Romanian mathematician studying Mathematics at UCLA. She represented Romania on the world stage, earning
+          a Silver Medal at the International Mathematical Olympiad (IMO) and multiple medals— including Gold—at the European
+          Girls’ Mathematical Olympiad (EGMO).
         </p>
         <p className="text-base text-slate-200">
-          At UCLA she balances rigorous coursework with mentoring peers, and her problem-solving depth led to a Top 200 finish in
-          the William Lowell Putnam Mathematical Competition. Diana is known for translating contest intuition into clear,
-          university-ready explanations that help students thrive in proofs, analysis, linear algebra, combinatorics, and geometry.
+          At UCLA she balances rigorous coursework with mentoring peers, earning a Top 200 finish in the William Lowell Putnam
+          Mathematical Competition. Students love how she translates contest intuition into step-by-step explanations that click
+          for coursework in proofs, analysis, linear algebra, combinatorics, and geometry.
         </p>
         <p className="text-base text-slate-200">
-          Sessions emphasize creative strategies, precise mathematical writing, and calm coaching. Whether you&apos;re aiming for a
-          medal, strengthening fundamentals, or preparing for graduate-level study, Diana adapts the pace and structure so each
-          meeting is focused, encouraging, and outcome-driven.
+          Sessions feel like collaborative workshops: brainstorming first, then polished write-ups, then reflection on how to grow
+          ten times faster next week. Expect positivity, accountability, and study plans tailored to your next big milestone.
         </p>
       </div>
-      <div className="card-surface space-y-3">
+      <div className="card-surface space-y-4 bg-slate-900/80">
         <div className="flex items-center justify-between">
           <span className="text-sm text-slate-300">Location</span>
           <span className="text-sm font-semibold text-white">Los Angeles • Remote worldwide</span>
@@ -37,6 +36,25 @@ export const Biography = () => (
           <span className="text-sm text-slate-300">Languages</span>
           <span className="text-sm font-semibold text-white">English, Romanian</span>
         </div>
+        <div className="grid gap-2 rounded-2xl border border-sky-200/20 bg-slate-800/60 p-4 text-sm text-slate-100">
+          <p className="font-semibold text-white">Teaching pillars</p>
+          <ul className="space-y-1">
+            {[
+              'Curiosity-first warmups to lower stress',
+              'Proof critiques that read like coaching letters',
+              'Colorful diagrams and analogies for sticky ideas',
+              'Clear next steps at the end of every lesson'
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-1 h-2 w-2 rounded-full bg-sky-300" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-sm text-slate-200">
+          Ready to start? Book a session to co-design a plan that fits your classes, competitions, and preferred pace.
+        </p>
       </div>
     </div>
   </section>
