@@ -27,19 +27,19 @@ const testimonials = [
 ];
 
 export const Testimonials = () => (
-  <section className="section bg-white">
+  <section className="section bg-white/70">
     <div className="mx-auto max-w-6xl px-4">
       <p className="label">Testimonials</p>
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <h2 className="text-3xl font-bold text-slate-900 md:text-4xl">Students value clarity, rigor, and calm coaching</h2>
-        <span className="text-sm text-slate-600">Every quote below comes from a real session recap.</span>
+        <h2 className="text-3xl font-bold text-[#1f274b] md:text-4xl">Students value clarity, rigor, and calm coaching</h2>
+        <span className="text-sm text-[#5b6185]">Every quote below comes from a real session recap.</span>
       </div>
       <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
         {testimonials.map((testimonial) => (
-          <div key={testimonial.name} className="card-surface space-y-3">
-            <p className="text-sm text-slate-700">“{testimonial.note}”</p>
-            <p className="text-sm font-semibold text-rose-700">{testimonial.name}</p>
-            <p className="text-xs text-slate-500">{testimonial.role}</p>
+          <div key={testimonial.name} className="card-surface space-y-3 bg-white/95">
+            <p className="text-sm text-[#4b5070]">“{testimonial.note}”</p>
+            <p className="text-sm font-semibold text-[#e1498d]">{testimonial.name}</p>
+            <p className="text-xs text-[#5b6185]">{testimonial.role}</p>
           </div>
         ))}
       </div>

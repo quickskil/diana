@@ -3,24 +3,25 @@
 @tailwind utilities;
 
 body {
-  @apply antialiased min-h-screen text-slate-800;
+  @apply min-h-screen bg-[#fffafb] text-[#1f274b] antialiased;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: radial-gradient(circle at 14% 20%, rgba(244, 114, 182, 0.2), transparent 28%),
-    radial-gradient(circle at 82% 12%, rgba(190, 227, 248, 0.28), transparent 30%),
-    radial-gradient(circle at 40% 86%, rgba(254, 249, 195, 0.26), transparent 34%),
-    linear-gradient(135deg, #fff7fb 0%, #fdf4ff 42%, #f8fafc 100%);
+  background-image: radial-gradient(circle at 10% 10%, rgba(231, 73, 141, 0.12), transparent 26%),
+    radial-gradient(circle at 80% 8%, rgba(37, 64, 121, 0.1), transparent 32%),
+    radial-gradient(circle at 25% 70%, rgba(255, 176, 204, 0.15), transparent 34%),
+    radial-gradient(circle at 80% 72%, rgba(255, 235, 245, 0.42), transparent 46%),
+    linear-gradient(145deg, #fff7fc 0%, #fff0f6 45%, #f8f2ff 100%);
 }
 
 a {
-  @apply text-rose-600 transition hover:text-rose-800;
+  @apply text-[#e1498d] transition hover:text-[#c92e74];
 }
 
 .button-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-400 via-rose-500 to-pink-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-rose-200/70 transition hover:shadow-xl hover:shadow-rose-200/90 hover:brightness-105;
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#e1498d] via-[#f05fa8] to-[#f7a6d1] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#f7c5de]/70 transition hover:shadow-xl hover:shadow-[#f7c5de] hover:brightness-110;
 }
 
 .button-secondary {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-[#f3bfd8] bg-white/80 px-5 py-2.5 text-sm font-semibold text-[#e1498d] shadow-sm shadow-[#f7d7e8]/60 transition hover:border-[#e1498d] hover:bg-[#fff2f8];
 }
 
 .section {
@@ -28,23 +29,23 @@ a {
 }
 
 .card-surface {
-  @apply rounded-3xl border border-rose-100 bg-white/90 p-6 shadow-lg shadow-rose-100/80 backdrop-blur;
+  @apply rounded-3xl border border-[#f3bfd8] bg-white/90 p-6 shadow-xl shadow-[#f8ddeb]/80 backdrop-blur;
 }
 
 .grid-accent {
-  background-image: radial-gradient(circle at 12% 15%, rgba(244, 114, 182, 0.18), transparent 34%),
-    radial-gradient(circle at 88% 20%, rgba(190, 227, 248, 0.22), transparent 32%),
-    radial-gradient(circle at 50% 88%, rgba(248, 250, 252, 0.2), transparent 42%);
+  background-image: radial-gradient(circle at 14% 18%, rgba(231, 73, 141, 0.12), transparent 32%),
+    radial-gradient(circle at 86% 16%, rgba(37, 64, 121, 0.12), transparent 34%),
+    radial-gradient(circle at 50% 88%, rgba(255, 201, 221, 0.16), transparent 44%);
 }
 
 .label {
-  @apply text-[11px] uppercase tracking-[0.4em] text-rose-500/80;
+  @apply text-[11px] uppercase tracking-[0.32em] text-[#e1498d]/80;
 }
 
 .input {
-  @apply w-full rounded-xl border border-rose-100 bg-white px-4 py-2.5 text-sm text-slate-800 shadow-inner shadow-rose-100 focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-400;
+  @apply w-full rounded-xl border border-[#f3bfd8] bg-white px-4 py-2.5 text-sm text-[#1f274b] shadow-inner shadow-[#f7d7e8] focus:border-[#e1498d] focus:outline-none focus:ring-1 focus:ring-[#e1498d];
 }
 
 .pill {
-  @apply inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-700;
+  @apply inline-flex items-center gap-2 rounded-full border border-[#f3bfd8] bg-[#fff4fa] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#e1498d];
 }
